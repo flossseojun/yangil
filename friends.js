@@ -752,6 +752,38 @@ MORE_CAMEO_EVENTS.munyunsu = [
     ] },
 ];
 
+// 학교 친구들 8기
+MORE_CAMEOS.hyeonseo = { name: '주현서', role: '양평 메시 · 장난꾸러기', color: '#3a8fd6', desc: '별명은 양평 메시. 공만 잡으면 아무도 못 뺏는다. 평소엔 장난기가 넘쳐서 현서 옆에 있으면 하루가 심심할 틈이 없다.', title: '메시의 짝꿍' };
+CAMEOS.hyeonseo = MORE_CAMEOS.hyeonseo; CAMEO_IDS.push('hyeonseo');
+CAMEO_ROLLING.hyeonseo = ['졸업 축하해! 마지막으로 장난 하나만 쳐도 돼?', '내 드리블 제일 많이 본 사람이 너야. 영광인 줄 알아라 ㅋㅋ', '너 덕분에 3년 내내 웃었다. 진짜 고마워. 이건 장난 아님.'];
+MORE_CAMEO_EVENTS.hyeonseo = [
+  { title: '양평 메시의 등장', text: '점심시간 운동장. 주현서가 공을 발에 붙인 채 세 명을 제친다. 구경하던 애들이 "양평 메시다!" 하고 소리친다. 현서가 나를 보더니 공을 툭 굴려 준다. "너도 해 봐."',
+    choices: [
+      { label: '드리블에 도전한다', hint: '체력 판정', run: s => { if (G.check('stamina', 40)) { G.grow('stamina', 2); G.add('rep', 2); return '현서를 한 번 제쳤다! 현서가 "오, 재능 있는데?" 하며 엄지를 들었다. 물론 바로 다시 뺏겼다.'; } G.grow('stamina', 1); G.fat(-4); return '두 걸음 만에 뺏겼다. 현서가 웃으며 공을 다시 줬다. "괜찮아, 메시도 처음엔 그랬어."'; } },
+      { label: '드리블 비법을 물어본다', run: s => { G.grow('stamina', 2); G.grow('social', 1); return '"공을 보지 말고 사람을 봐." 현서가 진지하게 알려 줬다. 진지한 건 딱 10초였다.'; } },
+    ] },
+  { title: '현서의 장난', text: '쉬는 시간, 자리에 돌아와 보니 필통이 사라졌다. 뒤에서 현서가 시치미를 뚝 떼고 있다. 그런데 어깨가 떨리고 있다.',
+    choices: [
+      { label: '모르는 척 같이 연기한다', run: s => { G.absurd(); G.grow('social', 2); return '"아 필통 잃어버렸네~" 크게 말했더니 현서가 웃음을 못 참고 터졌다. 필통은 현서 사물함 위에 있었다.'; } },
+      { label: '역으로 장난을 친다', run: s => { G.grow('social', 3); G.fat(-6); return '현서 실내화를 몰래 반대로 놔뒀다. 현서가 한참 헤매다 "인정, 너 고수다" 하며 하이파이브를 했다.'; } },
+    ] },
+  { title: 'Y리그의 메시', text: 'Y리그 축구 경기. 현서가 공을 잡자 상대 팀이 셋이나 달라붙는다. 현서가 눈짓을 한다. "빈자리로 뛰어!"',
+    choices: [
+      { label: '빈 공간으로 뛰어든다', hint: '체력 판정', run: s => { if (G.check('stamina', 45)) { G.add('rep', 5); G.flag('sportsWins'); return '현서가 수비를 다 끌고 와서 나한테 공을 찔러 줬다. 골! 현서가 나보다 더 크게 세리머니를 했다.'; } G.add('rep', 2); return '아깝게 골키퍼에게 막혔다. 현서가 어깨를 툭 쳤다. "타이밍 완벽했어. 다음엔 들어간다."'; } },
+      { label: '벤치에서 응원가를 만든다', run: s => { G.grow('social', 2); G.fat(-4); return '"양평의 메시, 주현서!" 즉석 응원가가 체육관에 울렸다. 현서가 골을 넣고 벤치를 향해 손가락 하트를 날렸다.'; } },
+    ] },
+  { title: '장난 뒤의 진심', text: '시험을 망치고 엎드려 있는데 현서가 다가와 머리 위에 귤 하나를 올려놨다. "귤 왕관 받아라." 그러더니 옆에 앉아 조용히 말한다. "괜찮아? 진짜로."',
+    choices: [
+      { label: '웃으면서 귤을 나눠 먹는다', run: s => { G.fat(-12); G.grow('social', 2); return '현서가 귤 껍질로 웃는 얼굴을 만들었다. 어이없어서 웃음이 나왔다. 그게 현서의 위로였다.'; } },
+      { label: '고민을 털어놓는다', run: s => { G.grow('social', 3); return '현서가 장난 한 번 없이 끝까지 들어 줬다. 마지막에 "그래도 넌 잘할 거야"라고 했는데, 그 말은 진심 같았다.'; } },
+    ] },
+  { title: '마지막 경기', text: '졸업을 앞둔 마지막 점심시간. 현서가 공을 들고 왔다. "고등학교 마지막 경기다. 오늘은 내가 패스만 할게. 네가 넣어."',
+    choices: [
+      { label: '마지막 골을 넣는다', run: s => { G.grow('stamina', 1); G.add('rep', 3); return '현서의 패스가 발 앞에 딱 떨어졌다. 골. 현서가 달려와 업어 줬다. "역시 내 짝꿍."'; } },
+      { label: '현서에게 사인을 받는다', run: s => { G.grow('social', 3); G.fat(-6); return '"양평 메시 주현서" 축구공에 사인을 받았다. 현서가 옆에 작게 낙서를 하나 더 그렸다. 웃는 얼굴이었다.'; } },
+    ] },
+];
+
 // 친구들은 모두 실제 친구다. 대화·친밀도·선물 같은 친구 시스템이 그대로 쓰도록 CHARACTERS에 등록한다.
 const TALK_LINES = [
   ['어, 안녕! 너 이름 들어 봤어.', '여기 앉아도 돼?'],
@@ -771,6 +803,7 @@ const TALK_SIG = {
   yejin: ['어제 그랑프리 봤어? 마지막 랩 미쳤어.', 'likes:playful'], seoan: ['치이카와 신상 나왔대. 같이 보러 갈래?', 'likes:playful'],
   jaejun: ['오늘 체육 뭐 한대? 나 오늘 컨디션 좋다.', 'likes:sincere'], taeyeol: ['자기 전에 3분 복습, 오늘도 했어?', 'likes:curious'],
   munyunsu: ['야아!! 운동장 가자!! 날씨 미쳤다!!', 'likes:playful'],
+  hyeonseo: ['점심에 공 차자. 오늘 드리블 신기술 보여 줄게.', 'likes:playful'],
 };
 CAMEO_IDS.filter(id => !CAMEOS[id].fixed).forEach(id => {
   const c = CAMEOS[id], sig = TALK_SIG[id] || ['오늘도 좋은 하루!', 'likes:sincere'];
