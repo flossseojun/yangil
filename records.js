@@ -18,6 +18,7 @@ function saveRecord(s, j) {
     friends, ach: s.ach.slice(), rare: s.rare.slice(), nicks: s.nicks.slice(), club: s.club, absurd: s.absurd,
     bestExam: s.exams.reduce((a, e) => Math.max(a, e.score), 0), date: new Date().toISOString(),
     track: s.track, electives: s.electives, autoClub: s.autoClub, setuk: (s.setuk || []).length, setukTop: (s.setuk || []).slice(-2).map(x => x.text),
+    days: (s.days || []).map(d => ({ y: d.y, s: d.s, date: d.date, k: d.k, rare: d.rare, n: d.n, a: d.a, h: d.h })), best: (s.best || []).slice(0, 3),
     college: s.college, daily: s.daily, memories: albumPicks(s.memories || [], 8), rolling: rollingList(s).filter(r => r.id !== 'teacher').slice(0, 4).map(r => ({ name: r.name, msg: r.msg })), title: TITLES[s.title || 'newbie'].name, titleCount: (s.titles || []).length, cameo: Object.assign({}, s.cameo || {}), president: s.flags.president ? 'president' : s.flags.vicePresident ? 'vice' : null, council: s.council ? COUNCIL_DEPTS[s.council].name : null, partner: s.partner ? { id: s.partner, love: s.love[s.partner], secret: !!s.loveSecret } : null, scale: 5, suneung: s.suneung ? s.suneung.grade : null, gradNo: SCHOOL.lastGradNo + (2026 + 2 - SCHOOL.lastGradYear),
   };
   recs.unshift(rec);
@@ -73,13 +74,82 @@ function renderEnding() {
           <button class="btn primary" data-act="png" data-arg="${r.no}">PNG로 저장</button>
           <button class="btn" data-act="new">새로운 인생 시작</button>
           <button class="btn" data-act="gallery">기록 갤러리</button>
+          ${joinButton('btn')}
         </div>
         <p class="fine">다운로드가 막혀 있으면 카드 이미지를 길게 누르거나 우클릭해서 저장하세요.</p>
       </div>
     </div>
+    ${renderBest(r)}
+    ${renderLifeMap(r)}
+    ${renderRarity(r)}
     ${(r.memories || []).length ? `<div class="paper"><h3 class="sec-title">추억 앨범</h3><div class="album small">${r.memories.map((m, i) => `<figure class="polaroid t-${m.type}" style="--r:${(i % 4 - 1.5) * 1.6}deg"><span class="when">${esc(m.when)}</span><b>${esc(m.title)}</b><figcaption>${esc(m.choice || '')}</figcaption></figure>`).join('')}</div></div>` : ''}
     ${(r.rolling || []).length ? `<div class="paper"><h3 class="sec-title">롤링페이퍼 한 줄</h3><ul class="rolling-mini">${r.rolling.map(x => `<li><b>${esc(x.name)}</b> ${esc(x.msg)}</li>`).join('')}</ul></div>` : ''}
   </section>`;
+}
+
+// 나의 명장면 (졸업식 앨범에서 ★을 찍은 장면)
+function renderBest(r) {
+  if (!(r.best || []).length) return '';
+  return `<div class="paper"><h3 class="sec-title">나의 명장면</h3><ol class="best-list">${r.best.map((m, i) => `<li><span class="best-no">★ ${i + 1}</span><small>${esc(m.when)}</small><b>${esc(m.title)}</b>${m.choice ? `<span>${esc(m.choice)}</span>` : ''}</li>`).join('')}</ol></div>`;
+}
+
+// 3년 인생 지도: 하루 = 한 칸. 칸을 누르면 그날 있었던 일이 보인다.
+function renderLifeMap(r) {
+  const days = r.days || [];
+  if (!days.length) return '';
+  UI.mapDays = days;
+  const counts = {}; days.forEach(d => counts[d.k] = (counts[d.k] || 0) + 1);
+  const top = Object.keys(counts).filter(k => k !== 'plain').sort((a, b) => counts[b] - counts[a])[0];
+  const row = y => [1, 2].map(s => days.map((d, i) => [d, i]).filter(([d]) => d.y === y && d.s === s)
+    .map(([d, i]) => `<button type="button" class="map-cell k-${d.k}${d.rare ? ' rare' : ''}" data-act="map-day" data-arg="${i}" aria-label="${y}학년 ${esc(d.date)} ${DAY_KINDS[d.k].label}">${DAY_KINDS[d.k].icon}</button>`).join('')).map(h => `<span class="map-sem">${h}</span>`).join('');
+  return `<div class="paper life-map">
+    <h3 class="sec-title">3년 인생 지도</h3>
+    <p class="fine">하루가 한 칸이야. 모두 ${days.length}일${top ? ` · 가장 많았던 날은 「${DAY_KINDS[top].label}」 (${counts[top]}일)` : ''}. 칸을 누르면 그날이 보여.</p>
+    <div class="map-grid">${[1, 2, 3].map(y => `<div class="map-row"><span class="map-year">${y}학년</span>${row(y)}</div>`).join('')}</div>
+    <p class="map-detail" id="map-detail" aria-live="polite">칸을 눌러 그날을 다시 떠올려 봐.</p>
+    <ul class="map-legend">${Object.keys(DAY_KINDS).filter(k => counts[k]).map(k => `<li><i class="map-cell k-${k}">${DAY_KINDS[k].icon}</i>${DAY_KINDS[k].label} ${counts[k]}</li>`).join('')}</ul>
+  </div>`;
+}
+function showMapDay(i) {
+  const d = (UI.mapDays || [])[i], el = document.getElementById('map-detail');
+  if (!d || !el) return;
+  document.querySelectorAll('.map-cell.on').forEach(c => c.classList.remove('on'));
+  const btn = document.querySelector(`.map-cell[data-arg="${i}"]`); if (btn) btn.classList.add('on');
+  const what = (d.n || []).length ? d.n.join(' · ') : (d.a || []).length ? `${d.a.join(', ')}을(를) 하며 보낸 하루` : '조용히 지나간 하루';
+  el.innerHTML = `<b>${d.y}학년 ${esc(d.date)}</b> · ${DAY_KINDS[d.k].label}${d.h ? ` (${esc(d.h)})` : ''}<br>${esc(what)}`;
+}
+
+// 엔딩 희귀도 · 졸업생 통계 (가상 졸업생 시뮬레이션 기준, endings.js의 GRAD_STATS)
+function topPct(v, qs, lowerBetter) {
+  // qs: 0~100 백분위 값(오름차순). 내 값보다 나은 사람의 비율 = 상위 %
+  let below = 0; for (let i = 0; i < qs.length; i++) if (qs[i] < v) below = i;
+  let p = lowerBetter ? Math.round(below / (qs.length - 1) * 100) : 100 - Math.round(below / (qs.length - 1) * 100);
+  return Math.min(99, Math.max(1, p));
+}
+function rarityOf(r) {
+  const G = GRAD_STATS[r.mode] || GRAD_STATS.real, n = G.n, c = G.endings[r.ending] || 0;
+  const per100 = Math.max(c / n * 100, 0);
+  const tier = per100 < 2 ? ['전설', 4] : per100 < 5 ? ['희귀', 3] : per100 < 12 ? ['드묾', 2] : ['흔함', 1];
+  return { per100, tier };
+}
+function renderRarity(r) {
+  if (typeof GRAD_STATS === 'undefined') return '';
+  const { per100, tier } = rarityOf(r), Q = GRAD_STATS.q;
+  const stars3 = Object.values(r.cameo || {}).filter(x => x >= 3).length;
+  const mine = loadRecords().filter(x => x.ending === r.ending).length;
+  const rows = [
+    ['내신', `${r.gpa}등급`, topPct(r.gpa, Q.gpa, true)],
+    ['종합 점수', `${r.score}점`, topPct(r.score, Q.score)],
+    ['우정 ★3 친구', `${stars3}명`, topPct(stars3, Q.stars3)],
+    ['업적', `${r.ach.length}개`, topPct(r.ach.length, Q.ach)],
+  ];
+  return `<div class="paper rarity">
+    <h3 class="sec-title">졸업생 통계</h3>
+    <div class="rarity-head"><span class="rarity-tier t${tier[1]}">${tier[0]}</span>
+      <p>이 엔딩을 본 졸업생은 <b>100명 중 ${per100 < 1 ? '1명도 안 돼' : `${Math.round(per100)}명`}</b>${per100 < 1 ? '' : ''}.<br><small>${mine > 1 ? `나는 이 엔딩을 ${mine}번째 봤어.` : '내 기록에서는 처음 본 엔딩이야!'}</small></p></div>
+    <ul class="pct-list">${rows.map(([k, v, p]) => `<li><span>${k}</span><b>${v}</b><span class="pct-bar"><i style="width:${100 - p}%"></i></span><em>상위 ${p}%</em></li>`).join('')}</ul>
+    <p class="fine">가상 졸업생 ${GRAD_STATS.real.n + GRAD_STATS.classic.n}명이 여러 방식으로 3년을 보낸 결과와 비교한 거야.</p>
+  </div>`;
 }
 
 async function afterEndingRender() {
@@ -213,7 +283,7 @@ async function cardDataUrl(rec) {
   const key = `${rec.no}|${rec.date}`;
   if (cardCache[key]) return cardCache[key];
   try { await Promise.all(['700 64px Jua', '400 28px "Gowun Dodum"', '700 28px "Gowun Dodum"'].map(f => document.fonts.load(f))); } catch (e) { /* 기본 글꼴 사용 */ }
-  const W = 1080, H = 1440, cv = document.createElement('canvas');
+  const W = 1080, H = 1800, cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const x = cv.getContext('2d');
   const DISP = 'Jua, "Gowun Dodum", sans-serif', BODY = '"Gowun Dodum", "Apple SD Gothic Neo", sans-serif';
@@ -316,6 +386,43 @@ async function cardDataUrl(rec) {
     cx += w + 10;
   });
   if (!rec.ach.length) { x.fillStyle = '#c9d6cd'; x.fillText('업적은 다음 생에…', 80, y + 52); }
+
+  // 나의 명장면
+  y = 1310;
+  x.fillStyle = '#ffd23f'; x.font = `30px ${DISP}`; x.fillText('나의 명장면', 80, y);
+  const best = (rec.best || []).length ? rec.best : (rec.memories || []).slice(-3);
+  x.font = `27px ${BODY}`;
+  best.slice(0, 3).forEach((m, i) => {
+    x.fillStyle = '#ffd23f'; x.fillText('★', 80, y + 50 + i * 46);
+    x.fillStyle = '#c9d6cd'; x.fillText(m.when, 120, y + 50 + i * 46);
+    const wx = 120 + x.measureText(m.when).width + 16;
+    x.fillStyle = '#ffffff'; let t = m.title; while (t.length > 1 && wx + x.measureText(t).width > W - 80) t = t.slice(0, -2) + '…';
+    x.fillText(t, wx, y + 50 + i * 46);
+  });
+  if (!best.length) { x.fillStyle = '#c9d6cd'; x.fillText('조용하지만 소중했던 3년', 120, y + 50); }
+
+  // 3년 인생 지도 (하루 = 한 칸) + 엔딩 희귀도
+  y = 1506;
+  x.fillStyle = '#ffd23f'; x.font = `30px ${DISP}`; x.fillText('3년 인생 지도', 80, y);
+  const MAPC = { love: '#ff8fa3', school: '#ffd23f', friend: '#7cc7ff', club: '#b69cff', odd: '#7fe0b0', study: '#e9efe9', rest: '#6f8a7b', plain: '#cdbf9f' };
+  [1, 2, 3].forEach(yr => {
+    const ry = y + 22 + (yr - 1) * 40;
+    x.fillStyle = '#c9d6cd'; x.font = `22px ${BODY}`; x.fillText(`${yr}학년`, 80, ry + 25);
+    (rec.days || []).filter(d => d.y === yr).forEach((d, i) => {
+      const cx2 = 170 + i * 44 + (d.s === 2 ? 20 : 0);
+      x.fillStyle = MAPC[d.k] || MAPC.plain; roundRect(x, cx2, ry, 36, 32, 6); x.fill();
+      if (d.rare) { x.fillStyle = '#1d3329'; x.font = `20px ${BODY}`; x.textAlign = 'center'; x.fillText('✦', cx2 + 18, ry + 23); x.textAlign = 'left'; }
+    });
+  });
+  if (typeof GRAD_STATS !== 'undefined') {
+    const { per100, tier } = rarityOf(rec);
+    x.textAlign = 'center';
+    x.strokeStyle = '#ffd23f'; x.lineWidth = 3; roundRect(x, 750, y - 4, 250, 150, 16); x.stroke();
+    x.fillStyle = '#ffd23f'; x.font = `42px ${DISP}`; x.fillText(tier[0], 875, y + 50);
+    x.fillStyle = '#e9efe9'; x.font = `23px ${BODY}`; x.fillText('이 엔딩을 본 졸업생', 875, y + 92);
+    x.fillStyle = '#ffffff'; x.font = `28px ${DISP}`; x.fillText(per100 < 1 ? '100명 중 1명 미만' : `100명 중 ${Math.round(per100)}명`, 875, y + 130);
+    x.textAlign = 'left';
+  }
 
   // 바닥 분필 받침
   x.fillStyle = '#a8794a'; x.fillRect(30, H - 120, W - 60, 10);

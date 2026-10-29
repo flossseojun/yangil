@@ -242,3 +242,5 @@ const SHOP = {
   summary: { name: '요약 노트 세트', price: 2500, desc: '이번 학기 모든 과목 숙련도 +2' },
 };
 const ALLOWANCE = 700;  // 하루 용돈
+// 출연 신청 구글 폼 주소. 비워 두면 메뉴의 신청 버튼이 "준비 중"으로 보인다.
+const JOIN_FORM_URL = '';

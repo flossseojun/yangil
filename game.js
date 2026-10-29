@@ -186,7 +186,7 @@ function newGame(d) {
     met: mode === 'classic' ? { chaerin: true, teacher: true } : { teacher: true }, aff, club: null, clubPts: 0,
     exams: [], flags: {}, seen: {}, recent: [], rare: [], absurd: 0, nicks: [], ach: [],
     counts: { study: 0, talk: 0, rest: 0, exercise: 0, explore: 0, club: 0, auto: 0 }, visits: {}, studied: [],
-    autoClub: null, autoPts: 0, council: null, councilPts: 0, money: 3000, memories: [], cameo: {}, roster: pickRoster(mode), titles: ['newbie'], title: 'newbie', perf: {}, written: {}, semGrades: [], setuk: [], route: null, college: null, daily: d.daily || null, vac: null,
+    autoClub: null, autoPts: 0, council: null, councilPts: 0, money: 3000, memories: [], days: [], today: [], cameo: {}, roster: pickRoster(mode), titles: ['newbie'], title: 'newbie', perf: {}, written: {}, semGrades: [], setuk: [], route: null, college: null, daily: d.daily || null, vac: null,
     love: {}, crush: null, partner: null, partnerSince: 0, loveNo: {}, waitConfess: 0, loveDay: 0, wrongNote: [],
     favors: {}, pairs: {}, likedPlace: {}, loveTension: 0, loveTouch: 0, coupleItems: [],
     electives: {}, track: null, mastery: {}, dayEvent: false, dayTalk: false,
@@ -348,6 +348,7 @@ function endDay() {
   G.fat(-sleep);
   romanceEndDay();
   if (S.partner && S.dayNo % 2 && !S.loveSecret) S.love[S.partner] = clamp(S.love[S.partner] - 1);
+  recordDay(holiday);
   S.day++; S.dayNo++;
   if (S.day > semDays()) {
     S.phase = 'report'; UI.screen = 'report';
@@ -357,6 +358,41 @@ function endDay() {
   const today = specialsFor(S.year, S.sem, S.day);
   toast((holiday ? `${holiday}, 하루 푹 쉬었다! 피로 -${sleep}` : `밤사이 피로 -${sleep}`) + (today.length ? ` · 오늘은 ${today.map(id => specialLabel(id, S.day)).join(', ')}!` : ''));
   render();
+}
+
+// 인생 지도: 하루를 한 칸으로 정리해 둔다. 가장 기억에 남을 종류로 칸 색을 정한다.
+const DAY_KINDS = {
+  love:   { label: '연애', icon: '♥' },
+  school: { label: '학교 행사', icon: '★' },
+  friend: { label: '친구', icon: '●' },
+  club:   { label: '동아리·학생회', icon: '◆' },
+  odd:    { label: '병맛·희귀', icon: '✦' },
+  study:  { label: '공부', icon: '✎' },
+  rest:   { label: '휴식', icon: '☾' },
+  plain:  { label: '일상', icon: '·' },
+};
+// 그날 있었던 일마다 점수를 더해 가장 큰 종류로 칸 색을 정한다 (거의 매일 학교 일정이 있어서 단순 우선순위로는 한 색만 나온다)
+const DAY_EV_W = { love: ['love', 3], rare: ['odd', 4], absurd: ['odd', 2], cameo: ['friend', 1.2], char: ['friend', 1.4], meet: ['friend', 1.5], talk: ['friend', 0.8], daily: ['plain', 0.3], story: ['school', 1.6], club: ['club', 1.6], council: ['club', 1.6] };
+const BIG_DAY = /입학식|체육한마당|축제|녹향제|체험학습|수학여행|Y리그|수능|과학의 날|선거|졸업|크리스마스|빼빼로/;
+const DAY_ACT_W = { talk: ['friend', 0.8], hangout: ['friend', 2], club: ['club', 1], auto: ['club', 1], council: ['club', 1], study: ['study', 1], rest: ['rest', 0.7], exercise: ['plain', 0.4], explore: ['plain', 0.4] };
+function dayKind(list, holiday) {
+  const sc = {};
+  list.forEach(([t, v]) => {
+    let w = t === 'act' ? DAY_ACT_W[v] : DAY_EV_W[t];
+    // 학교 일정은 큰 행사만 「학교 행사」, 시험·수행평가는 「공부」, 나머지(모집·반 배정 등)는 가볍게
+    if (t === 'story') w = /시험|모의|수행평가/.test(v) ? ['study', 1.3] : BIG_DAY.test(v) ? ['school', 1.6] : ['school', 0.4];
+    if (w) sc[w[0]] = (sc[w[0]] || 0) + w[1];
+  });
+  if (holiday) sc.rest = (sc.rest || 0) + 2;
+  const best = Object.keys(sc).sort((a, b) => sc[b] - sc[a])[0];
+  return best || 'plain';
+}
+function recordDay(holiday) {
+  const list = S.today || [];
+  const titles = list.filter(x => x[0] !== 'act').map(x => x[1]);
+  const acts = list.filter(x => x[0] === 'act').map(x => ACTIONS[x[1]] ? ACTIONS[x[1]].label : x[1]);
+  (S.days = S.days || []).push({ y: S.year, s: S.sem, d: S.day, date: dateLabel(), k: dayKind(list, holiday), rare: list.some(x => x[0] === 'rare'), n: titles.slice(0, 3), a: acts.slice(0, 2), h: holiday || null });
+  S.today = [];
 }
 
 function nextSemester() {
@@ -416,6 +452,7 @@ function performAction(type, arg, mult = 1, note = '', info = {}) {
 
   const r = withDiff(() => {
     S.counts[type] = (S.counts[type] || 0) + 1;
+    (S.today = S.today || []).push(['act', type]);
     switch (type) {
       case 'study': {
         const subs = subjectsOf(S);
@@ -658,6 +695,7 @@ function chooseEvent(i) {
 function closeEvent() {
   const e = EVENTS[S.cur.id];
   addLog(eventTitle(e, S.cur.ctx));
+  (S.today = S.today || []).push([e.type, eventTitle(e, S.cur.ctx)]);
   // 추억 앨범: 학교 행사·친구·연애·동아리 같은 기억할 만한 순간을 남긴다
   if (['story', 'char', 'love', 'council', 'club', 'cameo', 'meet', 'rare'].includes(e.type) && !['exam', 'mock', 'perf', 'club_pick', 'college_apply'].includes(S.cur.id) && S.cur.result) {
     S.memories = (S.memories || []).concat({ when: `${S.year}학년 ${dateOf(S.year, S.sem, S.day).getMonth() + 1}월`, title: eventTitle(e, S.cur.ctx), choice: S.cur.result.choice, type: e.type }).slice(-60);
@@ -881,6 +919,9 @@ function takeSuneung(mode) {
 /* ───────── 졸업 ───────── */
 function graduate() {
   const j = judgeEnding(S);
+  const mem = albumPicks(S.memories || [], 16);
+  S.best = (UI.stars || []).slice().sort((a, b) => a - b).map(i => mem[i]).filter(Boolean);
+  UI.stars = [];
   const rec = saveRecord(S, j);
   store.del(SAVE_KEY);
   S = null;
@@ -922,6 +963,11 @@ function renderTutorial() {
   const f = el.querySelector('[autofocus]'); if (f) f.focus({ preventScroll: true });
 }
 function closeTutorial() { UI.tut = null; try { localStorage.setItem(TUT_KEY, '1'); } catch (e) {} renderTutorial(); }
+
+// 출연 신청: 구글 폼 주소가 있으면 새 탭으로 연다
+function joinButton(cls) {
+  return JOIN_FORM_URL ? `<a class="${cls}" href="${esc(JOIN_FORM_URL)}" target="_blank" rel="noopener">나도 출연 신청</a>` : `<button class="${cls}" data-act="join">나도 출연 신청</button>`;
+}
 
 function render() {
   const fn = { menu: renderMenu, create: renderCreate, game: renderGame, report: renderReport, ending: renderEnding, gallery: renderGallery, dex: renderDex, school: renderSchool, course: renderCourse, vacation: renderVacation, ceremony: renderCeremony, settings: renderSettings }[UI.screen];
@@ -992,7 +1038,7 @@ function renderMenu() {
         ['school', '학교 안내', `개교 ${new Date().getFullYear() - 1970}주년, 경기도 양평`]].map(([k, name, sub, off], i) => `
       <button class="locker" data-act="${k}" ${off ? 'disabled' : ''}><span class="locker-no">2-${String(i + 1).padStart(2, '0')}</span><span class="vents" aria-hidden="true"></span><span class="nametag"><b>${name}</b><small>${sub}</small></span></button>`).join('')}
     </nav>
-    <div class="menu-foot"><button class="sfx-btn light" data-act="sfx" aria-pressed="${SFX.on}">효과음 ${SFX.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="settings">설정</button></div>
+    <div class="menu-foot"><button class="sfx-btn light" data-act="sfx" aria-pressed="${SFX.on}">효과음 ${SFX.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="settings">설정</button>${joinButton('sfx-btn light')}</div>
     <p class="fine center">양일고 학생이 만든 팬 게임입니다. 학교 정보는 공개 자료를 참고했어요. 실제 친구들은 본인 허락을 받고 출연했고, 가상 친구와 사건은 지어낸 이야기예요.</p>
   </section>`;
 }
@@ -1378,10 +1424,11 @@ function renderCeremony() {
     <div class="rolling">${list.map((r, i) => `<div class="note ${r.heart ? 'heart' : ''}" style="--r:${(i % 5 - 2) * 1.2}deg">${avatar(r.id, 'sm')}<p>${esc(r.msg)}</p><small>— ${esc(r.name)}</small></div>`).join('')}</div>
     <div class="create-actions center"><button class="btn primary big" data-act="cer-next">추억 앨범 넘기기 →</button></div>
   </section>`; }
-  if (step === 2) { const mem = albumPicks(S.memories || [], 16); return `
+  if (step === 2) { const mem = albumPicks(S.memories || [], 16), st = UI.stars || []; return `
   <section class="ceremony">${head}
     <h2 class="cer-title">3년 추억 앨범</h2>
-    ${mem.length ? `<div class="album">${mem.map((m, i) => `<figure class="polaroid t-${m.type}" style="--r:${(i % 4 - 1.5) * 1.6}deg"><span class="when">${esc(m.when)}</span><b>${esc(m.title)}</b><figcaption>${esc(m.choice || '')}</figcaption></figure>`).join('')}</div>` : '<p class="sit-text center">앨범이 비어 있다. 조용한 3년이었다.</p>'}
+    ${mem.length ? `<p class="sit-text center">가장 기억에 남는 장면에 ★을 찍어 줘. <b>명장면 ${st.length} / 3</b> · 졸업 카드에 들어가.</p>
+    <div class="album">${mem.map((m, i) => `<button type="button" class="polaroid t-${m.type} ${st.includes(i) ? 'starred' : ''}" style="--r:${(i % 4 - 1.5) * 1.6}deg" data-act="star" data-arg="${i}" aria-pressed="${st.includes(i)}"><span class="when">${esc(m.when)}</span><b>${esc(m.title)}</b><span class="cap">${esc(m.choice || '')}</span><span class="star-mark" aria-hidden="true">★</span></button>`).join('')}</div>` : '<p class="sit-text center">앨범이 비어 있다. 조용한 3년이었다.</p>'}
     <div class="create-actions center"><button class="btn primary big" data-act="cer-end">졸업 엔딩 공개 →</button></div>
   </section>`; }
   return '';
@@ -1493,7 +1540,7 @@ document.addEventListener('click', ev => {
     case 'enroll': { const nm = document.getElementById('name-input').value.trim();
       if (!nm) { toast('이름을 먼저 적어 줘.'); document.getElementById('name-input').focus(); break; }
       UI.draft.name = nm.slice(0, 8); UI.draft.mode = UI.mode; newGame(UI.draft); break; }
-    case 'continue': S = store.get(SAVE_KEY, null); if (S) { S.mode = S.mode || 'real'; S.coupleItems = S.coupleItems || []; S.cameo = S.cameo || {}; S.favors = S.favors || {}; S.pairs = S.pairs || {}; S.likedPlace = S.likedPlace || {}; S.love = S.love || {}; S.loveNo = S.loveNo || {}; syncFriends(S); S.titles = S.titles || ['newbie']; S.title = S.title || 'newbie'; UI.screen = ['report', 'course', 'vacation', 'ceremony'].includes(S.phase) ? S.phase : 'game'; UI.cer = 0; S.money = S.money ?? 3000; S.memories = S.memories || []; UI.course = null; UI.vac = []; render(); } break;
+    case 'continue': S = store.get(SAVE_KEY, null); if (S) { S.mode = S.mode || 'real'; S.coupleItems = S.coupleItems || []; S.cameo = S.cameo || {}; S.favors = S.favors || {}; S.pairs = S.pairs || {}; S.likedPlace = S.likedPlace || {}; S.love = S.love || {}; S.loveNo = S.loveNo || {}; syncFriends(S); S.titles = S.titles || ['newbie']; S.title = S.title || 'newbie'; UI.screen = ['report', 'course', 'vacation', 'ceremony'].includes(S.phase) ? S.phase : 'game'; UI.cer = 0; S.money = S.money ?? 3000; S.memories = S.memories || []; S.days = S.days || []; S.today = S.today || []; UI.course = null; UI.vac = []; render(); } break;
     case 'gtab': UI.gtab = arg; render(); break;
     case 'menu': if (S) save(); UI.screen = 'menu'; UI.pick = null; render(); break;
     case 'gallery': UI.screen = 'gallery'; render(); break;
@@ -1513,6 +1560,11 @@ document.addEventListener('click', ev => {
     case 'set-toggle': if (arg === 'sfx') SFX.toggle(); else { SETTINGS[arg] = !SETTINGS[arg]; saveSettings(); } render(); break;
     case 'cer-next': UI.cer = (UI.cer || 0) + 1; render(); window.scrollTo(0, 0); break;
     case 'cer-end': graduate(); break;
+    case 'star': { const st = UI.stars = UI.stars || [], i = +arg, k = st.indexOf(i);
+      if (k >= 0) st.splice(k, 1); else if (st.length >= 3) { toast('명장면은 3개까지 고를 수 있어. 하나를 빼고 골라 줘.'); break; } else { st.push(i); SFX.play('pop'); }
+      const y = window.scrollY; render(); window.scrollTo(0, y); break; }
+    case 'map-day': showMapDay(+arg); break;
+    case 'join': if (!JOIN_FORM_URL) toast('출연 신청 폼은 아직 준비 중이야. 곧 열릴 거야!'); break;
     case 'title-pick': UI.pick = UI.pick === 'title' ? null : 'title'; render(); break;
     case 'title-set': S.title = arg; UI.pick = null; save(); render(); break;
     case 'daily': { const k = todayKey(); UI.draft = Object.assign(rollCharacter(null, null, seededRng('yangil-' + k)), { rerolls: 0, daily: k, name: '' }); UI.screen = 'create'; render(); document.getElementById('name-input').focus(); break; }

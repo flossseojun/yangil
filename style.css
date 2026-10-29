@@ -324,7 +324,7 @@ h1, h2, h3 { font-family: var(--f-disp); font-weight: 400; line-height: 1.2; tex
 .rank-stamp.sm { width: 44px; height: 44px; font-size: 22px; border-width: 4px; animation: none; }
 .ending-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; margin-top: 8px; align-items: start; }
 .card-frame { margin: 0; display: grid; gap: 6px; }
-.card-frame img { width: 100%; max-width: 100%; aspect-ratio: 3 / 4; border-radius: 12px; background: var(--board-deep); box-shadow: var(--shadow); }
+.card-frame img { width: 100%; max-width: 100%; aspect-ratio: 3 / 5; border-radius: 12px; background: var(--board-deep); box-shadow: var(--shadow); }
 .card-frame figcaption { font-size: 12.5px; color: var(--muted); text-align: center; }
 .ending-side { display: grid; gap: 14px; }
 .kv { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; }
@@ -711,3 +711,47 @@ h1, h2, h3 { font-family: var(--f-disp); font-weight: 400; line-height: 1.2; tex
 .tut-card p { margin: 0; font-size: 15.5px; line-height: 1.75; }
 .tut-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 20px; }
 .tut-actions span { display: flex; gap: 8px; }
+
+/* 졸업식 앨범: 명장면 별표 */
+button.polaroid { font: inherit; text-align: left; cursor: pointer; position: relative; border-left: 0; border-right: 0; border-bottom: 0; }
+button.polaroid .cap { font-size: 13px; color: #555; }
+button.polaroid .star-mark { position: absolute; top: -38px; right: 10px; font-size: 26px; color: rgba(255, 255, 255, .35); transition: transform .15s; }
+button.polaroid.starred { outline: 3px solid var(--marker); outline-offset: 2px; }
+button.polaroid.starred .star-mark { color: var(--marker); transform: scale(1.2); }
+button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset: 3px; }
+.best-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.best-list li { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--marker) 14%, var(--card)); }
+.best-list .best-no { grid-row: span 3; font-family: var(--f-display, inherit); font-size: 20px; color: var(--ink); align-self: center; }
+.best-list small { color: var(--muted); }
+.best-list span:not(.best-no) { font-size: 14px; color: var(--muted); }
+
+/* 3년 인생 지도 */
+.map-grid { display: grid; gap: 8px; margin: 10px 0; }
+.map-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.map-year { flex: none; width: 44px; font-size: 13px; color: var(--muted); }
+.map-sem { display: flex; gap: 4px; flex-wrap: wrap; }
+.map-sem + .map-sem { padding-left: 8px; border-left: 2px dashed var(--line); }
+.map-cell { width: 30px; height: 30px; border-radius: 7px; border: 0; display: inline-grid; place-items: center; font-size: 13px; font-style: normal; cursor: pointer; color: #1d3329; background: #e5e9e4; padding: 0; }
+.map-cell.k-love { background: #ff8fa3; } .map-cell.k-school { background: #ffd23f; } .map-cell.k-friend { background: #7cc7ff; }
+.map-cell.k-club { background: #b69cff; } .map-cell.k-odd { background: #7fe0b0; } .map-cell.k-study { background: #dfe6df; }
+.map-cell.k-rest { background: #6f8a7b; color: #fff; } .map-cell.k-plain { background: #efe6d2; }
+.map-cell.rare { box-shadow: 0 0 0 2px var(--ink) inset; }
+.map-cell.on { outline: 3px solid var(--ink); outline-offset: 2px; }
+.map-cell:focus-visible { outline: 3px solid var(--board); outline-offset: 2px; }
+.map-detail { min-height: 3.2em; margin: 4px 0 10px; padding: 10px 12px; border-radius: 8px; background: var(--notebook); font-size: 14.5px; line-height: 1.6; }
+.map-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.map-legend li { display: flex; align-items: center; gap: 6px; }
+.map-legend .map-cell { width: 20px; height: 20px; font-size: 11px; cursor: default; }
+@media (max-width: 520px) { .map-cell { width: 24px; height: 24px; font-size: 11px; border-radius: 6px; } .map-row { align-items: flex-start; } .map-sem + .map-sem { padding-left: 0; border-left: 0; } .map-row { flex-wrap: wrap; } .map-year { width: 100%; } }
+
+/* 졸업생 통계 */
+.rarity-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.rarity-head p { margin: 0; line-height: 1.6; }
+.rarity-tier { flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; font-family: var(--f-display, inherit); font-size: 18px; border: 3px solid currentColor; transform: rotate(-8deg); }
+.rarity-tier.t4 { color: #c2410c; } .rarity-tier.t3 { color: #7c3aed; } .rarity-tier.t2 { color: #0369a1; } .rarity-tier.t1 { color: var(--muted); }
+.pct-list { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 8px; }
+.pct-list li { display: grid; grid-template-columns: 92px 64px 1fr 72px; align-items: center; gap: 8px; font-size: 14px; }
+.pct-list em { font-style: normal; text-align: right; color: var(--ink); font-weight: 700; }
+.pct-bar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.pct-bar i { display: block; height: 100%; background: var(--board); border-radius: 5px; }
+@media (max-width: 520px) { .pct-list li { grid-template-columns: 1fr auto auto; row-gap: 4px; } .pct-bar { grid-column: 1 / -1; order: 3; } }

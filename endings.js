@@ -159,3 +159,6 @@ const TITLES = {
   class_star:    { name: '양일고 인기인', desc: '친구 5명과 우정 ★3을 채웠다', test: s => CAMEO_IDS.filter(id => (s.cameo[id] || 0) >= 3).length >= 5 },
 };
 CAMEO_IDS.forEach(id => { TITLES['cam_' + id] = { name: CAMEOS[id].title, desc: `${CAMEOS[id].name}${josa(CAMEOS[id].name, '과', '와')} 우정 ★3`, test: s => (s.cameo[id] || 0) >= 3 }; });
+// 가상 졸업생 600명(전략 4가지 × 두 모드)을 시뮬레이션한 결과. 엔딩 희귀도와 상위 % 계산에 쓴다.
+// q: 0·5·10…100 백분위 값
+const GRAD_STATS = {"q": {"gpa": [1.1, 1.4, 1.5, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.4, 2.5, 2.6, 2.7, 2.8, 3, 3.1, 3.3, 3.4, 3.6, 3.9, 4.5], "score": [61, 75, 79, 82, 84, 86, 87, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 100, 101, 103, 109], "stars3": [2, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 7], "ach": [3, 6, 6, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 11, 11, 12, 13, 16]}, "real": {"n": 300, "endings": {"insider": 98, "idol": 75, "president": 30, "sports": 29, "happy": 20, "squad": 12, "byeongmat": 7, "auto_water": 6, "legend": 6, "auto_squid": 4, "auto_seed": 4, "auto_robotics": 4, "survivor": 3, "topstudent": 2}}, "classic": {"n": 300, "endings": {"topstudent": 90, "couple": 38, "scientist": 32, "legend": 29, "happy": 19, "insider": 18, "byeongmat": 14, "auto_seed": 10, "sports": 9, "idol": 9, "survivor": 8, "secret_couple": 7, "auto_water": 5, "president": 4, "auto_robotics": 4, "auto_squid": 4}}};
