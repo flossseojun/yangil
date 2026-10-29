@@ -186,7 +186,7 @@ function newGame(d) {
     met: mode === 'classic' ? { chaerin: true, teacher: true } : { teacher: true }, aff, club: null, clubPts: 0,
     exams: [], flags: {}, seen: {}, recent: [], rare: [], absurd: 0, nicks: [], ach: [],
     counts: { study: 0, talk: 0, rest: 0, exercise: 0, explore: 0, club: 0, auto: 0 }, visits: {}, studied: [],
-    autoClub: null, autoPts: 0, council: null, councilPts: 0, money: 10000, memories: [], cameo: {}, roster: pickRoster(mode), titles: ['newbie'], title: 'newbie', perf: {}, written: {}, semGrades: [], setuk: [], route: null, college: null, daily: d.daily || null, vac: null,
+    autoClub: null, autoPts: 0, council: null, councilPts: 0, money: 3000, memories: [], cameo: {}, roster: pickRoster(mode), titles: ['newbie'], title: 'newbie', perf: {}, written: {}, semGrades: [], setuk: [], route: null, college: null, daily: d.daily || null, vac: null,
     love: {}, crush: null, partner: null, partnerSince: 0, loveNo: {}, waitConfess: 0, loveDay: 0, wrongNote: [],
     favors: {}, pairs: {}, likedPlace: {}, loveTension: 0, loveTouch: 0, coupleItems: [],
     electives: {}, track: null, mastery: {}, dayEvent: false, dayTalk: false,
@@ -293,7 +293,7 @@ function specialsFor(year, sem, day) {
   if (sem === 1 && day === 2) l.push('sports_day');
   if (year === 1 && sem === 1 && day === 4) l.push('auto_club_fair');
   if (year >= 2 && sem === 1 && day === 4) l.push('science_day');
-  if (sem === 2 && day === 2) l.push('yleague');
+  if (sem === 2 && day === 2 && year < 3) l.push('yleague');
   if (year === 2 && sem === 2 && day === 2 && electionEligible(S)) l.push('election');
   if (sem === 1 && day === 5) l.push(year === 2 ? 'school_trip' : 'exp_day');
   if (sem === 2 && day === 4) { l.push(year === 3 ? 'suneung' : 'cheer'); if (year < 3) l.push(year === 1 ? 'field_trip' : 'field_trip2'); }
@@ -399,7 +399,9 @@ function doAction(type, arg) {
     return openMini('quiz', { title: arg === 'wrong' ? '오답노트' : '문제 풀기', qs }, go);
   }
   if (type === 'exercise') { render(); return openMini('timing', { title: '타이밍', stamina: S.stats.stamina }, go); }
-  if (type === 'club' || type === 'auto' || type === 'council') { render(); return openMini('memory', { title: '손발 맞추기', len: 3 + S.year }, go); }
+  if (type === 'club') { render(); return openMini('memory', { title: '손발 맞추기', len: 3 + S.year }, go); }
+  if (type === 'auto') { render(); return openMini('order', { title: '실험 순서 맞추기', club: S.autoClub }, go); }
+  if (type === 'council') { render(); return openMini('sort', { title: '건의함 분류', n: 3 + S.year }, go); }
   if (type === 'talk') { UI.line = charLine(arg, S.aff[arg]); render(); return openMini('talk', { title: '반응 고르기', who: arg, line: UI.line }, go); }
   go();
 }
@@ -889,11 +891,44 @@ function graduate() {
 /* ───────── 렌더링 ───────── */
 const $app = () => document.getElementById('app');
 
+/* ───────── 처음 하는 사람을 위한 설명 ───────── */
+const TUT_KEY = 'yangil.tutorial.v1';
+function tutorialSteps() {
+  const real = !S || S.mode !== 'classic';
+  return [
+    ['양일고에 온 걸 환영해!', '1학년 입학부터 3학년 졸업까지 3년을 보내는 게임이야. 학기마다 5~6일이 지나가고, 졸업할 때 내가 보낸 3년에 맞는 엔딩과 졸업 카드를 받아.'],
+    ['하루는 행동 2번', '점심시간과 방과후에 한 번씩 행동을 골라. 자습, 친구와 대화, 운동, 학교 탐험, 약속 잡기 같은 것들이야. 행동마다 짧은 미니게임이 있는데, 귀찮으면 「빠르게 넘기기」를 눌러도 돼. 대신 효과가 조금 줄어.'],
+    ['피로와 용돈', '행동할수록 피로가 쌓여. 75를 넘으면 효율이 떨어지고 100이 되면 쓰러지니까 가끔 휴식하자. 용돈은 하루 700원이야. 매점 간식이나 친구와 약속에 쓸 수 있어.'],
+    ['학교 일정과 성적', '위쪽에 보이는 D-day가 다가오는 학교 행사야. 정기시험과 수행평가로 내신 등급(1~5등급)이 정해져. 시험 전에는 자습으로 과목 숙련도를 올려 두자.'],
+    real ? ['친구들', '이번 판에 만날 친구들은 오른쪽(휴대폰은 「인간관계」 탭)에 있어. 대화하고, 약속을 잡고, 선물하면 친해져. 친구 에피소드를 볼 때마다 우정 ★이 올라. 친구 부탁을 들어주면 시험이나 선거 같은 중요한 날 보답해 줘.']
+      : ['친구와 연애', '가상 친구 4명과 친해지면 썸이 시작될 수 있어. 대화와 데이트로 설렘을 키워서 고백해 보자. 연인과 오래 연락을 안 하면 서운함이 쌓이니 조심해. 실제 친구들은 우정 에피소드에 나와.'],
+    ['이제 시작해 볼까?', '사건은 하루에 2개까지만 저절로 일어나. 저장은 자동으로 되고, 이 설명은 위쪽 「도움말」에서 다시 볼 수 있어. 좋은 3년 보내!'],
+  ];
+}
+function renderTutorial() {
+  let el = document.getElementById('tut');
+  if (!el) { el = document.createElement('div'); el.id = 'tut'; el.className = 'overlay tut'; document.body.appendChild(el); }
+  // 처음 게임 화면에 들어오면 한 번 자동으로 보여 준다
+  if (UI.tut == null && UI.screen === 'game' && S && !S.cur && !(typeof MINI !== 'undefined' && MINI.st)) { let seen = false; try { seen = !!localStorage.getItem(TUT_KEY); } catch (e) {} if (!seen) UI.tut = 0; }
+  if (UI.tut == null || UI.screen !== 'game') { el.hidden = true; el.innerHTML = ''; el.dataset.step = ''; return; }
+  const steps = tutorialSteps(), i = Math.min(UI.tut, steps.length - 1), [title, body] = steps[i];
+  if (!el.hidden && el.dataset.step === String(i)) return; // 같은 장이면 다시 그리지 않는다 (애니메이션 반복 방지)
+  el.hidden = false; el.dataset.step = i;
+  el.innerHTML = `<div class="ev-card tut-card" role="dialog" aria-modal="true" aria-labelledby="tut-title">
+    <div class="tut-top"><span class="ev-type">게임 설명</span><span class="tut-dots" aria-label="${i + 1} / ${steps.length}">${steps.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</span></div>
+    <h2 id="tut-title">${title}</h2><p>${body}</p>
+    <div class="tut-actions"><button class="link" data-act="tut-close">건너뛰기</button><span>${i ? '<button class="btn" data-act="tut-prev">이전</button>' : ''}<button class="btn primary" data-act="tut-next" autofocus>${i === steps.length - 1 ? '시작하기' : '다음'}</button></span></div>
+  </div>`;
+  const f = el.querySelector('[autofocus]'); if (f) f.focus({ preventScroll: true });
+}
+function closeTutorial() { UI.tut = null; try { localStorage.setItem(TUT_KEY, '1'); } catch (e) {} renderTutorial(); }
+
 function render() {
   const fn = { menu: renderMenu, create: renderCreate, game: renderGame, report: renderReport, ending: renderEnding, gallery: renderGallery, dex: renderDex, school: renderSchool, course: renderCourse, vacation: renderVacation, ceremony: renderCeremony, settings: renderSettings }[UI.screen];
   $app().innerHTML = fn();
   $app().dataset.screen = UI.screen;
   renderModal();
+  renderTutorial();
   if (UI.screen === 'ending') afterEndingRender();
   if (UI.screen === 'gallery') afterGalleryRender();
 }
@@ -980,7 +1015,7 @@ function renderCreate() {
       <div class="photo">${avatarSVG(d.avatar, '증명사진')}<small>증명사진</small></div>
       <div class="id-body">
         <label class="field-l" for="name-input">이름</label>
-        <input id="name-input" class="name-input" maxlength="8" value="${esc(d.name)}" autocomplete="off">
+        <input id="name-input" class="name-input" maxlength="8" value="${esc(d.name)}" placeholder="이름을 적어 줘" autocomplete="off" required>
         <div class="seg gender" role="radiogroup" aria-label="성별">${Object.entries(GENDER_LABEL).map(([k, l]) => `<button role="radio" aria-checked="${d.gender === k}" class="${d.gender === k ? 'on' : ''}" data-act="gender" data-arg="${k}">${l}</button>`).join('')}</div>
         <div class="stats">${STATS.map(k => statBar(STAT_LABEL[k], d.stats[k])).join('')}</div>
       </div>
@@ -1025,6 +1060,7 @@ function renderGame() {
       <span class="dday">${ns ? `${esc(ns.label)} D-${ns.dday}` : (S.day === semDays() ? '학기 마지막 날' : '')}</span>
     </div>
     <div class="ap" aria-label="행동력 ${S.ap} / ${AP_MAX}">${Array.from({ length: AP_MAX }, (_, i) => `<i class="${i < S.ap ? 'on' : ''}"></i>`).join('')}<span>${S.ap} / ${AP_MAX}</span></div>
+    <button class="sfx-btn" data-act="tut-open" aria-label="게임 설명 다시 보기">도움말</button>
     <button class="sfx-btn" data-act="sfx" aria-pressed="${SFX.on}">소리 ${SFX.on ? '켜짐' : '꺼짐'}</button>
     <div class="statline">${STATS.map(k => `<span>${STAT_LABEL[k]} <b>${Math.round(S.stats[k])}</b></span>`).join('')}<span class="${fatigueCls}">피로 <b>${S.fatigue}</b></span></div>
   </header>
@@ -1273,7 +1309,7 @@ function doVacation() {
   const run = {
     academy: () => { ['국어', '수학', '영어'].forEach(k => { S.mastery[k] = clamp((S.mastery[k] ?? S.stats.study * 0.6) + 6); }); G.grow('study', 3); G.fat(15); return '학원 특강으로 국어·수학·영어 기본기를 다졌다. (국·수·영 숙련도 +6)'; },
     reading: () => { const b = pick(BOOKS); G.grow('study', 2); addSetuk('독서', `방학 중 『${b}』를 읽고 자신의 진로와 연결한 독서 감상문을 작성함.`); return `『${b}』를 읽었다. 생각이 한 뼘 자란 기분이다.`; },
-    job: () => { G.add('luck', 3); G.add('rep', 2); G.fat(10); S.money = (S.money || 0) + 40000; return '편의점 알바를 했다. 손님 응대 스킬이 늘었고, 폐기 삼각김밥은 맛있었다. (알바비 +40,000원)'; },
+    job: () => { G.add('luck', 3); G.add('rep', 2); G.fat(10); S.money = (S.money || 0) + 8000; return '편의점 알바를 했다. 손님 응대 스킬이 늘었고, 폐기 삼각김밥은 맛있었다. (알바비 +8,000원)'; },
     trip: () => { G.fat(-40); G.grow('social', 3); return S.sem === 1 ? '친구들과 남한강에서 물놀이를 했다. 까맣게 탔다.' : '용문산 눈썰매장에서 하루 종일 놀았다. 볼이 빨개졌다.'; },
     friends: () => { FRIEND_IDS.forEach(id => S.met[id] && G.aff(id, 7)); return '친구들과 노래방, 떡볶이, 영화관 코스를 완주했다.'; },
     volunteer: () => { G.add('rep', 4); G.grow('social', 1); addSetuk('봉사', '방학 중 지역 복지관에서 어르신 디지털 교육 봉사활동에 꾸준히 참여함.'); return '복지관에서 어르신들께 스마트폰 쓰는 법을 알려 드렸다.'; },
@@ -1439,13 +1475,12 @@ document.addEventListener('click', ev => {
   if (!b || b.disabled) return;
   const act = b.dataset.act, arg = b.dataset.arg;
   switch (act) {
-    case 'new': UI.draft = Object.assign(rollCharacter(), { rerolls: 3 }); UI.screen = 'create'; render(); break;
-    case 'reroll': { const nm = document.getElementById('name-input').value.trim(); const r = UI.draft.rerolls - 1; UI.draft = Object.assign(rollCharacter(nm, UI.draft.gender), { rerolls: r, avatar: UI.draft.avatar }); render(); break; }
+    case 'new': UI.draft = Object.assign(rollCharacter(), { rerolls: 3, name: '' }); UI.screen = 'create'; render(); document.getElementById('name-input').focus(); break;
+    case 'reroll': { const nm = document.getElementById('name-input').value.trim(); const r = UI.draft.rerolls - 1; UI.draft = Object.assign(rollCharacter(nm, UI.draft.gender), { rerolls: r, avatar: UI.draft.avatar, name: nm }); render(); break; }
     case 'gender': {
-      // 직접 고친 이름은 두고, 자동으로 뽑힌 이름이면 성별에 맞게 다시 뽑는다
-      const nm = document.getElementById('name-input').value.trim();
+      // 적어 둔 이름은 그대로 둔다
+      UI.draft.name = document.getElementById('name-input').value.trim();
       UI.draft.gender = arg;
-      if (!nm || nm === UI.draft.name) UI.draft.name = pick(SURNAMES) + pick(GIVEN[arg]); else UI.draft.name = nm;
       render(); break;
     }
     case 'av-step': case 'av-rand': {
@@ -1455,8 +1490,10 @@ document.addEventListener('click', ev => {
       render(); break;
     }
     case 'mode': UI.mode = arg; try { localStorage.setItem('yangil.mode', arg); } catch (e) {} { const nm = document.getElementById('name-input').value.trim(); if (nm) UI.draft.name = nm; } render(); break;
-    case 'enroll': { const nm = document.getElementById('name-input').value.trim() || UI.draft.name; UI.draft.name = nm.slice(0, 8); UI.draft.mode = UI.mode; newGame(UI.draft); break; }
-    case 'continue': S = store.get(SAVE_KEY, null); if (S) { S.mode = S.mode || 'real'; S.coupleItems = S.coupleItems || []; S.cameo = S.cameo || {}; S.favors = S.favors || {}; S.pairs = S.pairs || {}; S.likedPlace = S.likedPlace || {}; S.love = S.love || {}; S.loveNo = S.loveNo || {}; syncFriends(S); S.titles = S.titles || ['newbie']; S.title = S.title || 'newbie'; UI.screen = ['report', 'course', 'vacation', 'ceremony'].includes(S.phase) ? S.phase : 'game'; UI.cer = 0; S.money = S.money ?? 10000; S.memories = S.memories || []; UI.course = null; UI.vac = []; render(); } break;
+    case 'enroll': { const nm = document.getElementById('name-input').value.trim();
+      if (!nm) { toast('이름을 먼저 적어 줘.'); document.getElementById('name-input').focus(); break; }
+      UI.draft.name = nm.slice(0, 8); UI.draft.mode = UI.mode; newGame(UI.draft); break; }
+    case 'continue': S = store.get(SAVE_KEY, null); if (S) { S.mode = S.mode || 'real'; S.coupleItems = S.coupleItems || []; S.cameo = S.cameo || {}; S.favors = S.favors || {}; S.pairs = S.pairs || {}; S.likedPlace = S.likedPlace || {}; S.love = S.love || {}; S.loveNo = S.loveNo || {}; syncFriends(S); S.titles = S.titles || ['newbie']; S.title = S.title || 'newbie'; UI.screen = ['report', 'course', 'vacation', 'ceremony'].includes(S.phase) ? S.phase : 'game'; UI.cer = 0; S.money = S.money ?? 3000; S.memories = S.memories || []; UI.course = null; UI.vac = []; render(); } break;
     case 'gtab': UI.gtab = arg; render(); break;
     case 'menu': if (S) save(); UI.screen = 'menu'; UI.pick = null; render(); break;
     case 'gallery': UI.screen = 'gallery'; render(); break;
@@ -1465,6 +1502,10 @@ document.addEventListener('click', ev => {
     case 'unpick': UI.pick = null; render(); break;
     case 'rest': case 'exercise': case 'club': case 'auto': case 'council': doAction(act); break;
     case 'sfx': SFX.toggle(); render(); break;
+    case 'tut-open': UI.tut = 0; renderTutorial(); break;
+    case 'tut-next': UI.tut++; if (UI.tut >= tutorialSteps().length) closeTutorial(); else renderTutorial(); break;
+    case 'tut-prev': UI.tut = Math.max(0, UI.tut - 1); renderTutorial(); break;
+    case 'tut-close': closeTutorial(); break;
     case 'shop': UI.pick = UI.pick === 'shop' ? null : 'shop'; render(); break;
     case 'buy': if (SHOP[arg].gift) { UI.pick = 'gift'; render(); } else buyItem(arg); break;
     case 'gift': buyItem('bread', arg); break;
@@ -1474,7 +1515,7 @@ document.addEventListener('click', ev => {
     case 'cer-end': graduate(); break;
     case 'title-pick': UI.pick = UI.pick === 'title' ? null : 'title'; render(); break;
     case 'title-set': S.title = arg; UI.pick = null; save(); render(); break;
-    case 'daily': { const k = todayKey(); UI.draft = Object.assign(rollCharacter(null, null, seededRng('yangil-' + k)), { rerolls: 0, daily: k }); UI.screen = 'create'; render(); break; }
+    case 'daily': { const k = todayKey(); UI.draft = Object.assign(rollCharacter(null, null, seededRng('yangil-' + k)), { rerolls: 0, daily: k, name: '' }); UI.screen = 'create'; render(); document.getElementById('name-input').focus(); break; }
     case 'vac-toggle': { const i = UI.vac.indexOf(arg); if (i >= 0) UI.vac.splice(i, 1); else if (UI.vac.length < 2) UI.vac.push(arg); render(); break; }
     case 'vac-go': doVacation(); break;
     case 'vac-done': S.phase = 'report'; S.vac = null; nextSemesterAfterVacation(); break;

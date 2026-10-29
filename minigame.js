@@ -113,6 +113,8 @@ function openMini(kind, opts, done) {
   if (kind === 'timing') { MINI.st.rounds = 3; newTimingRound(); }
   if (kind === 'memory') { MINI.st.seq = Array.from({ length: opts.len }, () => Math.floor(Math.random() * 4)); MINI.st.input = []; MINI.st.showing = true; }
   if (kind === 'quiz') { MINI.st.deadline = performance.now() + 15000; }
+  if (kind === 'order') { const pool = ORDER_TASKS[opts.club] || ORDER_TASKS.robotics; const t = pool[Math.floor(Math.random() * pool.length)]; Object.assign(MINI.st, { task: t, steps: t.steps.slice().sort(() => Math.random() - 0.5), got: [] }); }
+  if (kind === 'sort') { MINI.st.slips = SLIPS.slice().sort(() => Math.random() - 0.5).slice(0, opts.n || 4); }
   renderMini();
   if (kind === 'timing') loopTiming();
   if (kind === 'quiz') loopQuiz();
@@ -147,6 +149,15 @@ function renderMini() {
   } else if (st.kind === 'memory') {
     body = `<p class="mini-q"><small>${st.showing ? '순서를 기억해!' : `${st.input.length} / ${st.seq.length}`}</small>${st.showing ? '불이 켜지는 순서를 잘 봐.' : '같은 순서대로 눌러!'}</p>
       <div class="mini-pads">${[0, 1, 2, 3].map(i => `<button class="pad p${i}" id="pad${i}" data-act="mini-pad" data-arg="${i}" ${st.showing ? 'disabled' : ''} aria-label="${['빨강', '노랑', '초록', '파랑'][i]}"></button>`).join('')}</div>`;
+  } else if (st.kind === 'order') {
+    body = `<p class="mini-q"><small>${st.task.name}</small>실험 순서대로 눌러!</p>
+      <ol class="order-done">${st.task.steps.map((x, k) => `<li class="${k < st.got.length ? 'ok' : ''}">${k < st.got.length ? esc(st.got[k]) : '?'}</li>`).join('')}</ol>
+      <div class="mini-opts">${st.steps.map((x, k) => `<button class="choice" data-act="mini-order" data-arg="${k}" ${st.got.includes(x) ? 'disabled' : ''}>${esc(x)}</button>`).join('')}</div>`;
+  } else if (st.kind === 'sort') {
+    const slip = st.slips[st.step];
+    body = `<p class="mini-q"><small>${st.step + 1} / ${st.slips.length} · 맞힘 ${st.hits}</small>어느 부서로 보낼까?</p>
+      <blockquote class="slip">"${esc(slip[0])}"</blockquote>
+      <div class="mini-opts bins">${SLIP_BINS.map(b => `<button class="choice" data-act="mini-sort" data-arg="${b}">${b}</button>`).join('')}</div>`;
   } else if (st.kind === 'talk') {
     body = `<div class="ev-body">${avatar(st.who, 'lg')}<p>"${esc(st.line)}"</p></div>
       <p class="mini-q"><small>${esc(CHARACTERS[st.who].name)}${josa(CHARACTERS[st.who].name, '은', '는')} 어떤 반응을 좋아할까?</small></p>
@@ -221,6 +232,38 @@ function pressPad(i) {
   const s = document.querySelector('.mini-q small'); if (s) s.textContent = `${st.input.length} / ${st.seq.length}`;
 }
 
+// 자율동아리: 실험·활동 순서를 차례대로 누른다
+const ORDER_TASKS = {
+  robotics: [{ name: '라인트레이서 만들기', steps: ['회로도 그리기', '부품 납땜', '코드 업로드', '주행 테스트'] }, { name: '센서 보정', steps: ['센서 연결', '센서 값 읽기', '기준값 정하기', '라인 따라 주행'] }],
+  squid: [{ name: '수조 관리', steps: ['물 받아 두기', '수온 맞추기', '물 일부 갈기', '갑오징어 상태 관찰'] }, { name: '사육 기록', steps: ['수온 확인', '염도 측정', '먹이 주기', '관찰 일지 쓰기'] }],
+  seed: [{ name: '토종 씨앗 심기', steps: ['흙 고르기', '씨앗 심기', '물 주기', '싹 관찰하기'] }, { name: '씨앗 나눔 준비', steps: ['씨앗 고르기', '이름표 붙이기', '봉투에 담기', '장터에 진열'] }],
+  water: [{ name: '남한강 수질 측정', steps: ['측정 지점 정하기', '강물 떠 오기', '측정기 보정', '결과 기록'] }, { name: 'pH 측정', steps: ['시료 채취', '전극 세척', 'pH 측정', '지도에 표시'] }],
+};
+function pressOrder(k) {
+  const st = MINI.st, x = st.steps[k];
+  if (x === st.task.steps[st.got.length]) {
+    st.got.push(x); SFX.play('pop');
+    if (st.got.length === st.task.steps.length) return finishWith('실험 성공!', '순서를 한 번도 틀리지 않았다. 결과가 깔끔하게 나왔다.', 1.6);
+    return renderMini();
+  }
+  SFX.play('boing');
+  finishWith(`${st.got.length} / ${st.task.steps.length}`, `"${x}"는 아직 할 차례가 아니었다. 다음엔 순서를 먼저 떠올려 보자.`, multOf(st.got.length, st.task.steps.length));
+}
+// 학생회: 건의함 쪽지를 알맞은 부서로 보낸다
+const SLIP_BINS = ['행사', '복지', '안전·환경'];
+const SLIPS = [
+  ['축제 무대 시간을 늘려 주세요', '행사'], ['체육대회 종목에 이어달리기를 추가해 주세요', '행사'], ['양스킹 무대에 조명을 달아 주세요', '행사'], ['졸업식 영상을 학생들이 만들게 해 주세요', '행사'],
+  ['매점 소보로빵을 더 들여와 주세요', '복지'], ['급식 메뉴 투표를 해 주세요', '복지'], ['교실 정수기를 고쳐 주세요', '복지'], ['도서관을 저녁까지 열어 주세요', '복지'],
+  ['복도에서 뛰지 않기 캠페인을 해 주세요', '안전·환경'], ['분리수거함을 층마다 놓아 주세요', '안전·환경'], ['계단 미끄럼 방지 테이프를 붙여 주세요', '안전·환경'], ['은행나무길에 쓰레기통을 놓아 주세요', '안전·환경'],
+];
+function pressSort(bin) {
+  const st = MINI.st, slip = st.slips[st.step];
+  if (slip[1] === bin) { st.hits++; SFX.play('pop'); } else SFX.play('click');
+  st.step++;
+  if (st.step >= st.slips.length) return finishWith(st.hits === st.slips.length ? '완벽한 분류!' : `${st.hits} / ${st.slips.length} 정확`, st.hits === st.slips.length ? '건의 쪽지가 모두 알맞은 부서로 갔다.' : '몇 장은 다른 부서로 갔지만, 회의에서 바로잡았다.', multOf(st.hits, st.slips.length));
+  renderMini();
+}
+
 function reactTalk(k) {
   const st = MINI.st, liked = CHARACTERS[st.who].likes;
   const ok = k === liked;
@@ -236,4 +279,6 @@ function miniAction(act, arg) {
   if (act === 'mini-tap') tapTiming();
   if (act === 'mini-pad') pressPad(+arg);
   if (act === 'mini-react') reactTalk(arg);
+  if (act === 'mini-order') pressOrder(+arg);
+  if (act === 'mini-sort') pressSort(arg);
 }

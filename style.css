@@ -691,3 +691,23 @@ h1, h2, h3 { font-family: var(--f-disp); font-weight: 400; line-height: 1.2; tex
   .diploma-photo { left: 24px; top: 24px; width: 58px; height: 72px; }
   .diploma:has(.diploma-photo) .diploma-no { padding-left: 70px; min-height: 72px; }
 }
+
+/* 미니게임: 실험 순서 · 건의함 분류 */
+.order-done { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; counter-reset: st; }
+.order-done li { counter-increment: st; font-size: 12.5px; text-align: center; padding: 8px 4px; border-radius: 8px; border: 1.5px dashed var(--line); color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.order-done li::before { content: counter(st) ". "; }
+.order-done li.ok { border-style: solid; border-color: var(--up); color: var(--ink); background: color-mix(in srgb, var(--up) 12%, var(--card)); }
+.slip { margin: 0 0 12px; padding: 14px 16px; font-family: var(--f-hand); font-size: 24px; line-height: 1.3; background: var(--notebook); border: 1px solid var(--line); border-radius: 4px; transform: rotate(-.8deg); }
+.mini-opts.bins { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* 처음 하는 사람을 위한 설명 */
+.overlay.tut { z-index: 30; }
+.tut-card { border-top-color: var(--marker); }
+.tut-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.tut-dots { display: flex; gap: 5px; }
+.tut-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.tut-dots i.on { background: var(--board); }
+.tut-card h2 { font-size: 24px; margin: 4px 0 10px; }
+.tut-card p { margin: 0; font-size: 15.5px; line-height: 1.75; }
+.tut-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 20px; }
+.tut-actions span { display: flex; gap: 8px; }

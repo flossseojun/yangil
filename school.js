@@ -234,11 +234,11 @@ const COUNCIL_DEPTS = {
 
 // 매점 (용돈으로 산다). 선물은 친구를 골라 건넨다.
 const SHOP = {
-  choco:   { name: '초코우유', price: 1000, desc: '피로 -8 · 운 +1' },
-  energy:  { name: '에너지 음료', price: 1800, desc: '피로 -20' },
-  bread:   { name: '소보로빵 선물', price: 1500, desc: '친구에게 선물 · 친밀도 +7', gift: true },
-  keyring: { name: '은행잎 키링', price: 5000, desc: '썸·연인에게 선물 · 설렘 +8 (학기당 한 번)', love: true },
-  pen:     { name: '행운의 볼펜', price: 3000, desc: '다음 정기시험 +3점 (한 번)' },
-  summary: { name: '요약 노트 세트', price: 4500, desc: '이번 학기 모든 과목 숙련도 +2' },
+  choco:   { name: '초코우유', price: 500, desc: '피로 -8 · 운 +1' },
+  energy:  { name: '에너지 음료', price: 900, desc: '피로 -20' },
+  bread:   { name: '소보로빵 선물', price: 700, desc: '친구에게 선물 · 친밀도 +7', gift: true },
+  keyring: { name: '은행잎 키링', price: 2000, desc: '썸·연인에게 선물 · 설렘 +8 (학기당 한 번)', love: true },
+  pen:     { name: '행운의 볼펜', price: 1500, desc: '다음 정기시험 +3점 (한 번)' },
+  summary: { name: '요약 노트 세트', price: 2500, desc: '이번 학기 모든 과목 숙련도 +2' },
 };
-const ALLOWANCE = 4000;  // 하루 용돈
+const ALLOWANCE = 700;  // 하루 용돈

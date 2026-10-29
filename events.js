@@ -434,7 +434,7 @@ ev({ id: 'festival', type: 'story', title: '녹향제 (학교 축제)',
       if (G.talent('voice') || G.check('social', 60 - boost)) { G.flag('stage'); G.add('rep', 10); G.achieve('festival_star'); return '조명이 나를 비췄다. 첫 소절에 운동장이 조용해지고, 마지막 소절에 떼창이 터졌다.'; }
       G.add('rep', 3); G.nick('축제 삑사리'); return '고음에서 삑사리가 났다. 그런데 그게 오히려 레전드 영상이 됐다.'; } },
     { label: '반 부스를 운영한다', run: s => { G.grow('social', 4); G.add('rep', 4); G.fat(12); FRIEND_IDS.forEach(id => s.met[id] && G.aff(id, 3)); return '우리 반 "철벽 쌤 몰래카메라 카페"가 매출 1위를 했다.'; } },
-    { label: '축제를 구경한다', run: s => { G.fat(-12); G.add('luck', 3); s.money = (s.money || 0) + 10000; return '경품 추첨에서 문화상품권 만 원에 당첨됐다! (용돈 +10,000원)'; } },
+    { label: '축제를 구경한다', run: s => { G.fat(-12); G.add('luck', 3); s.money = (s.money || 0) + 3000; return '경품 추첨에서 문화상품권 3천 원에 당첨됐다! (용돈 +3,000원)'; } },
     { mode: 'classic', label: '그 사람과 축제를 돈다', req: s => !!(s.partner || s.crush), reqText: '썸이나 연인이 있어야 한다', run: s => { const w = s.partner || s.crush; s.love[w] = clamp(s.love[w] + 12); G.aff(w, 5); G.fat(-5); return `${N(w)}${josa(N(w), '과', '와')} 솜사탕 하나를 나눠 먹으며 부스를 돌았다. 불꽃이 터질 때 눈이 마주쳤다. (설렘 ${s.love[w]})`; } },
   ] });
 ev({ id: 'school_trip', type: 'story', once: true, title: '2학년 수학여행 · 제주도 (6/10~12)',
@@ -589,7 +589,7 @@ ev({ id: 'birthday', rel: true, title: '친구의 생일', cond: s => FRIEND_IDS
   text: (s, c) => `학년 단톡방에 누가 몰래 공지를 올렸다. "오늘 ${N(c.who)} 생일!" 정작 본인은 아무 말도 안 하고 있다.`,
   choices: [
     { label: '깜짝 파티를 연다', run: (s, c) => { G.aff(c.who, 14); FRIEND_IDS.forEach(id => s.met[id] && id !== c.who && G.aff(id, 2)); G.fat(6); return `매점 초코파이로 케이크를 쌓았다. ${N(c.who)}${josa(N(c.who), '이', '가')} 눈시울을 붉혔다.`; } },
-    { label: '선물을 산다 (8,000원)', req: s => (s.money || 0) >= 8000, reqText: '용돈이 부족하다', run: (s, c) => { s.money -= 8000; G.aff(c.who, 16); return `용돈을 털어 산 선물을 건넸다. ${N2(c.who)} 한참 포장지를 만지작거렸다.`; } },
+    { label: '선물을 산다 (3,000원)', req: s => (s.money || 0) >= 3000, reqText: '용돈이 부족하다', run: (s, c) => { s.money -= 3000; G.aff(c.who, 16); return `용돈을 털어 산 선물을 건넸다. ${N2(c.who)} 한참 포장지를 만지작거렸다.`; } },
     { label: '조용히 편지를 건넨다', run: (s, c) => { G.aff(c.who, 10); return '짧은 편지였지만, 다음 날 그 편지가 필통 안에 꽂혀 있었다.'; } },
   ] });
 ev({ id: 'walk_home', rel: true, title: '하굣길', cond: anyFriend, setup: (s, c) => { c.who = pickFriend(s); }, who: (s, c) => c.who,
@@ -1061,7 +1061,7 @@ ev({ mode: 'classic', id: 'love_100', type: 'love', once: true, title: '사귄 �
   text: (s, c) => `오늘은 ${N(c.who)}${josa(N(c.who), '과', '와')} 사귄 지 100일. 반 친구들이 이미 알고 있다. 소리가 달력에 하트를 그려 놨다.`,
   choices: [
     { label: '손편지를 쓴다', run: s => { s.love[s.partner] = clamp(s.love[s.partner] + 12); return `편지를 읽던 ${N2(s.partner)} 고개를 숙였다. 다음 날 답장이 필통에 들어 있었다.`; } },
-    { label: '커플 키링을 맞춘다 (6,000원)', req: s => (s.money || 0) >= 6000, reqText: '용돈이 부족하다', run: s => { s.money -= 6000; s.love[s.partner] = clamp(s.love[s.partner] + 9); G.add('luck', 2); addCoupleItem('커플 키링'); loveTouch(s.partner, 20); return '가방에 똑같은 은행잎 키링이 달렸다.'; } },
+    { label: '커플 키링을 맞춘다 (2,500원)', req: s => (s.money || 0) >= 2500, reqText: '용돈이 부족하다', run: s => { s.money -= 2500; s.love[s.partner] = clamp(s.love[s.partner] + 9); G.add('luck', 2); addCoupleItem('커플 키링'); loveTouch(s.partner, 20); return '가방에 똑같은 은행잎 키링이 달렸다.'; } },
     { label: '…까먹었다', run: s => { s.love[s.partner] = clamp(s.love[s.partner] - 15); G.absurd(); return '"오늘 무슨 날인지 몰라?" 등줄기에 식은땀이 흘렀다.'; } },
   ] });
 ev({ mode: 'classic', id: 'love_breakup', type: 'love', title: '우리 요즘…',

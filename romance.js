@@ -2,12 +2,12 @@
 
 /* ───────── 데이트 장소 (약속 잡기에서 썸·연인과 갈 수 있다) ───────── */
 const DATE_PLACES = {
-  railbike: { name: '양평 레일바이크', cost: 6000, text: n => `${n}${josa(n, '과', '와')} 레일바이크를 탔다. 터널에 들어설 때마다 ${n}${josa(n, '이', '가')} 소리를 질렀다.` },
-  cinema:   { name: '읍내 작은영화관', cost: 7000, text: n => `${n}${josa(n, '과', '와')} 영화를 봤다. 팝콘 통 안에서 손이 두 번 부딪혔다.` },
-  bingsu:   { name: '빙수집', cost: 5000, text: n => `빙수 하나에 숟가락 두 개. ${n}${josa(n, '이', '가')} 팥을 자꾸 내 쪽으로 밀어 줬다.` },
-  semiwon:  { name: '세미원 연꽃길', cost: 3000, text: n => `${n}${josa(n, '과', '와')} 세미원 징검다리를 건넜다. 연꽃 사이로 해가 졌다.` },
-  yongmun:  { name: '용문사 은행나무', cost: 2000, text: n => `천 년 넘은 은행나무 아래 ${n}${josa(n, '과', '와')} 나란히 섰다. 소원은 서로 비밀로 하기로 했다.` },
-  photo:    { name: '인생네컷', cost: 4000, item: '인생네컷 사진', text: n => `${n}${josa(n, '과', '와')} 인생네컷을 찍었다. 마지막 컷에서 ${n}${josa(n, '이', '가')} 볼에 손가락 하트를 올렸다.` },
+  railbike: { name: '양평 레일바이크', cost: 3000, text: n => `${n}${josa(n, '과', '와')} 레일바이크를 탔다. 터널에 들어설 때마다 ${n}${josa(n, '이', '가')} 소리를 질렀다.` },
+  cinema:   { name: '읍내 작은영화관', cost: 3500, text: n => `${n}${josa(n, '과', '와')} 영화를 봤다. 팝콘 통 안에서 손이 두 번 부딪혔다.` },
+  bingsu:   { name: '빙수집', cost: 2500, text: n => `빙수 하나에 숟가락 두 개. ${n}${josa(n, '이', '가')} 팥을 자꾸 내 쪽으로 밀어 줬다.` },
+  semiwon:  { name: '세미원 연꽃길', cost: 1500, text: n => `${n}${josa(n, '과', '와')} 세미원 징검다리를 건넜다. 연꽃 사이로 해가 졌다.` },
+  yongmun:  { name: '용문사 은행나무', cost: 1000, text: n => `천 년 넘은 은행나무 아래 ${n}${josa(n, '과', '와')} 나란히 섰다. 소원은 서로 비밀로 하기로 했다.` },
+  photo:    { name: '인생네컷', cost: 2000, item: '인생네컷 사진', text: n => `${n}${josa(n, '과', '와')} 인생네컷을 찍었다. 마지막 컷에서 ${n}${josa(n, '이', '가')} 볼에 손가락 하트를 올렸다.` },
 };
 const DATE_FAV = { chaerin: 'semiwon', taepung: 'railbike', sori: 'photo', jaemin: 'cinema' };
 const isLove = id => S && S.mode === 'classic' && (S.partner === id || S.crush === id);
@@ -69,8 +69,8 @@ ev({ mode: 'classic', id: 'love_fight', type: 'love', title: '서운함이 쌓�
     };
     return [
       { label: '먼저 진심으로 사과한다', hint: '진심이 통하는 상대라면 효과적', run: makeup('sincere', '"미안해. 내가 너무 당연하게 생각했어."') },
-      { label: '좋아하는 간식을 사 들고 찾아간다 (5,000원)', req: s => (s.money || 0) >= 5000, reqText: '용돈이 부족하다', hint: '장난스럽게 풀리는 상대라면 효과적',
-        run: (s, c) => { s.money -= 5000; return makeup('playful', '"화 풀어 주세요~" 하며 좋아하는 간식을 내밀었다.')(s, c); } },
+      { label: '좋아하는 간식을 사 들고 찾아간다 (2,000원)', req: s => (s.money || 0) >= 2000, reqText: '용돈이 부족하다', hint: '장난스럽게 풀리는 상대라면 효과적',
+        run: (s, c) => { s.money -= 2000; return makeup('playful', '"화 풀어 주세요~" 하며 좋아하는 간식을 내밀었다.')(s, c); } },
       { label: '왜 서운했는지 끝까지 들어 준다', hint: '이야기를 들어 주는 걸 좋아하는 상대라면 효과적', run: makeup('curious', '말을 끊지 않고 끝까지 들었다.') },
       { label: '"나도 서운한 거 많아."', run: (s, c) => { const w = c.who; s.love[w] = clamp(s.love[w] - 15); s.loveTension = 60; return `말다툼이 커졌다. ${N2(w)} 먼저 자리를 떴다. 오늘 밤은 메시지가 오지 않을 것 같다. (설렘 ${s.love[w]})`; } },
     ];
@@ -81,7 +81,7 @@ ev({ mode: 'classic', id: 'love_200', type: 'love', once: true, title: '사귄 �
   cond: s => s.partner && s.dayNo - s.partnerSince >= 24, setup: (s, c) => { c.who = s.partner; }, who: (s, c) => c.who,
   text: (s, c) => `200일. ${N2(c.who)} 쉬는 시간에 쪽지를 건넸다. "오늘 끝나고 시간 비워 둬. 할 말 있어."`,
   choices: [
-    { label: '커플링을 맞춘다 (10,000원)', req: s => (s.money || 0) >= 10000, reqText: '용돈이 부족하다', run: (s, c) => { s.money -= 10000; s.love[c.who] = clamp(s.love[c.who] + 14); addCoupleItem('은행잎 커플링'); loveTouch(c.who, 30); return '은행잎이 새겨진 반지를 나눠 꼈다. 수업 시간에 자꾸 손을 보게 된다.'; } },
+    { label: '커플링을 맞춘다 (4,000원)', req: s => (s.money || 0) >= 4000, reqText: '용돈이 부족하다', run: (s, c) => { s.money -= 4000; s.love[c.who] = clamp(s.love[c.who] + 14); addCoupleItem('은행잎 커플링'); loveTouch(c.who, 30); return '은행잎이 새겨진 반지를 나눠 꼈다. 수업 시간에 자꾸 손을 보게 된다.'; } },
     { label: '서로에게 200일 편지를 쓴다', run: (s, c) => { s.love[c.who] = clamp(s.love[c.who] + 10); addCoupleItem('200일 편지'); loveTouch(c.who, 30); return `${N(c.who)}의 편지 마지막 줄: "300일에도 이렇게 쓰고 있었으면 좋겠다."`; } },
   ] });
 ev({ mode: 'classic', id: 'love_365', type: 'love', once: true, title: '1주년',
@@ -105,7 +105,7 @@ ev({ mode: 'classic', id: 'love_xmas', type: 'love', title: '크리스마스 선
   setup: (s, c) => { c.who = s.partner; s.flags['xmas' + s.year] = 1; }, who: (s, c) => c.who,
   text: (s, c) => `겨울방학식 날. 크리스마스에 각자 바빠서 못 한 선물 교환을 오늘 하기로 했다. ${N2(c.who)} 쇼핑백을 등 뒤에 숨기고 있다.`,
   choices: [
-    { label: '커플 목도리를 준다 (8,000원)', req: s => (s.money || 0) >= 8000, reqText: '용돈이 부족하다', run: (s, c) => { s.money -= 8000; s.love[c.who] = clamp(s.love[c.who] + 13); addCoupleItem('커플 목도리'); loveTouch(c.who, 25); return '같은 색 목도리를 둘러매고 교문을 나섰다. 반 친구들이 휘파람을 불었다.'; } },
+    { label: '커플 목도리를 준다 (3,500원)', req: s => (s.money || 0) >= 3500, reqText: '용돈이 부족하다', run: (s, c) => { s.money -= 3500; s.love[c.who] = clamp(s.love[c.who] + 13); addCoupleItem('커플 목도리'); loveTouch(c.who, 25); return '같은 색 목도리를 둘러매고 교문을 나섰다. 반 친구들이 휘파람을 불었다.'; } },
     { label: '1년 동안의 일을 담은 편지를 준다', run: (s, c) => { s.love[c.who] = clamp(s.love[c.who] + 10); loveTouch(c.who, 25); return `${N2(c.who)} 편지를 읽다 목도리에 얼굴을 묻었다.`; } },
     { label: '두물머리 불빛 축제에 같이 간다', run: (s, c) => { s.love[c.who] = clamp(s.love[c.who] + 11); G.fat(-10); loveTouch(c.who, 25); return '강 위에 불빛이 반짝였다. 추웠는데 하나도 춥지 않았다.'; } },
   ] });
