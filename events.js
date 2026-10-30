@@ -592,6 +592,14 @@ ev({ id: 'birthday', rel: true, title: '친구의 생일', cond: s => FRIEND_IDS
     { label: '선물을 산다 (3,000원)', req: s => (s.money || 0) >= 3000, reqText: '용돈이 부족하다', run: (s, c) => { s.money -= 3000; G.aff(c.who, 16); return `용돈을 털어 산 선물을 건넸다. ${N2(c.who)} 한참 포장지를 만지작거렸다.`; } },
     { label: '조용히 편지를 건넨다', run: (s, c) => { G.aff(c.who, 10); return '짧은 편지였지만, 다음 날 그 편지가 필통 안에 꽂혀 있었다.'; } },
   ] });
+// 이재원: 비둘기를 쫓아 주면 부쩍 친해진다 (실제 친구 모드에서 재원이가 이번 판 친구일 때)
+ev({ id: 'pigeon_chase', rel: true, title: '비둘기 출몰!', weight: 2, cond: s => FRIEND_IDS.includes('jaewon') && s.met.jaewon, who: () => 'jaewon',
+  text: s => `${pick(['매점 앞', '운동장 스탠드', '은행나무길', '교문 앞'])}에 비둘기 몇 마리가 내려앉았다. 이재원이 그 자리에 얼어붙어 나를 쳐다본다. "저기… 좀 도와줄 수 있어?"`,
+  choices: [
+    { label: '"내가 간다!" 비둘기를 쫓아낸다', run: s => { G.aff('jaewon', 10); G.grow('stamina', 1); s.flags.pigeons = (s.flags.pigeons || 0) + 1; if (s.flags.pigeons >= 3) G.nick('비둘기 퇴치반장'); return pick(['두 팔을 날개처럼 퍼덕이며 달려가자 비둘기들이 일제히 날아올랐다. 재원이가 박수를 쳤다. "역시 내 경호원!"', '발을 쿵쿵 구르자 비둘기들이 후다닥 도망갔다. 재원이가 "너 없으면 나 어떻게 다니냐" 하며 웃었다.', '가방을 흔들며 돌진했다. 비둘기들은 날아가고, 재원이는 그날 내내 내 옆에 붙어 다녔다.']); } },
+    { label: '재원이 손을 잡고 같이 지나간다', run: s => { G.aff('jaewon', 6); G.grow('social', 2); return '"하나, 둘, 셋." 같이 걸으니 비둘기들이 알아서 비켜 줬다. 재원이 손에 땀이 흥건했다.'; } },
+    { label: '그냥 돌아서 가자고 한다', run: s => { G.aff('jaewon', 2); return '돌아서 가는 길이 조금 멀었다. 재원이가 미안해했다.'; } },
+  ] });
 ev({ id: 'walk_home', rel: true, title: '하굣길', cond: anyFriend, setup: (s, c) => { c.who = pickFriend(s); }, who: (s, c) => c.who,
   text: (s, c) => `하굣길, ${N(c.who)}${josa(N(c.who), '이', '가')} 같은 방향이라며 따라왔다. 남한강 둑길로 노을이 진다.`,
   choices: [
@@ -1216,7 +1224,7 @@ const CAMEO_EVENTS = {
   jaewon: [
     { title: '운동장의 비둘기 떼', text: '점심시간 운동장에 비둘기 떼가 내려앉았다. 이재원이 그 자리에 얼어붙었다. 매점으로 가는 길이 막혔다.',
       choices: [
-        { label: '앞장서서 길을 터 준다', run: s => { G.grow('stamina', 1); G.add('rep', 1); return '천천히 앞에서 걸었더니 비둘기들이 날아갔다. 재원이가 "진짜 고마워…" 하며 빵을 하나 사 줬다.'; } },
+        { label: '비둘기를 쫓아 준다', run: s => { G.grow('stamina', 1); G.add('rep', 1); G.aff('jaewon', 10); return '팔을 크게 휘두르며 달려가자 비둘기 떼가 한꺼번에 날아올랐다. 재원이가 "진짜 고마워…" 하며 빵을 하나 사 줬다. 재원이와 한층 가까워졌다.'; } },
         { label: '돌아가는 길로 같이 간다', run: s => { G.grow('social', 2); return '조금 멀지만 은행나무길로 돌아갔다. 가는 길에 이야기를 많이 했다.'; } },
       ] },
     { title: '재원이의 반격', text: '내가 체육 수행평가 준비로 쩔쩔매자 이재원이 나섰다. "비둘기만 아니면 나 꽤 쓸 만하다고."',
@@ -1227,7 +1235,7 @@ const CAMEO_EVENTS = {
     { title: '은행나무길 작전', text: '은행나무길에 참새가 많아서 재원이가 매일 돌아서 다닌다. "오늘은 한번 지나가 보고 싶어." 재원이가 숨을 크게 쉰다.',
       choices: [
         { label: '옆에서 같이 걷는다', run: s => { G.grow('social', 3); return '천천히, 한 걸음씩. 끝까지 지나간 재원이가 웃었다. "생각보다 괜찮네." 대단한 하루였다.'; } },
-        { label: '우산으로 경호한다', run: s => { G.absurd(); G.grow('social', 2); return '맑은 날 우산을 쓰고 경호원처럼 걸었다. 지나가던 친구들이 영문도 모르고 같이 경호에 합류했다.'; } },
+        { label: '우산을 휘둘러 참새를 쫓으며 경호한다', run: s => { G.absurd(); G.grow('social', 2); G.aff('jaewon', 8); return '맑은 날 우산을 쓰고 경호원처럼 걸었다. 지나가던 친구들이 영문도 모르고 같이 경호에 합류했다.'; } },
       ] },
     { title: '재원이의 요약 노트', text: '시험 일주일 전, 이재원이 두툼한 노트를 들고 왔다. "내가 정리한 거. 너도 봐." 색깔별로 깔끔하게 정리돼 있다.',
       choices: [
