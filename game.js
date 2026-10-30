@@ -445,7 +445,7 @@ function doAction(type, arg) {
 }
 
 function sigEventOf(id) {
-  const ev = id === 'jaewon' ? 'pigeon_chase' : 'sig_' + id;
+  const ev = id === 'jaewon' ? 'pigeon_chase' : id === 'ryun' && Math.random() < 0.5 ? 'ryun_double' : 'sig_' + id;
   return id && EVENTS[ev] && available(EVENTS[ev]) ? ev : null;
 }
 function performAction(type, arg, mult = 1, note = '', info = {}) {

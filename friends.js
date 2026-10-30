@@ -856,7 +856,7 @@ const TALK_LINES = [
   ['졸업해도 우리 계속 보는 거다.', '3년 동안 네가 있어서 든든했어.'],
 ];
 const TALK_SIG = {
-  ryun: ['양평 지도 새로 그렸는데 볼래?', 'likes:curious'], seojun: ['오늘의 포켓몬 퀴즈! 151번은?', 'likes:playful'], yejun: ['오늘 그늘 명당은 은행나무길 세 번째 벤치야.', 'likes:sincere'],
+  ryun: ['어… 나 오늘 약속이 두 개인 것 같은데. 괜찮아, 동선 다 짜 놨어.', 'likes:curious'], seojun: ['오늘의 포켓몬 퀴즈! 151번은?', 'likes:playful'], yejun: ['오늘 그늘 명당은 은행나무길 세 번째 벤치야.', 'likes:sincere'],
   mingyeol: ['방금 생각난 개그 있는데 들어 볼래?', 'likes:playful'], jaewon: ['오늘 운동장에 비둘기 없지? 확인 좀…', 'likes:sincere'], jiyong: ['인큐베이터 온도 25도 유지 중. 적정 온도 딱이야.', 'likes:curious'],
   geonwoo: ['파카가 오늘 너 보고 싶대. 진짜야.', 'likes:playful'], yunsu: ['포켓몬 챔피언스 한 판? 오늘도 내가 이긴다.', 'likes:playful'], eunseong: ['내일 아침에도 같이 뛰자!', 'likes:playful'],
   yunbo: ['이 문제 보조선 하나면 끝나.', 'likes:sincere'], isan: ['오늘 스쿼트 했어? 자세 봐 줄게!', 'likes:playful'], soyul: ['높은 데 물건 필요하면 말해.', 'likes:sincere'],

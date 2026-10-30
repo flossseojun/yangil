@@ -98,10 +98,19 @@ ev({ id: 'pair_scene', rel: true, title: (s, c) => PAIR_SCENES[c.i][2], weight: 
     G.aff(a, 7); G.aff(b, 7); G.grow('social', 2); G.fat(-4);
     return res; } })) });
 
+// 신륜: 이중약속 전문가. 나와의 약속과 다른 약속이 겹쳤다!
+ev({ id: 'ryun_double', rel: true, title: '륜이의 이중약속', weight: 2, cond: s => FRIEND_IDS.includes('ryun') && s.met.ryun, who: () => 'ryun',
+  text: s => `방과후, 신륜과 은행나무길에서 만나기로 했다. 그런데 륜이가 헐레벌떡 뛰어온다. "미안, ${pick(['5시에 도서관 스터디도 잡아 놨더라', '같은 시간에 매점 앞 약속도 있었어', '축구 보러 가기로 한 것도 지금이야'])}…! 근데 걱정 마. 동선 다 짜 놨어."`,
+  choices: [
+    { label: '륜이의 동선대로 두 약속을 같이 뛴다', run: s => { G.aff('ryun', 10); G.grow('stamina', 2); s.flags.ryunDouble = (s.flags.ryunDouble || 0) + 1; if (s.flags.ryunDouble >= 3) G.nick('이중약속 매니저'); return '륜이가 그린 지름길 지도대로 뛰었더니 두 약속에 다 1분 일찍 도착했다. "봐, 이중약속도 실력이야." 숨이 찼지만 웃음이 났다.'; } },
+    { label: '"다음엔 달력에 적어!" 다이어리를 선물한다', run: s => { G.aff('ryun', 7); G.grow('social', 2); return '륜이가 다이어리 첫 장에 내 이름을 크게 적었다. "이건 절대 안 겹치게 할게." 다음 날 그 옆에 약속이 또 하나 적혀 있었다.'; } },
+    { label: '오늘은 다른 약속에 양보한다', run: s => { G.aff('ryun', 4); G.fat(-5); return '"진짜 미안, 내일은 너만!" 다음 날 륜이가 양평 맛집 지도를 들고 왔다. 미안함이 담긴 지도였다.'; } },
+  ] });
+
 /* ───────── 10년 뒤 에필로그 ─────────
    [기본 미래, 아주 친했을 때 덧붙는 한 줄] */
 const FUTURE = {
-  ryun: ['세계 곳곳을 누비는 지리학자가 됐다. 새 지도를 만들 때마다 양평 골목길부터 그려 본다고.', '출장 갈 때마다 그 나라 엽서를 나한테 보낸다. 벌써 40장째다.'],
+  ryun: ['세계 곳곳을 누비는 지리학자가 됐다. 학회 두 개를 같은 날 잡아 놓고, 비행기 동선을 짜서 둘 다 발표하는 전설을 남겼다.', '그래도 내 생일만큼은 약속을 하나만 잡는다. 10년째 지키는 유일한 단독 약속이다.'],
   seojun: ['포켓몬 회사에 입사해 새 포켓몬 도감 설명을 쓰고 있다.', '신작 도감 어딘가에 내 이름을 숨겨 놨다고 했다. 아직 못 찾았다.'],
   yejun: ['도시 그늘 설계 전문가가 됐다. 양평 은행나무길 벤치도 예준이가 새로 배치했다.', '그 벤치 하나에는 작은 글씨로 "우리 자리"라고 새겨져 있다.'],
   mingyeol: ['개그 유튜버로 대박이 났다. 구독자가 100만을 넘었다.', '100만 기념 영상 첫 장면에 고등학교 때 나랑 찍은 영상이 나왔다.'],
@@ -182,7 +191,7 @@ function renderEpilogue(r) {
 
 /* ───────── 별명 도감 (친구가 붙여 주는 별명) ───────── */
 function friendNicks() {
-  return Object.entries(SIG_EVENTS).map(([id, v]) => ({ id, nick: v[3] })).concat([{ id: 'jaewon', nick: '비둘기 퇴치반장' }])
+  return Object.entries(SIG_EVENTS).map(([id, v]) => ({ id, nick: v[3] })).concat([{ id: 'jaewon', nick: '비둘기 퇴치반장' }, { id: 'ryun', nick: '이중약속 매니저' }])
     .sort((a, b) => CAMEO_IDS.indexOf(a.id) - CAMEO_IDS.indexOf(b.id));
 }
 function renderNickDex(d) {
