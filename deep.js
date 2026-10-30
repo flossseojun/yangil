@@ -12,7 +12,7 @@ const PLACES = {
 };
 // 친구마다 제일 좋아하는 장소 (대화 성향 + 이름으로 정한다)
 const PLACE_BY_LIKES = { playful: ['noraebang', 'pc', 'ttok'], sincere: ['river', 'ttok', 'cafe'], curious: ['dumeori', 'market', 'cafe'] };
-const PLACE_FIXED = { chaerin: 'cafe', taepung: 'pc', sori: 'market', jaemin: 'noraebang', jiyong: 'market', sia: 'dumeori', yunsu: 'pc', taeyeol: 'river', yejin: 'pc', seoan: 'market', mingyeol: 'noraebang', hyunwoo: 'pc', isan: 'ttok', hayeon: 'cafe' };
+const PLACE_FIXED = { chaerin: 'cafe', taepung: 'pc', sori: 'market', jaemin: 'noraebang', jiyong: 'market', sia: 'dumeori', yunsu: 'pc', taeyeol: 'river', yejin: 'pc', seoan: 'market', mingyeol: 'noraebang', hyunwoo: 'pc', isan: 'ttok', hayeon: 'cafe', minah: 'river' };
 function favPlace(id) {
   if (PLACE_FIXED[id]) return PLACE_FIXED[id];
   const pool = PLACE_BY_LIKES[CHARACTERS[id].likes] || PLACE_BY_LIKES.sincere;
@@ -255,6 +255,11 @@ const SIG_EVENTS = {
     ['조용히 다가가 같이 푼다', 8, 'study', 3, '윤호가 문제를 풀어 주는데 목소리 때문에 옆 반 애들까지 같이 배웠다.'],
     ['목캔디를 건넨다', 6, 'luck', 1, '"고마워!!! 이걸로 오늘 하루 더 외칠 수 있다!!!"'],
   ], '확성기 짝꿍'],
+  minah: ['할리 출동', '방과후 주차장, 박민아가 할리에 기대 헬멧을 들고 있다. "남한강 둑길까지 바람 쐬러 갈 건데. 같이 갈래? 헬멧은 두 개 있어."', [
+    ['헬멧을 꽉 쓰고 따라간다', 10, 'luck', 2, '남한강 바람이 시원했다. 둑길 끝에서 민아가 헬멧을 벗으며 말했다. "이 맛에 타는 거야." 그 옆모습이 진짜 간지였다.'],
+    ['학생부 일을 먼저 도와주고 간다', 8, 'rep', 2, '복도 순찰을 같이 끝내자 민아가 고개를 끄덕였다. "일 먼저, 바람은 그다음. 너 좀 멋있다."'],
+    ['할리 사진을 멋있게 찍어 준다', 6, 'social', 2, '노을 앞 할리 사진을 받은 민아가 바로 프로필로 바꿨다. "작가님, 다음에도 부탁."'],
+  ], '간지 크루'],
   hayeon: ['오늘의 책 추천', '도서관에서 이하연이 책 두 권을 들고 고민 중이다. "하나는 소설, 하나는 건축 에세이. 네가 골라 줄래? 같이 읽게."', [
     ['건축 에세이를 골라 같이 읽는다', 10, 'study', 2, '하연이가 사진 하나하나를 짚으며 설명했다. "이 창문 각도 봐, 빛이 이렇게 들어오게 설계한 거야."'],
     ['소설을 골라 서로 감상을 나눈다', 8, 'study', 2, '다 읽고 나서 결말을 두고 한참 이야기했다. 하연이가 "너랑 얘기하면 책이 두 배로 재밌어"라고 했다.'],
