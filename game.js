@@ -181,7 +181,7 @@ function newGame(d) {
   const mode = d.mode === 'classic' ? 'classic' : 'real';
   if (mode === 'classic') aff.chaerin = 10;
   S = {
-    v: 1, mode, avatar: d.avatar || randomAvatar(d.gender), name: d.name, gender: d.gender, stats: { ...d.stats }, traits: d.traits, talent: d.talent, talentRevealed: false,
+    v: 1, mode, origin: { stats: { ...d.stats }, traits: d.traits, talent: d.talent, daily: d.daily || null }, avatar: d.avatar || randomAvatar(d.gender), name: d.name, gender: d.gender, stats: { ...d.stats }, traits: d.traits, talent: d.talent, talentRevealed: false,
     fatigue: 15, year: 1, sem: 1, day: 1, dayNo: 1, ap: AP_MAX, slot: 0,
     met: mode === 'classic' ? { chaerin: true, teacher: true } : { teacher: true }, aff, club: null, clubPts: 0,
     exams: [], flags: {}, seen: {}, recent: [], rare: [], absurd: 0, nicks: [], ach: [],
@@ -972,6 +972,24 @@ function renderTutorial() {
   </div>`;
   const f = el.querySelector('[autofocus]'); if (f) f.focus({ preventScroll: true });
 }
+// 다시 시작 확인 창
+function renderRestart() {
+  let el = document.getElementById('restart');
+  if (!el) { el = document.createElement('div'); el.id = 'restart'; el.className = 'overlay tut'; document.body.appendChild(el); }
+  if (!UI.restart || UI.screen !== 'game' || !S) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = `<div class="ev-card tut-card" role="dialog" aria-modal="true" aria-labelledby="rs-title">
+    <div class="tut-top"><span class="ev-type">다시 시작</span></div>
+    <h2 id="rs-title">처음부터 다시 할까?</h2>
+    <p>지금까지의 ${S.year}학년 ${S.sem}학기 기록은 사라지고 1학년 3월 입학식부터 다시 시작해. 졸업 기록과 도감은 그대로 남아.</p>
+    <div class="restart-opts">
+      <button class="btn primary" data-act="restart-same">같은 캐릭터로 다시<small>${esc(S.name)} · 외모와 성격 그대로</small></button>
+      <button class="btn" data-act="restart-new">새 캐릭터 만들기<small>이름부터 새로 정하기</small></button>
+      <button class="link" data-act="restart-no" autofocus>계속 플레이하기</button>
+    </div>
+  </div>`;
+  el.querySelector('[autofocus]').focus({ preventScroll: true });
+}
 function closeTutorial() { UI.tut = null; try { localStorage.setItem(TUT_KEY, '1'); } catch (e) {} renderTutorial(); }
 
 // 출연 신청: 구글 폼 주소가 있으면 새 탭으로 연다
@@ -1116,6 +1134,7 @@ function renderGame() {
       <span class="dday">${ns ? `${esc(ns.label)} D-${ns.dday}` : (S.day === semDays() ? '학기 마지막 날' : '')}</span>
     </div>
     <div class="ap" aria-label="행동력 ${S.ap} / ${AP_MAX}">${Array.from({ length: AP_MAX }, (_, i) => `<i class="${i < S.ap ? 'on' : ''}"></i>`).join('')}<span>${S.ap} / ${AP_MAX}</span></div>
+    <button class="sfx-btn" data-act="restart-ask" aria-label="처음부터 다시 시작">다시 시작</button>
     <button class="sfx-btn" data-act="tut-open" aria-label="게임 설명 다시 보기">도움말</button>
     <button class="sfx-btn" data-act="sfx" aria-pressed="${SFX.on}">소리 ${SFX.on ? '켜짐' : '꺼짐'}</button>
     <div class="statline">${STATS.map(k => `<span>${STAT_LABEL[k]} <b>${Math.round(S.stats[k])}</b></span>`).join('')}<span class="${fatigueCls}">피로 <b>${S.fatigue}</b></span></div>
@@ -1579,6 +1598,13 @@ document.addEventListener('click', ev => {
     case 'unpick': UI.pick = null; render(); break;
     case 'rest': case 'exercise': case 'club': case 'auto': case 'council': doAction(act); break;
     case 'sfx': SFX.toggle(); render(); break;
+    case 'restart-ask': UI.restart = true; renderRestart(); break;
+    case 'restart-no': UI.restart = false; renderRestart(); break;
+    case 'restart-same': { // 같은 이름·외모·성격으로 1학년 3월부터
+      const o = S.origin || rollCharacter(S.name, S.gender);
+      const d = { name: S.name, gender: S.gender, avatar: S.avatar, mode: S.mode, stats: o.stats, traits: o.traits, talent: o.talent, daily: o.daily || S.daily || null };
+      UI.restart = false; renderRestart(); store.del(SAVE_KEY); newGame(d); toast('같은 캐릭터로 1학년 3월부터 다시 시작한다!'); break; }
+    case 'restart-new': UI.restart = false; renderRestart(); store.del(SAVE_KEY); S = null; UI.draft = Object.assign(rollCharacter(), { rerolls: 3, name: '' }); UI.screen = 'create'; render(); document.getElementById('name-input').focus(); break;
     case 'tut-open': UI.tut = 0; renderTutorial(); break;
     case 'tut-next': UI.tut++; if (UI.tut >= tutorialSteps().length) closeTutorial(); else renderTutorial(); break;
     case 'tut-prev': UI.tut = Math.max(0, UI.tut - 1); renderTutorial(); break;
