@@ -344,8 +344,10 @@ function endDay() {
   const left = S.ap;
   // 2학기 1차 정기시험 다음 날(10/28)은 실제 학사일정대로 학교장재량휴업일
   const holiday = S.day === 3 ? (S.sem === 1 ? '5/4 재량휴업일' : '10/28 개교기념 재량휴업일') : S.year === 3 && S.sem === 2 && S.day === 4 ? '11/20 수능 다음 날 재량휴업일' : null;
-  const sleep = Math.round(18 * (G.has('sleepy') ? 1.6 : 1)) + left * 5 + (holiday ? 30 : 0);
-  G.fat(-sleep);
+  // 에너지 음료를 마신 날은 잠을 설쳐서 밤사이 회복이 줄어든다
+  const caf = (S.energyToday || 0) * 10;
+  const sleep = Math.max(0, Math.round(18 * (G.has('sleepy') ? 1.6 : 1)) + left * 5 + (holiday ? 30 : 0) - caf);
+  G.fat(-sleep); S.energyToday = 0;
   romanceEndDay();
   if (S.partner && S.dayNo % 2 && !S.loveSecret) S.love[S.partner] = clamp(S.love[S.partner] - 1);
   recordDay(holiday);
@@ -356,7 +358,7 @@ function endDay() {
   }
   startDay();
   const today = specialsFor(S.year, S.sem, S.day);
-  toast((holiday ? `${holiday}, 하루 푹 쉬었다! 피로 -${sleep}` : `밤사이 피로 -${sleep}`) + (today.length ? ` · 오늘은 ${today.map(id => specialLabel(id, S.day)).join(', ')}!` : ''));
+  toast((holiday ? `${holiday}, 하루 푹 쉬었다! 피로 -${sleep}` : caf ? `에너지 음료 때문에 잠을 설쳤다… 밤사이 피로 -${sleep}` : `밤사이 피로 -${sleep}`) + (today.length ? ` · 오늘은 ${today.map(id => specialLabel(id, S.day)).join(', ')}!` : ''));
   render();
 }
 
@@ -1196,13 +1198,33 @@ function giftPicker() {
   return `<div class="picker"><div class="picker-head"><b>누구에게 소보로빵을 줄까?</b><button class="link" data-act="unpick">취소</button></div>
     <div class="pick-grid">${FRIEND_IDS.filter(id => S.met[id]).map(id => `<button class="pick" data-act="gift" data-arg="${id}">${avatar(id)}<span><b>${esc(CHARACTERS[id].name)}</b><small>${esc(CHARACTERS[id].role)}</small></span></button>`).join('')}</div></div>`;
 }
+// 에너지 음료: 피로는 확 풀리지만, 같은 날 또 마시거나 자주 마시면 부작용이 따라온다
+const ENERGY_SIDE = [
+  () => { G.add('stamina', -3); return '심장이 쿵쾅거린다. 계단 하나 오르는데 숨이 찼다. (체력 -3)'; },
+  () => { G.add('luck', -2); return '배가 살살 아프다. 수업 중에 화장실을 두 번 다녀왔다. (운 -2)'; },
+  () => { G.add('study', -2); return '손이 덜덜 떨려서 필기가 지렁이처럼 됐다. (공부 -2)'; },
+  () => { G.add('social', -2); return '괜히 예민해져서 친구 말에 퉁명스럽게 대답했다. (사교성 -2)'; },
+];
+function drinkEnergy() {
+  S.energyToday = (S.energyToday || 0) + 1;
+  S.energyTotal = (S.energyTotal || 0) + 1;
+  const n = S.energyToday;
+  G.fat(n === 1 ? -20 : -8);
+  let text = n === 1 ? '에너지 음료를 원샷했다. 눈이 번쩍 뜨였다.' : `오늘만 ${n}캔째다. 아까만큼 정신이 들지 않는다. (피로 회복 효과 감소)`;
+  // 첫 캔은 가끔, 두 캔째부터는 반드시 부작용
+  if (n >= 2 || Math.random() < 0.25) text += ' ' + pick(ENERGY_SIDE)();
+  text += ' 오늘 밤엔 잠이 잘 안 올 것 같다.';
+  if (S.energyTotal >= 6 && !S.flags.caffeine) { S.flags.caffeine = 1; G.nick('카페인 인간'); G.add('stamina', -3); text += ' 친구들이 나를 "카페인 인간"이라고 부르기 시작했다. (체력 -3)'; }
+  return text;
+}
+
 function buyItem(id, target) {
   const it = SHOP[id];
   if ((S.money || 0) < it.price) return;
   const r = withDiff(() => {
     S.money -= it.price;
     if (id === 'choco') { G.fat(-8); G.add('luck', 1); return '초코우유 한 팩에 기분이 좋아졌다.'; }
-    if (id === 'energy') { G.fat(-20); return '에너지 음료를 원샷했다. 눈이 번쩍 뜨였다.'; }
+    if (id === 'energy') return drinkEnergy();
     if (id === 'pen') { S.flags.pen = 1; return '금색 행운의 볼펜을 샀다. 다음 시험 때 쓰자.'; }
     if (id === 'keyring') { const w = S.partner || S.crush; S.love[w] = clamp(S.love[w] + 8); S.flags.keyring = semKey(S); if (S.partner === w) { addCoupleItem('은행잎 키링'); loveTouch(w, 10); } return `${CHARACTERS[w].name}에게 은행잎 키링을 줬다. 다음 날, 그 키링이 가방에 달려 있었다.`; }
     if (id === 'summary') { subjectsOf(S).forEach(sub => { S.mastery[sub.key] = clamp(mastery(sub) + 2); }); return '과목별 요약 노트 세트를 샀다. 한 번 훑어보니 정리가 된다. (모든 과목 숙련도 +2)'; }
