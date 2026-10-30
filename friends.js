@@ -599,7 +599,7 @@ MORE_CAMEO_EVENTS.yuchan = [
 Object.assign(MORE_CAMEOS, {
   yejin:   { name: '소예진', role: 'F1 마니아', color: '#d23b3b', desc: 'F1을 진심으로 사랑한다. 팀, 드라이버, 서킷 이름까지 줄줄 꿴다.', title: '피트 크루' },
   seoan:   { name: '장서안', role: '삭발한 치이카와 덕후', color: '#8a6fd1', desc: '시원한 삭발 머리가 트레이드마크. 그리고 누구보다 치이카와를 좋아한다.', title: '치이카와 원정대' },
-  jaejun:  { name: '김재준', role: '의족과 함께 씩씩한 친구', color: '#3f8f6a', desc: '한쪽 다리가 의족이다. 본인은 "남들보다 다리 관리가 편하다"며 웃는다. 어떤 일이든 끝까지 해내는 친구.', title: '끝까지 동지' },
+  jaejun:  { name: '김재준', role: '아이언맨을 꿈꾸는 씩씩한 친구', color: '#3f8f6a', desc: '한쪽 다리가 의족이다. 본인은 "남들보다 다리 관리가 편하다"며 웃는다. 꿈은 아이언맨. 어떤 일이든 끝까지 해내는 친구.', title: '끝까지 동지' },
   taeyeol: { name: '황태열', role: '워터스캔 · 약대 지망 공부 짱', color: '#2a7fbf', club: 'water', desc: '워터스캔 부원. 시험만 보면 상위권인 공부 짱이고, 목표는 약대 진학. 물 이야기만 나오면 눈이 반짝인다.', title: '수질 파트너' },
 });
 ['yejin', 'seoan', 'jaejun', 'taeyeol'].forEach(id => { CAMEOS[id] = MORE_CAMEOS[id]; CAMEO_IDS.push(id); });
