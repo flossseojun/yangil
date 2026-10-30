@@ -120,7 +120,7 @@ const G = {
   check(stat, target) { return Math.random() < clamp((S.stats[stat] - target) / 40 + 0.5, 0.05, 0.95); },
   flag(k, n = 1) { S.flags[k] = (S.flags[k] || 0) + n; },
   set(k, v) { S.flags[k] = v; },
-  nick(name) { if (!S.nicks.includes(name)) { S.nicks.push(name); G.notes.push(`별명 획득: "${name}"`); } },
+  nick(name) { if (!S.nicks.includes(name)) { S.nicks.push(name); G.notes.push(`별명 획득: "${name}"`); dexMark('nicks', name); } },
   absurd() { S.absurd++; },
   talent(id) {
     if (S.talent !== id) return false;
@@ -935,7 +935,7 @@ function graduate() {
   const rec = saveRecord(S, j);
   store.del(SAVE_KEY);
   S = null;
-  UI.rec = rec; UI.screen = 'ending';
+  UI.rec = rec; UI.screen = 'ending'; UI.shareText = null;
   render();
 }
 
@@ -1066,7 +1066,7 @@ function renderMenu() {
         ['school', '학교 안내', `개교 ${new Date().getFullYear() - 1970}주년, 경기도 양평`]].map(([k, name, sub, off], i) => `
       <button class="locker" data-act="${k}" ${off ? 'disabled' : ''}><span class="locker-no">2-${String(i + 1).padStart(2, '0')}</span><span class="vents" aria-hidden="true"></span><span class="nametag"><b>${name}</b><small>${sub}</small></span></button>`).join('')}
     </nav>
-    <div class="menu-foot"><button class="sfx-btn light" data-act="sfx" aria-pressed="${SFX.on}">효과음 ${SFX.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="settings">설정</button>${joinButton('sfx-btn light')}</div>
+    <div class="menu-foot"><button class="sfx-btn light" data-act="sfx" aria-pressed="${SFX.on}">효과음 ${SFX.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="bgm" aria-pressed="${BGM.on}">음악 ${BGM.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="settings">설정</button>${joinButton('sfx-btn light')}</div>
     <p class="fine center">양일고 학생이 만든 팬 게임입니다. 학교 정보는 공개 자료를 참고했어요. 실제 친구들은 본인 허락을 받고 출연했고, 가상 친구와 사건은 지어낸 이야기예요.</p>
   </section>`;
 }
@@ -1134,9 +1134,12 @@ function renderGame() {
       <span class="dday">${ns ? `${esc(ns.label)} D-${ns.dday}` : (S.day === semDays() ? '학기 마지막 날' : '')}</span>
     </div>
     <div class="ap" aria-label="행동력 ${S.ap} / ${AP_MAX}">${Array.from({ length: AP_MAX }, (_, i) => `<i class="${i < S.ap ? 'on' : ''}"></i>`).join('')}<span>${S.ap} / ${AP_MAX}</span></div>
+    <div class="top-tools">
     <button class="sfx-btn" data-act="restart-ask" aria-label="처음부터 다시 시작">다시 시작</button>
     <button class="sfx-btn" data-act="tut-open" aria-label="게임 설명 다시 보기">도움말</button>
     <button class="sfx-btn" data-act="sfx" aria-pressed="${SFX.on}">소리 ${SFX.on ? '켜짐' : '꺼짐'}</button>
+    <button class="sfx-btn" data-act="bgm" aria-pressed="${BGM.on}">음악 ${BGM.on ? '켜짐' : '꺼짐'}</button>
+    </div>
     <div class="statline">${STATS.map(k => `<span>${STAT_LABEL[k]} <b>${Math.round(S.stats[k])}</b></span>`).join('')}<span class="${fatigueCls}">피로 <b>${S.fatigue}</b></span></div>
   </header>
   <main class="game" data-tab="${UI.gtab || 'me'}">
@@ -1598,6 +1601,8 @@ document.addEventListener('click', ev => {
     case 'unpick': UI.pick = null; render(); break;
     case 'rest': case 'exercise': case 'club': case 'auto': case 'council': doAction(act); break;
     case 'sfx': SFX.toggle(); render(); break;
+    case 'bgm': BGM.toggle(); render(); break;
+    case 'share': shareResult(+arg); break;
     case 'restart-ask': UI.restart = true; renderRestart(); break;
     case 'restart-no': UI.restart = false; renderRestart(); break;
     case 'restart-same': { // 같은 이름·외모·성격으로 1학년 3월부터

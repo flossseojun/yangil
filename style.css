@@ -761,3 +761,16 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .restart-opts .btn { display: grid; gap: 2px; text-align: center; }
 .restart-opts .btn small { font-size: 12.5px; font-weight: 400; opacity: .8; }
 .restart-opts .link { justify-self: center; margin-top: 2px; }
+
+/* 10년 뒤 에필로그 */
+.epi-me { margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; background: var(--notebook); line-height: 1.7; }
+.epi-list { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 12px; }
+.epi-list li { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: start; }
+.epi-list p { margin: 2px 0 0; font-size: 14.5px; line-height: 1.65; }
+.epi-list em { font-style: normal; color: var(--ink); background: color-mix(in srgb, var(--marker) 30%, transparent); padding: 0 2px; }
+.epi-dot { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-family: var(--f-display, inherit); font-size: 17px; }
+.share-text { width: 100%; min-height: 110px; padding: 10px; border-radius: 8px; border: 1px solid var(--line); font: inherit; font-size: 13.5px; resize: vertical; background: var(--card); color: var(--ink); }
+
+/* 상단 바 보조 버튼 묶음 (다시 시작 · 도움말 · 소리 · 음악) */
+.top-tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+@media (max-width: 760px) { .top-tools { order: 5; width: 100%; } .date-box { flex: 1 1 auto; } }

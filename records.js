@@ -3,7 +3,7 @@ const REC_KEY = 'yangil.records.v1';
 const DEX_KEY = 'yangil.dex.v1';
 
 function loadRecords() { return store.get(REC_KEY, []); }
-function loadDex() { return Object.assign({ endings: {}, ach: {}, rare: {}, titles: {}, friends: {} }, store.get(DEX_KEY, {})); }
+function loadDex() { return Object.assign({ endings: {}, ach: {}, rare: {}, titles: {}, friends: {}, nicks: {} }, store.get(DEX_KEY, {})); }
 // 친구 도감: 여러 판에 걸쳐 친구별로 가장 많이 모은 우정 ★
 function dexFriend(id, stars) { const d = loadDex(); d.friends[id] = Math.max(d.friends[id] || 0, stars); store.set(DEX_KEY, d); }
 function dexMark(kind, id) { const d = loadDex(); d[kind][id] = (d[kind][id] || 0) + 1; store.set(DEX_KEY, d); }
@@ -71,7 +71,9 @@ function renderEnding() {
           ${r.nicks.length ? `<p class="nick-line">별명: ${r.nicks.map(n => `"${esc(n)}"`).join(', ')}</p>` : ''}
         </div>
         <div class="create-actions col">
-          <button class="btn primary" data-act="png" data-arg="${r.no}">PNG로 저장</button>
+          <button class="btn primary" data-act="share" data-arg="${r.no}">결과 공유하기</button>
+          ${UI.shareText ? `<textarea class="share-text" readonly aria-label="공유 문구">${esc(UI.shareText)}</textarea>` : ''}
+          <button class="btn" data-act="png" data-arg="${r.no}">PNG로 저장</button>
           <button class="btn" data-act="new">새로운 인생 시작</button>
           <button class="btn" data-act="gallery">기록 갤러리</button>
           ${joinButton('btn')}
@@ -80,6 +82,7 @@ function renderEnding() {
       </div>
     </div>
     ${renderBest(r)}
+    ${renderEpilogue(r)}
     ${renderLifeMap(r)}
     ${renderRarity(r)}
     ${(r.memories || []).length ? `<div class="paper"><h3 class="sec-title">추억 앨범</h3><div class="album small">${r.memories.map((m, i) => `<figure class="polaroid t-${m.type}" style="--r:${(i % 4 - 1.5) * 1.6}deg"><span class="when">${esc(m.when)}</span><b>${esc(m.title)}</b><figcaption>${esc(m.choice || '')}</figcaption></figure>`).join('')}</div></div>` : ''}
@@ -200,7 +203,7 @@ function afterGalleryRender() { }
 UI.dexTab = 'endings';
 function renderDex() {
   const d = loadDex();
-  const tabs = [['endings', `엔딩 ${ENDINGS.filter(e => d.endings[e.id]).length}/${ENDINGS.length}`], ['ach', `업적 ${Object.keys(ACHIEVEMENTS).filter(k => d.ach[k]).length}/${Object.keys(ACHIEVEMENTS).length}`], ['titles', `칭호 ${Object.keys(TITLES).filter(k => d.titles[k]).length}/${Object.keys(TITLES).length}`], ['friends', `친구 ${CAMEO_IDS.filter(id => d.friends[id]).length}/${CAMEO_IDS.length}`], ['rare', `희귀 이벤트 ${Object.values(EVENTS).filter(e => e.type === 'rare' && d.rare[e.id]).length}/${Object.values(EVENTS).filter(e => e.type === 'rare').length}`]];
+  const tabs = [['endings', `엔딩 ${ENDINGS.filter(e => d.endings[e.id]).length}/${ENDINGS.length}`], ['ach', `업적 ${Object.keys(ACHIEVEMENTS).filter(k => d.ach[k]).length}/${Object.keys(ACHIEVEMENTS).length}`], ['titles', `칭호 ${Object.keys(TITLES).filter(k => d.titles[k]).length}/${Object.keys(TITLES).length}`], ['friends', `친구 ${CAMEO_IDS.filter(id => d.friends[id]).length}/${CAMEO_IDS.length}`], ['nicks', `별명 ${friendNicks().filter(x => d.nicks[x.nick]).length}/${friendNicks().length}`], ['rare', `희귀 이벤트 ${Object.values(EVENTS).filter(e => e.type === 'rare' && d.rare[e.id]).length}/${Object.values(EVENTS).filter(e => e.type === 'rare').length}`]];
   let body = '';
   if (UI.dexTab === 'endings') body = ENDINGS.map(e => d.endings[e.id]
     ? `<li class="dex-item found"><b>${esc(e.name)}</b><span>${esc(e.desc)}</span><small>달성 ${d.endings[e.id]}회</small></li>`
@@ -214,6 +217,7 @@ function renderDex() {
   if (UI.dexTab === 'rare') body = Object.values(EVENTS).filter(e => e.type === 'rare').map(e => d.rare[e.id]
     ? `<li class="dex-item found rare"><b>${esc(e.title)}</b><span>${esc(typeof e.text === 'function' ? '' : e.text)}</span></li>`
     : `<li class="dex-item"><b>??? 미발견</b><span>${e.loc ? `${LOCATIONS[e.loc].name} 어딘가에서…` : '학교 어딘가에서…'}</span></li>`).join('');
+  if (UI.dexTab === 'nicks') body = renderNickDex(d);
   if (UI.dexTab === 'friends') body = CAMEO_IDS.map(id => { const c = CAMEOS[id], n = d.friends[id] || 0; return n
     ? `<li class="dex-item found"><b>${esc(c.name)} <small class="stars">${'★'.repeat(n)}${'☆'.repeat(3 - n)}</small></b><span>${esc(c.role)}</span>${n >= 3 ? `<small>칭호 「${esc(c.title)}」</small>` : ''}</li>`
     : `<li class="dex-item"><b>???</b><span>힌트: ${esc(c.role)}</span></li>`; }).join('');
