@@ -444,7 +444,12 @@ function doAction(type, arg) {
   go();
 }
 
+function sigEventOf(id) {
+  const ev = id === 'jaewon' ? 'pigeon_chase' : 'sig_' + id;
+  return id && EVENTS[ev] && available(EVENTS[ev]) ? ev : null;
+}
 function performAction(type, arg, mult = 1, note = '', info = {}) {
+  S._sigFrom = null;
   S._act = type;
   S._eff = (S.fatigue >= 75 ? 0.6 : 1) * (S.slot === 0 && G.has('sleepy') ? 0.6 : 1) * mult * ACT_BOOST;
   const extra = G.has('hot') ? 3 : 0;
@@ -498,6 +503,7 @@ function performAction(type, arg, mult = 1, note = '', info = {}) {
         const line = UI.line || charLine(arg, S.aff[arg]);
         if (arg === 'teacher') { G.aff('teacher', rand(5, 8) * mult); G.grow('study', 1); G.fat(4 + extra); return `상담을 요청했다. "${line}"`; }
         G.aff(arg, rand(6, 9) * mult * ACT_BOOST); G.grow('social', 2); G.fat(5 + extra);
+        S._sigFrom = arg;
         if (S.partner === arg || S.crush === arg) { S.love[arg] = clamp(S.love[arg] + (info.matched ? 8 : 3)); G.notes.push(`${ch.name} 설렘 ${S.love[arg]}`); loveTouch(arg, 10); }
         if (ch.perk === 'study') G.grow('study', 1);
         if (ch.perk === 'stamina') G.grow('stamina', 1);
@@ -559,6 +565,8 @@ function performAction(type, arg, mult = 1, note = '', info = {}) {
 
   if (S.fatigue >= 100) collapse();
   else if (triggered && triggered !== 'chaos') S.queue.unshift(pickLocationEvent(triggered));
+  // 말을 건 친구의 특징 사건(재원이의 비둘기처럼)이 이어질 때가 많다
+  else if (sigEventOf(S._sigFrom) && S.queue.length === 0 && (S.dayPops || 0) < DAY_POPS && Math.random() < 0.45) { S.dayPops++; S.queue.push(sigEventOf(S._sigFrom)); }
   else if (S.queue.length === 0 && (S.dayPops || 0) < DAY_POPS) {
     // 친구가 먼저 말을 거는 일과 일상 사건은 각각 하루 한 번까지
     const quietDay = specialsFor(S.year, S.sem, S.day).length > 0;
