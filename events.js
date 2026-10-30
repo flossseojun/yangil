@@ -434,7 +434,7 @@ ev({ id: 'festival', type: 'story', title: '녹향제 (학교 축제)',
       if (G.talent('voice') || G.check('social', 60 - boost)) { G.flag('stage'); G.add('rep', 10); G.achieve('festival_star'); return '조명이 나를 비췄다. 첫 소절에 운동장이 조용해지고, 마지막 소절에 떼창이 터졌다.'; }
       G.add('rep', 3); G.nick('축제 삑사리'); return '고음에서 삑사리가 났다. 그런데 그게 오히려 레전드 영상이 됐다.'; } },
     { label: '반 부스를 운영한다', run: s => { G.grow('social', 4); G.add('rep', 4); G.fat(12); FRIEND_IDS.forEach(id => s.met[id] && G.aff(id, 3)); return '우리 반 "철벽 쌤 몰래카메라 카페"가 매출 1위를 했다.'; } },
-    { label: '축제를 구경한다', run: s => { G.fat(-12); G.add('luck', 3); s.money = (s.money || 0) + 3000; return '경품 추첨에서 문화상품권 3천 원에 당첨됐다! (용돈 +3,000원)'; } },
+    { label: '축제를 구경한다', run: s => { G.fat(-12); G.add('luck', 3); s.money = (s.money || 0) + 1000; return '경품 추첨에서 매점 쿠폰 천 원짜리에 당첨됐다! (용돈 +1,000원)'; } },
     { mode: 'classic', label: '그 사람과 축제를 돈다', req: s => !!(s.partner || s.crush), reqText: '썸이나 연인이 있어야 한다', run: s => { const w = s.partner || s.crush; s.love[w] = clamp(s.love[w] + 12); G.aff(w, 5); G.fat(-5); return `${N(w)}${josa(N(w), '과', '와')} 솜사탕 하나를 나눠 먹으며 부스를 돌았다. 불꽃이 터질 때 눈이 마주쳤다. (설렘 ${s.love[w]})`; } },
   ] });
 ev({ id: 'school_trip', type: 'story', once: true, title: '2학년 수학여행 · 제주도 (6/10~12)',

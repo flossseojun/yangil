@@ -186,7 +186,7 @@ function newGame(d) {
     met: mode === 'classic' ? { chaerin: true, teacher: true } : { teacher: true }, aff, club: null, clubPts: 0,
     exams: [], flags: {}, seen: {}, recent: [], rare: [], absurd: 0, nicks: [], ach: [],
     counts: { study: 0, talk: 0, rest: 0, exercise: 0, explore: 0, club: 0, auto: 0 }, visits: {}, studied: [],
-    autoClub: null, autoPts: 0, council: null, councilPts: 0, money: 3000, memories: [], days: [], today: [], cameo: {}, roster: pickRoster(mode), titles: ['newbie'], title: 'newbie', perf: {}, written: {}, semGrades: [], setuk: [], route: null, college: null, daily: d.daily || null, vac: null,
+    autoClub: null, autoPts: 0, council: null, councilPts: 0, money: 1000, memories: [], days: [], today: [], cameo: {}, roster: pickRoster(mode), titles: ['newbie'], title: 'newbie', perf: {}, written: {}, semGrades: [], setuk: [], route: null, college: null, daily: d.daily || null, vac: null,
     love: {}, crush: null, partner: null, partnerSince: 0, loveNo: {}, waitConfess: 0, loveDay: 0, wrongNote: [],
     favors: {}, pairs: {}, likedPlace: {}, loveTension: 0, loveTouch: 0, coupleItems: [],
     electives: {}, track: null, mastery: {}, dayEvent: false, dayTalk: false,
@@ -1355,7 +1355,7 @@ function doVacation() {
   const run = {
     academy: () => { ['국어', '수학', '영어'].forEach(k => { S.mastery[k] = clamp((S.mastery[k] ?? S.stats.study * 0.6) + 6); }); G.grow('study', 3); G.fat(15); return '학원 특강으로 국어·수학·영어 기본기를 다졌다. (국·수·영 숙련도 +6)'; },
     reading: () => { const b = pick(BOOKS); G.grow('study', 2); addSetuk('독서', `방학 중 『${b}』를 읽고 자신의 진로와 연결한 독서 감상문을 작성함.`); return `『${b}』를 읽었다. 생각이 한 뼘 자란 기분이다.`; },
-    job: () => { G.add('luck', 3); G.add('rep', 2); G.fat(10); S.money = (S.money || 0) + 8000; return '편의점 알바를 했다. 손님 응대 스킬이 늘었고, 폐기 삼각김밥은 맛있었다. (알바비 +8,000원)'; },
+    job: () => { G.add('luck', 3); G.add('rep', 2); G.fat(10); S.money = (S.money || 0) + 3000; return '편의점 알바를 했다. 손님 응대 스킬이 늘었고, 폐기 삼각김밥은 맛있었다. (알바비 +3,000원)'; },
     trip: () => { G.fat(-40); G.grow('social', 3); return S.sem === 1 ? '친구들과 남한강에서 물놀이를 했다. 까맣게 탔다.' : '용문산 눈썰매장에서 하루 종일 놀았다. 볼이 빨개졌다.'; },
     friends: () => { FRIEND_IDS.forEach(id => S.met[id] && G.aff(id, 7)); return '친구들과 노래방, 떡볶이, 영화관 코스를 완주했다.'; },
     volunteer: () => { G.add('rep', 4); G.grow('social', 1); addSetuk('봉사', '방학 중 지역 복지관에서 어르신 디지털 교육 봉사활동에 꾸준히 참여함.'); return '복지관에서 어르신들께 스마트폰 쓰는 법을 알려 드렸다.'; },
@@ -1540,7 +1540,7 @@ document.addEventListener('click', ev => {
     case 'enroll': { const nm = document.getElementById('name-input').value.trim();
       if (!nm) { toast('이름을 먼저 적어 줘.'); document.getElementById('name-input').focus(); break; }
       UI.draft.name = nm.slice(0, 8); UI.draft.mode = UI.mode; newGame(UI.draft); break; }
-    case 'continue': S = store.get(SAVE_KEY, null); if (S) { S.mode = S.mode || 'real'; S.coupleItems = S.coupleItems || []; S.cameo = S.cameo || {}; S.favors = S.favors || {}; S.pairs = S.pairs || {}; S.likedPlace = S.likedPlace || {}; S.love = S.love || {}; S.loveNo = S.loveNo || {}; syncFriends(S); S.titles = S.titles || ['newbie']; S.title = S.title || 'newbie'; UI.screen = ['report', 'course', 'vacation', 'ceremony'].includes(S.phase) ? S.phase : 'game'; UI.cer = 0; S.money = S.money ?? 3000; S.memories = S.memories || []; S.days = S.days || []; S.today = S.today || []; UI.course = null; UI.vac = []; render(); } break;
+    case 'continue': S = store.get(SAVE_KEY, null); if (S) { S.mode = S.mode || 'real'; S.coupleItems = S.coupleItems || []; S.cameo = S.cameo || {}; S.favors = S.favors || {}; S.pairs = S.pairs || {}; S.likedPlace = S.likedPlace || {}; S.love = S.love || {}; S.loveNo = S.loveNo || {}; syncFriends(S); S.titles = S.titles || ['newbie']; S.title = S.title || 'newbie'; UI.screen = ['report', 'course', 'vacation', 'ceremony'].includes(S.phase) ? S.phase : 'game'; UI.cer = 0; S.money = S.money ?? 1000; S.memories = S.memories || []; S.days = S.days || []; S.today = S.today || []; UI.course = null; UI.vac = []; render(); } break;
     case 'gtab': UI.gtab = arg; render(); break;
     case 'menu': if (S) save(); UI.screen = 'menu'; UI.pick = null; render(); break;
     case 'gallery': UI.screen = 'gallery'; render(); break;
