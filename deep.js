@@ -12,7 +12,7 @@ const PLACES = {
 };
 // 친구마다 제일 좋아하는 장소 (대화 성향 + 이름으로 정한다)
 const PLACE_BY_LIKES = { playful: ['noraebang', 'pc', 'ttok'], sincere: ['river', 'ttok', 'cafe'], curious: ['dumeori', 'market', 'cafe'] };
-const PLACE_FIXED = { chaerin: 'cafe', taepung: 'pc', sori: 'market', jaemin: 'noraebang', jiyong: 'market', sia: 'dumeori', yunsu: 'pc', taeyeol: 'river', yejin: 'pc', seoan: 'market', mingyeol: 'noraebang', hyunwoo: 'pc', isan: 'ttok' };
+const PLACE_FIXED = { chaerin: 'cafe', taepung: 'pc', sori: 'market', jaemin: 'noraebang', jiyong: 'market', sia: 'dumeori', yunsu: 'pc', taeyeol: 'river', yejin: 'pc', seoan: 'market', mingyeol: 'noraebang', hyunwoo: 'pc', isan: 'ttok', hayeon: 'cafe' };
 function favPlace(id) {
   if (PLACE_FIXED[id]) return PLACE_FIXED[id];
   const pool = PLACE_BY_LIKES[CHARACTERS[id].likes] || PLACE_BY_LIKES.sincere;
