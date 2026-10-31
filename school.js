@@ -243,4 +243,4 @@ const SHOP = {
 };
 const ALLOWANCE = 700;  // 하루 용돈
 // 출연 신청 구글 폼 주소. 비워 두면 메뉴의 신청 버튼이 "준비 중"으로 보인다.
-const JOIN_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdbp5W-HILJYhrzcPyf2rqlz51IvSQh_fp6kx3GcSAwt_8UZA/viewform';
+const JOIN_FORM_URL = 'https://naver.me/Ge7KfixW';
