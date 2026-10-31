@@ -12,7 +12,7 @@ const PLACES = {
 };
 // 친구마다 제일 좋아하는 장소 (대화 성향 + 이름으로 정한다)
 const PLACE_BY_LIKES = { playful: ['noraebang', 'pc', 'ttok'], sincere: ['river', 'ttok', 'cafe'], curious: ['dumeori', 'market', 'cafe'] };
-const PLACE_FIXED = { chaerin: 'cafe', taepung: 'pc', sori: 'market', jaemin: 'noraebang', jiyong: 'market', sia: 'dumeori', yunsu: 'pc', taeyeol: 'river', yejin: 'pc', seoan: 'market', mingyeol: 'noraebang', hyunwoo: 'pc', isan: 'ttok', hayeon: 'cafe', minah: 'river', wooseok: 'cafe', taejeong: 'market', sangwoong: 'pc' };
+const PLACE_FIXED = { chaerin: 'cafe', taepung: 'pc', sori: 'market', jaemin: 'noraebang', jiyong: 'market', sia: 'dumeori', yunsu: 'pc', taeyeol: 'river', yejin: 'pc', seoan: 'market', mingyeol: 'noraebang', hyunwoo: 'river', isan: 'ttok', hayeon: 'cafe', minah: 'river', wooseok: 'cafe', taejeong: 'market', sangwoong: 'pc' };
 function favPlace(id) {
   if (PLACE_FIXED[id]) return PLACE_FIXED[id];
   const pool = PLACE_BY_LIKES[CHARACTERS[id].likes] || PLACE_BY_LIKES.sincere;
@@ -165,11 +165,11 @@ const SIG_EVENTS = {
     ['다른 친구들도 불러 대회를 연다', 8, 'social', 3, '교실 뒤편이 종이탑 숲이 됐다. 시우가 심사위원을 맡아 모두에게 칭찬을 해 줬다.'],
     ['시우 작품을 사진으로 남긴다', 5, 'luck', 1, '사진 속 탑은 진짜 건물 같았다. 시우가 그 사진을 포트폴리오에 넣겠다고 했다.'],
   ], '종이 건축 파트너'],
-  hyunwoo: ['카드 감정 의뢰', '손현우가 반짝이는 카드를 조심스럽게 꺼냈다. "이거 방금 뜯었어. 상태 같이 봐 줄래?"', [
-    ['돋보기로 같이 꼼꼼히 본다', 10, 'study', 1, '모서리, 표면, 센터링까지. 현우가 "완벽한 상태다"라며 카드를 슬리브에 넣었다. 손이 떨리고 있었다.'],
-    ['바인더 정리를 도와준다', 8, 'luck', 2, '번호순으로 정리된 바인더를 보며 현우가 감동했다. "이렇게 깔끔한 건 처음이야."'],
-    ['카드 한 팩을 같이 뜯는다', 6, 'social', 2, '레어 카드가 나오자 둘이 동시에 소리를 질렀다. 선생님이 쳐다봤다.'],
-  ], '카드 감정단'],
+  hyunwoo: ['현우의 경기 분석', '점심시간, 손현우가 태블릿에 어젯밤 경기를 띄웠다. "이 장면 봐. 여기서 수비 라인이 2미터만 올라갔어도 실점 안 했어. 같이 분석할래?"', [
+    ['끝까지 분석을 듣고 질문한다', 10, 'study', 2, '"좋은 질문이야!" 현우가 화면을 멈추고 전술을 그렸다. 듣다 보니 나도 축구가 보이기 시작했다.'],
+    ['같이 공 차러 나가자고 한다', 8, 'stamina', 2, '현우의 슛은 또 옆으로 갔다. 그래도 현우가 웃으며 말했다. "역시 난 벤치가 맞아." 둘이 배가 아프도록 웃었다.'],
+    ['응원 팀 유니폼을 칭찬한다', 6, 'social', 2, '현우가 유니폼 등번호에 얽힌 사연을 20분 동안 들려줬다.'],
+  ], '전술 파트너'],
   jio: ['왼발 크로스 연습', '권지오가 공을 들고 운동장 끝에 섰다. "크로스 올릴 테니까 헤딩 한번 해 볼래?"', [
     ['골문 앞으로 뛰어간다', 10, 'stamina', 2, '지오의 왼발 크로스가 정확히 내 머리로 왔다. 골! 지오가 달려와 어깨동무를 했다.'],
     ['골키퍼를 맡는다', 7, 'stamina', 2, '지오 공을 하나 막아 냈다. "오, 잘하는데?" 지오가 웃으며 다시 공을 찼다.'],
