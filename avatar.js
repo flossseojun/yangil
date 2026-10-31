@@ -9,7 +9,7 @@ const AVATAR_PARTS = {
     { id: '#b5813f', name: '밝은 갈색' }, { id: '#e3c068', name: '금발' }, { id: '#8e6fd6', name: '보라' },
   ],
   skin: [
-    { id: '#f6dcc6', name: '밝은 톤' }, { id: '#efc6a2', name: '중간 톤' }, { id: '#dba67b', name: '웜 톤' },
+    { id: '#fcebdf', name: '하얀 톤' }, { id: '#f6dcc6', name: '밝은 톤' }, { id: '#efc6a2', name: '중간 톤' }, { id: '#dba67b', name: '웜 톤' },
     { id: '#b97f55', name: '태닝 톤' }, { id: '#8a5a3b', name: '진한 톤' },
   ],
   face: [
@@ -57,10 +57,14 @@ function avatarSVG(av, label = '내 아바타') {
   const p = [];
   if (HAIR_BACK[a.hair]) p.push(`<path d="${HAIR_BACK[a.hair]}" fill="${hc}"/>`);
   // 교복: 남색 재킷 + 흰 셔츠 깃
-  p.push('<path d="M14 100 Q17 80 37 76 L63 76 Q83 80 86 100Z" fill="#2e3f63"/>', '<path d="M41 76 L50 90 L59 76Z" fill="#f4f6f8"/>', '<path d="M48 82 L52 82 L53 96 L50 99 L47 96Z" fill="#c23b2e"/>');
+  // 체형: 보통 · 통통(chubby) · 마름(slim) · 근육(muscle) — 얼굴 폭과 어깨 폭이 달라진다
+  const fw = a.build === 'chubby' ? 25.5 : a.build === 'slim' ? 19.5 : 22;
+  const JACKET = { muscle: 'M5 100 Q7 73 33 72 L67 72 Q93 73 95 100Z', chubby: 'M9 100 Q12 77 35 75 L65 75 Q88 77 91 100Z', slim: 'M19 100 Q22 81 39 77 L61 77 Q78 81 81 100Z' };
+  p.push(`<path d="${JACKET[a.build] || 'M14 100 Q17 80 37 76 L63 76 Q83 80 86 100Z'}" fill="#2e3f63"/>`, '<path d="M41 76 L50 90 L59 76Z" fill="#f4f6f8"/>', '<path d="M48 82 L52 82 L53 96 L50 99 L47 96Z" fill="#c23b2e"/>');
   p.push(`<rect x="44" y="64" width="12" height="14" rx="4" fill="${sk}"/>`);
-  p.push(`<ellipse cx="28" cy="51" rx="4" ry="5.5" fill="${sk}"/><ellipse cx="72" cy="51" rx="4" ry="5.5" fill="${sk}"/>`);
-  p.push(`<ellipse cx="50" cy="48" rx="22" ry="24" fill="${sk}"/>`);
+  p.push(`<ellipse cx="${50 - fw}" cy="51" rx="4" ry="5.5" fill="${sk}"/><ellipse cx="${50 + fw}" cy="51" rx="4" ry="5.5" fill="${sk}"/>`);
+  p.push(`<ellipse cx="50" cy="${a.build === 'chubby' ? 49 : 48}" rx="${fw}" ry="${a.build === 'chubby' ? 24.5 : a.build === 'slim' ? 24.5 : 24}" fill="${sk}"/>`);
+  if (a.nose) p.push('<path d="M50 52 Q52.5 55.5 49.5 56.2" fill="none" stroke="#c98f74" stroke-width="1.3" stroke-linecap="round"/>');
   if (a.hair === 'curly') p.push(CURLS.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${hc}"/>`).join(''));
   else p.push(`<path d="${HAIR_FRONT[a.hair] || HAIR_FRONT.short}" fill="${hc}"${a.hair === 'buzz' ? ' opacity=".55"' : ''}/>`);
   // 볼터치
