@@ -72,6 +72,8 @@ function avatarSVG(av, label = '내 아바타') {
   if (a.face === 'wink') p.push(dot(41), line('M56 50 Q59 47 62 50'), line('M44 59 Q50 64 56 59'));
   if (a.face === 'sleepy') p.push(line('M38 50 Q41 52.5 44 50'), line('M56 50 Q59 52.5 62 50'), `<ellipse cx="50" cy="61" rx="1.8" ry="2.2" fill="${ink}"/>`);
   if (a.face === 'proud') p.push(dot(41), dot(59), line('M37 44 L44 45'), line('M56 45 L63 44'), line('M44 59 Q51 63 57 57'));
+  // 장면용 특징: 빨간 입술
+  if (a.lips) p.push(`<path d="M43.5 59 Q50 66 56.5 59 Q50 61.5 43.5 59Z" fill="${a.lips}" stroke="${a.lips}" stroke-width="1.4" stroke-linejoin="round"/>`);
   if (a.acc === 'glasses') p.push(`<g fill="none" stroke="${ink}" stroke-width="1.6"><circle cx="41" cy="50" r="6"/><circle cx="59" cy="50" r="6"/><path d="M47 50 L53 50 M35 49 L29 47 M65 49 L71 47"/></g>`);
   if (a.acc === 'headband') p.push('<path d="M28 38 Q50 18 72 38" fill="none" stroke="#ffd23f" stroke-width="4.5" stroke-linecap="round"/>');
   if (a.acc === 'bandage') p.push('<g transform="rotate(-20 64 57)"><rect x="57" y="54" width="14" height="6" rx="2" fill="#f1d3a8"/><rect x="62" y="54" width="4" height="6" fill="#e2bd8b"/></g>');

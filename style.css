@@ -774,3 +774,8 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 /* 상단 바 보조 버튼 묶음 (다시 시작 · 도움말 · 소리 · 음악) */
 .top-tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 @media (max-width: 760px) { .top-tools { order: 5; width: 100%; } .date-box { flex: 1 1 auto; } }
+
+/* 사건 장면 그림 */
+.ev-scene { margin: 0 -2px 12px; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .5); }
+.ev-scene .scene-svg { display: block; width: 100%; aspect-ratio: 16 / 9; max-height: 34vh; height: auto; }
+.k-sms .ev-scene { margin-top: 4px; }

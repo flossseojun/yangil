@@ -1329,8 +1329,9 @@ function renderModal() {
   m.innerHTML = `
   <div class="ev-card t-${e.type} k-${kind}" role="dialog" aria-modal="true" aria-labelledby="ev-title">
     ${top}
+    <div class="ev-scene">${sceneFor(e, c, who, text)}</div>
     <h2 id="ev-title">${esc(eventTitle(e, c))}</h2>
-    <div class="ev-body">${who && kind !== 'sms' ? `<div class="speaker">${avatar(who, 'lg')}<small>${whoName}</small></div>` : ''}<p>${esc(text)}</p></div>
+    <div class="ev-body">${who && kind !== 'sms' ? `<div class="speaker"><small>${whoName}</small></div>` : ''}<p>${esc(text)}</p></div>
     ${r ? `
       <div class="ev-result"><p class="eyebrow">선택: ${esc(r.choice)}</p><p>${esc(r.text)}</p>${diffChips(r.diffs)}${notesHtml(r.notes)}</div>
       <button class="btn primary wide" data-act="evclose" autofocus>확인</button>`
