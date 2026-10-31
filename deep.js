@@ -12,7 +12,7 @@ const PLACES = {
 };
 // 친구마다 제일 좋아하는 장소 (대화 성향 + 이름으로 정한다)
 const PLACE_BY_LIKES = { playful: ['noraebang', 'pc', 'ttok'], sincere: ['river', 'ttok', 'cafe'], curious: ['dumeori', 'market', 'cafe'] };
-const PLACE_FIXED = { chaerin: 'cafe', taepung: 'pc', sori: 'market', jaemin: 'noraebang', jiyong: 'market', sia: 'dumeori', yunsu: 'pc', taeyeol: 'river', yejin: 'pc', seoan: 'market', mingyeol: 'noraebang', hyunwoo: 'pc', isan: 'ttok', hayeon: 'cafe', minah: 'river', wooseok: 'cafe' };
+const PLACE_FIXED = { chaerin: 'cafe', taepung: 'pc', sori: 'market', jaemin: 'noraebang', jiyong: 'market', sia: 'dumeori', yunsu: 'pc', taeyeol: 'river', yejin: 'pc', seoan: 'market', mingyeol: 'noraebang', hyunwoo: 'pc', isan: 'ttok', hayeon: 'cafe', minah: 'river', wooseok: 'cafe', taejeong: 'market' };
 function favPlace(id) {
   if (PLACE_FIXED[id]) return PLACE_FIXED[id];
   const pool = PLACE_BY_LIKES[CHARACTERS[id].likes] || PLACE_BY_LIKES.sincere;
@@ -255,6 +255,11 @@ const SIG_EVENTS = {
     ['조용히 다가가 같이 푼다', 8, 'study', 3, '윤호가 문제를 풀어 주는데 목소리 때문에 옆 반 애들까지 같이 배웠다.'],
     ['목캔디를 건넨다', 6, 'luck', 1, '"고마워!!! 이걸로 오늘 하루 더 외칠 수 있다!!!"'],
   ], '확성기 짝꿍'],
+  taejeong: ['레이드 10분 전', '쉬는 시간, 엄태정이 휴대폰을 들고 뛰어왔다. "학교 앞 체육관에 전설 레이드 떴어! 10분 남았어, 같이 하자!"', [
+    ['"가자!" 바로 같이 뛰어간다', 10, 'stamina', 2, '종 치기 직전에 레이드를 깼다. 전설 포켓몬이 잡히자 태정이가 "이 순간을 위해 산다"며 내 어깨를 흔들었다.'],
+    ['태정이 대신 공략 포켓몬을 검색해 준다', 8, 'study', 1, '내가 찾은 상성표대로 파티를 짜자 시간이 30초나 남았다. 태정이가 "너 전략가다"라며 엄지를 들었다.'],
+    ['수업 시간 맞춰 시계를 봐 준다', 5, 'social', 2, '"30초 남았어!" 내 카운트다운에 맞춰 태정이가 마지막 공격을 날렸다. 지각 없이 성공!'],
+  ], '레이드 파티원'],
   wooseok: ['우석이의 업어치기', '체육관 매트 위에서 선우석이 도복 띠를 고쳐 매고 있다. "유도 한 판 할래? 진짜 살살 할게. 넘어지는 법부터 알려 줄게."', [
     ['낙법부터 제대로 배운다', 10, 'stamina', 3, '"턱 당기고, 팡!" 손바닥으로 매트를 치는 소리가 경쾌했다. 우석이가 "유도는 예의부터"라며 고개 숙여 인사했다. 나도 따라 했다.'],
     ['우석이 사업 아이디어를 들어 준다', 8, 'study', 2, '매트에 앉아 우석이가 신규 사업 아이디어를 풀어놓았다. "유도장 체인점. 이름은 선우석 유도관." 듣다 보니 진짜 될 것 같았다.'],
