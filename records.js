@@ -18,11 +18,13 @@ function saveRecord(s, j) {
     friends, ach: s.ach.slice(), rare: s.rare.slice(), nicks: s.nicks.slice(), club: s.club, absurd: s.absurd,
     bestExam: s.exams.reduce((a, e) => Math.max(a, e.score), 0), date: new Date().toISOString(),
     track: s.track, electives: s.electives, autoClub: s.autoClub, setuk: (s.setuk || []).length, setukTop: (s.setuk || []).slice(-2).map(x => x.text),
+    history: (s.history || []).slice(), bloom: !!s.flags.bloomed, legend: legendOf(s),
     days: (s.days || []).map(d => ({ y: d.y, s: d.s, date: d.date, k: d.k, rare: d.rare, n: d.n, a: d.a, h: d.h })), best: (s.best || []).slice(0, 3),
     college: s.college, daily: s.daily, memories: albumPicks(s.memories || [], 8), rolling: rollingList(s).filter(r => r.id !== 'teacher').slice(0, 4).map(r => ({ name: r.name, msg: r.msg })), title: TITLES[s.title || 'newbie'].name, titleCount: (s.titles || []).length, cameo: Object.assign({}, s.cameo || {}), president: s.flags.president ? 'president' : s.flags.vicePresident ? 'vice' : null, council: s.council ? COUNCIL_DEPTS[s.council].name : null, partner: s.partner ? { id: s.partner, love: s.love[s.partner], secret: !!s.loveSecret } : null, scale: 5, suneung: s.suneung ? s.suneung.grade : null, gradNo: SCHOOL.lastGradNo + (2026 + 2 - SCHOOL.lastGradYear),
   };
   recs.unshift(rec);
   store.set(REC_KEY, recs);
+  markLegend(rec);
   dexMark('endings', rec.ending);
   return rec;
 }
@@ -77,13 +79,16 @@ function renderEnding() {
           <button class="btn" data-act="new">새로운 인생 시작</button>
           <button class="btn" data-act="gallery">기록 갤러리</button>
           ${joinButton('btn')}
+          ${feedbackButton('btn')}
         </div>
         <p class="fine">다운로드가 막혀 있으면 카드 이미지를 길게 누르거나 우클릭해서 저장하세요.</p>
       </div>
     </div>
+    ${renderNewspaper(r)}
     ${renderBest(r)}
     ${renderEpilogue(r)}
     ${renderLifeMap(r)}
+    ${renderHistory(r)}
     ${renderRarity(r)}
     ${(r.memories || []).length ? `<div class="paper"><h3 class="sec-title">추억 앨범</h3><div class="album small">${r.memories.map((m, i) => `<figure class="polaroid t-${m.type}" style="--r:${(i % 4 - 1.5) * 1.6}deg"><span class="when">${esc(m.when)}</span><b>${esc(m.title)}</b><figcaption>${esc(m.choice || '')}</figcaption></figure>`).join('')}</div></div>` : ''}
     ${(r.rolling || []).length ? `<div class="paper"><h3 class="sec-title">롤링페이퍼 한 줄</h3><ul class="rolling-mini">${r.rolling.map(x => `<li><b>${esc(x.name)}</b> ${esc(x.msg)}</li>`).join('')}</ul></div>` : ''}
@@ -203,7 +208,7 @@ function afterGalleryRender() { }
 UI.dexTab = 'endings';
 function renderDex() {
   const d = loadDex();
-  const tabs = [['endings', `엔딩 ${ENDINGS.filter(e => d.endings[e.id]).length}/${ENDINGS.length}`], ['ach', `업적 ${Object.keys(ACHIEVEMENTS).filter(k => d.ach[k]).length}/${Object.keys(ACHIEVEMENTS).length}`], ['titles', `칭호 ${Object.keys(TITLES).filter(k => d.titles[k]).length}/${Object.keys(TITLES).length}`], ['friends', `친구 ${CAMEO_IDS.filter(id => d.friends[id]).length}/${CAMEO_IDS.length}`], ['nicks', `별명 ${friendNicks().filter(x => d.nicks[x.nick]).length}/${friendNicks().length}`], ['rare', `희귀 이벤트 ${Object.values(EVENTS).filter(e => e.type === 'rare' && d.rare[e.id]).length}/${Object.values(EVENTS).filter(e => e.type === 'rare').length}`]];
+  const tabs = [['endings', `엔딩 ${ENDINGS.filter(e => d.endings[e.id]).length}/${ENDINGS.length}`], ['ach', `업적 ${Object.keys(ACHIEVEMENTS).filter(k => d.ach[k]).length}/${Object.keys(ACHIEVEMENTS).length}`], ['titles', `칭호 ${Object.keys(TITLES).filter(k => d.titles[k]).length}/${Object.keys(TITLES).length}`], ['friends', `친구 ${CAMEO_IDS.filter(id => d.friends[id]).length}/${CAMEO_IDS.length}`], ['nicks', `별명 ${friendNicks().filter(x => d.nicks[x.nick]).length}/${friendNicks().length}`], ['legends', `레전드 ${Object.keys(d.legends || {}).length}`], ['rare', `희귀 이벤트 ${Object.values(EVENTS).filter(e => e.type === 'rare' && d.rare[e.id]).length}/${Object.values(EVENTS).filter(e => e.type === 'rare').length}`]];
   let body = '';
   if (UI.dexTab === 'endings') body = ENDINGS.map(e => d.endings[e.id]
     ? `<li class="dex-item found"><b>${esc(e.name)}</b><span>${esc(e.desc)}</span><small>달성 ${d.endings[e.id]}회</small></li>`
@@ -218,6 +223,7 @@ function renderDex() {
     ? `<li class="dex-item found rare"><b>${esc(e.title)}</b><span>${esc(typeof e.text === 'function' ? '' : e.text)}</span></li>`
     : `<li class="dex-item"><b>??? 미발견</b><span>${e.loc ? `${LOCATIONS[e.loc].name} 어딘가에서…` : '학교 어딘가에서…'}</span></li>`).join('');
   if (UI.dexTab === 'nicks') body = renderNickDex(d);
+  if (UI.dexTab === 'legends') body = renderLegendDex(d);
   if (UI.dexTab === 'friends') body = CAMEO_IDS.map(id => { const c = CAMEOS[id], n = d.friends[id] || 0; return n
     ? `<li class="dex-item found"><b>${esc(c.name)} <small class="stars">${'★'.repeat(n)}${'☆'.repeat(3 - n)}</small></b><span>${esc(c.role)}</span>${n >= 3 ? `<small>칭호 「${esc(c.title)}」</small>` : ''}</li>`
     : `<li class="dex-item"><b>???</b><span>힌트: ${esc(c.role)}</span></li>`; }).join('');

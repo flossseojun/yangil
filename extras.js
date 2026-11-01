@@ -300,3 +300,199 @@ const BGM = {
 document.addEventListener('pointerdown', () => BGM.start(), { once: true });
 document.addEventListener('keydown', () => BGM.start(), { once: true });
 document.addEventListener('visibilitychange', () => { if (document.hidden) BGM.stop(); else if (BGM.ctx) BGM.start(); });
+
+/* ═════════ 벤치에서 발롱까지에서 참고한 기능들 ═════════ */
+
+/* ───────── 1. 졸업 특집 양일학보 + 친구 댓글 ───────── */
+const NEWS_HEAD = {
+  legend: ['[단독] 양일고에 전설이 졸업했다', '공부·친구·평판 모두 잡은 3년, 후배들 "교훈처럼 외운다"'],
+  president: ['전교회장 졸업… "임기 중 급식 만족도 역대 최고"', '마지막 조회에서 "양일고 사랑해요" 외쳐 강당 들썩'],
+  council_hero: ['학생회 살림꾼 졸업, 학생회실 비품이 운다', '"그가 없으면 축제 준비가 안 된다" 후배들 걱정'],
+  secret_couple: ['[충격] 3년간 아무도 몰랐던 커플, 졸업식에서 공개', '반 친구들 "어쩐지 하교 시간이 같더라"'],
+  couple: ['양일고 공식 커플, 졸업 후에도 공식', '은행나무길 벤치 "우리 자리" 명패 설치 요청 쇄도'],
+  byeongmat: ['[속보] 전설의 병맛 졸업생, 마지막까지 사건 남겨', '졸업식장 풍선 37개 실종 사건 "본인은 억울하다"'],
+  mystery: ['3층 화장실 미스터리, 졸업생이 결국 풀었다', '교내 7대 불가사의 중 3개 해결… "나머지는 후배 몫"'],
+  topstudent: ['전교권 모범생 졸업, 오답노트 기증 행렬', '도서관 사서 "가장 오래 머문 학생" 공식 인증'],
+  scientist: ['과학의 날 레전드 졸업… "실험실 불은 그가 껐다"', '탐구 보고서 두께가 교과서를 넘었다'],
+  auto_robotics: ['로보틱스 레전드 졸업, 라인트레이서는 아직 달린다', '부원들 "선배 코드는 주석까지 완벽"'],
+  auto_squid: ['갑오징어 박사 졸업, 수조 앞 눈물의 작별', '갑오징어들 색깔이 하루 종일 칙칙했다는 후문'],
+  auto_seed: ['토종 씨앗 지킴이 졸업, 텃밭에 이름 팻말', '쥐이빨옥수수 올해 수확량 역대 최고'],
+  auto_water: ['남한강 수질 탐정 졸업, 측정기는 후배에게', '3년간 기록한 pH 데이터 교내 문서고 보관 결정'],
+  citizen: ['세계시민 졸업생, 국제교류의 문을 열다', '모의 UN 연설 영상 조회수 학교 신기록'],
+  sports: ['체육대회 레전드 졸업, 계주 바통 영구 보관', '"마지막 코너의 그 추월" 아직도 회자'],
+  idol: ['녹향제의 아이돌 졸업, 팬클럽 해체 거부', '양일가왕 무대 직캠 조회수 1만 돌파'],
+  insider: ['양일고 인싸 졸업, 단톡방 알림 일시 정지', '전교생 절반과 맞팔… "진짜 다 아는 사이"'],
+  sleeper: ['보건실의 전설 졸업, 침대 하나 영구결번', '보건 선생님 "가장 평화롭게 잔 학생"'],
+  squad: ['평생 가는 친구들, 졸업식 단체 사진 화제', '"우리 단톡방은 졸업이 없다" 선언'],
+  happy: ['평범하지만 행복한 졸업생 인터뷰', '"가장 좋았던 건 매일 점심시간이었어요"'],
+  survivor: ['아무튼 졸업했다, 그것이 중요하다', '"버티면 된다"는 3년간의 깨달음 공유'],
+};
+const NEWS_COMMENT = {
+  ryun: '축하해!! 나 오늘 약속 두 개였는데 여기 먼저 들렀다', seojun: '이 기사 도감 번호 붙여서 저장함', yejun: '졸업식 날 그늘 자리 내가 맡아 놨었다',
+  mingyeol: '기사보다 내 축하 개그가 더 웃김 ㅇㅈ?', jaewon: '졸업식장에 비둘기 없게 해 줘서 고마웠다', jiyong: '축하! 인큐베이터 온도 25도처럼 따뜻하게 살자',
+  geonwoo: '파카도 축하한대. 진짜야', yunsu: '지옥에서 누가 돌아왔게? 졸업생이다!', eunseong: '내일 아침에도 운동장 한 바퀴 콜?',
+  yunbo: '3년 요약: 보조선 하나로 끝난 문제 같았다', isan: '졸업 기념 스쿼트 30개 같이 하자!', soyul: '높은 데 걸린 졸업 현수막 내가 달았다',
+  siwoo: '이 기사 배경 건물 내가 설계한 걸로 하자', hyunwoo: '전술적으로 완벽한 3년이었다', jio: '왼발 크로스처럼 깔끔한 졸업 ㅊㅊ',
+  younggeun: 'Congratulations… 아 이건 진짜 축하라는 뜻임', sia: '오늘 밤 별 하나 이름 네 걸로 붙임', yejunsim: '전교회장으로서 이 기사 공식 승인합니다',
+  jejun: '축하해 진심으로!! 다음 봉사도 같이 가자', sihun: '졸업 기념 토종 씨앗 한 봉지 보낼게', hyeongseop: '…계획대로 됐네. 축하한다',
+  sion: '축하 로봇 댄스 영상 찍어 올림', seongjun: '오늘은 내가 쏜다. 다 와라', yuchan: '무슨 일 있으면 내가 제일 먼저 간다. 축하한다',
+  yejin: '인생도 풀 스로틀로 가자!! 체커기 받았다!', seoan: '치이카와도 축하한대… 너무 귀엽지 않냐', jaejun: '끝까지 간 사람 = 우리. 아이언맨 슈트 나오면 태워 줌',
+  taeyeol: '오늘 남한강 pH도 축하하는 듯 7.4', munyunsu: '축하한다아아!!! 졸업 세리머니 간다!!!', hyeonseo: '기사 사진에 내가 몰래 브이 함 ㅋㅋ',
+  yunho: '축하한다!!! (이거 소리 내서 읽어야 함)', hayeon: '이 기사 스크랩해서 책 사이에 꽂아 둘게', minah: '간지 나게 졸업했네. 인정', wooseok: '창업 멤버 1호 졸업 축하. 자리 비워 둔다',
+  taejeong: '졸업 기념 선물 보냄. 친구 레벨 최고 찍자', sangwoong: '가디안처럼 우아한 졸업이었다',
+  chaerin: '반장으로서 마지막 출석 체크: 졸업생 출석 완료!', taepung: '졸업도 내가 먼저 할 뻔했는데 아깝다!', sori: '이 기사 내가 썼다. 특종이었다', jaemin: '졸업식 풍선 사건은 진짜 내가 아님',
+  haram: '후배야, 잘 컸다. 자랑스럽다', daon: '선배 졸업 축하드려요!! 기사 프린트해서 붙여 놨어요',
+};
+function renderNewspaper(r) {
+  const [head, sub] = NEWS_HEAD[r.ending] || NEWS_HEAD.happy;
+  const seed = typeof seededRng === 'function' ? seededRng('news-' + r.no + r.name) : Math.random;
+  const facts = [r.title ? `칭호 「${r.title}」` : '', r.college && r.college.tier ? `${r.college.tier} ${r.college.major} 합격` : '', r.president === 'president' ? '전교회장 역임' : '', (() => { const n = r.nicks.filter(x => !(r.bloom && x === '늦게 핀 꽃')).pop(); return n ? `별명 "${n}"` : ''; })(), r.legend ? `${r.legend} 레전드` : '', r.bloom ? '3학년 늦게 핀 꽃' : ''].filter(Boolean);
+  const people = r.friends.filter(f => NEWS_COMMENT[f.id]).slice(0, 5);
+  return `<div class="paper newspaper">
+    <div class="np-mast"><b>양일학보</b><span>제${r.gradNo || 57}회 졸업 특집호 · ${fmtDate(r.date)}</span></div>
+    <h3 class="np-head">${esc(head.replace('졸업생', r.name).replace(/^(\[[^\]]+\] )?/, m => m))}</h3>
+    <p class="np-sub">${esc(sub)}</p>
+    <p class="np-body"><b>${esc(r.name)}</b> 졸업생이 3년의 양일고 생활을 마쳤다. ${facts.length ? esc(facts.join(', ')) + ' 등의 기록을 남겼다.' : '조용하지만 단단한 3년이었다.'} 기자가 소감을 묻자 "${esc(pick(['은행나무길이 제일 그리울 것 같아요', '매점 소보로빵 못 먹는 게 제일 아쉬워요', '친구들 덕분에 버텼어요', '다시 1학년으로 돌아가고 싶어요']))}"라고 답했다.</p>
+    ${people.length ? `<ul class="np-comments">${people.map(f => { const ci = charInfo(f.id), likes = 3 + Math.floor(seed() * 40) + Math.round(f.aff / 5);
+      return `<li><span class="epi-dot sm" style="background:${ci.color}" aria-hidden="true">${esc(ci.name.slice(-2, -1))}</span><div><b>${esc(ci.name)}</b><p>${esc(NEWS_COMMENT[f.id])}</p><small>♥ ${likes}</small></div></li>`; }).join('')}</ul>` : '<p class="fine">아직 댓글이 없다.</p>'}
+  </div>`;
+}
+
+/* ───────── 2. 학기마다 바뀌는 매점 한정 상품 (학기당 하나) ───────── */
+const LIMITED_SHOP = {
+  exam_notes:  { name: '선배의 족보 노트', price: 3000, desc: '모든 과목 숙련도 +4', run: () => { subjectsOf(S).forEach(sub => { S.mastery[sub.key] = clamp(mastery(sub) + 4); }); return '선배가 물려준 노트에 형광펜이 빼곡하다. 시험 범위가 한눈에 들어온다.'; } },
+  fest_goods:  { name: '녹향제 한정 굿즈', price: 2500, desc: '평판 +5 · 운 +2', run: () => { G.add('rep', 5); G.add('luck', 2); return '한정 굿즈를 가방에 달았더니 복도에서 다들 어디서 샀냐고 묻는다.'; } },
+  armband:     { name: '학생부 완장 키링', price: 2000, desc: '평판 +4', run: () => { G.add('rep', 4); return '완장 모양 키링을 달았더니 왠지 행동이 반듯해졌다.'; } },
+  protein:     { name: '산이 추천 단백질바', price: 1800, desc: '체력 +4 · 피로 -10', run: () => { G.grow('stamina', 4); G.fat(-10); return '이산이 추천한 맛이다. 생각보다 맛있고 든든하다.'; } },
+  star_map:    { name: '초아 별자리 지도', price: 2200, desc: '운 +4', run: () => { G.add('luck', 4); return '책상 위에 별자리 지도를 붙였다. 오늘따라 운이 좋을 것 같다.'; } },
+  gift_set:    { name: '친구 선물 세트', price: 3500, desc: '만난 친구 모두 친밀도 +4', run: () => { FRIEND_IDS.forEach(id => S.met[id] && G.aff(id, 4)); return '작은 간식 꾸러미를 친구들에게 하나씩 돌렸다. 다들 환하게 웃었다.'; } },
+  alpaca_doll: { name: '미니 파카 인형', price: 2600, desc: '사교성 +4 · 피로 -6', run: () => { G.grow('social', 4); G.fat(-6); return '건우의 파카를 꼭 닮은 미니 인형. 보고만 있어도 기분이 풀린다.'; } },
+  water_kit:   { name: '휴대용 수질 키트', price: 2400, desc: '공부 +3 · 과학 숙련도 +4', run: () => { G.grow('study', 3); if (typeof mUp === 'function') mUp(S, '과학', 4); return '태열이가 쓰는 키트와 같은 모델. 물 한 컵에도 탐구할 게 많다.'; } },
+  lucky_bread: { name: '전설의 황금 소보로', price: 1500, desc: '피로 -15 · 운 +2', run: () => { G.fat(-15); G.add('luck', 2); return '하루 한 개만 나온다는 황금 소보로. 한 입에 피로가 사르르 녹았다.'; } },
+  iron_pen:    { name: '아이언맨 볼펜', price: 2000, desc: '공부 +4', run: () => { G.grow('study', 4); return '재준이가 극찬한 볼펜. 쓸 때마다 슈트를 입은 기분이다.'; } },
+  guardian:    { name: '가디안 응원 스티커', price: 1200, desc: '사교성 +3', run: () => { G.grow('social', 3); return '상웅이가 보더니 눈이 두 배가 됐다. 대화가 끊이지 않는다.'; } },
+  energy_x:    { name: '무카페인 에너지 젤리', price: 2000, desc: '피로 -18 · 부작용 없음', run: () => { G.fat(-18); return '카페인 없는 신상 젤리. 잠도 잘 오고 기운도 난다.'; } },
+};
+function limitedToday() {
+  const rng = seededRng('limited-' + semKey(S)), ids = Object.keys(LIMITED_SHOP).slice();
+  for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+  return ids.slice(0, 3);
+}
+function limitedShopHtml() {
+  const bought = S.flags.limitedSem === semKey(S);
+  return `<p class="limited-head">이번 학기 한정 · 학기당 하나만${bought ? ' <em>(이번 학기 구매 완료)</em>' : ''}</p>
+    <div class="pick-grid limited">${limitedToday().map(id => { const it = LIMITED_SHOP[id], why = bought ? '이번 학기엔 이미 샀다' : (S.money || 0) < it.price ? '용돈 부족' : '';
+      return `<button class="pick" data-act="buy-limited" data-arg="${id}" ${why ? 'disabled' : ''}><span class="subj-m">한정</span><span><b>${it.name}</b><small>${why || it.desc} · ${won(it.price)}</small></span></button>`; }).join('')}</div>`;
+}
+function buyLimited(id) {
+  const it = LIMITED_SHOP[id]; if (!it || S.flags.limitedSem === semKey(S) || (S.money || 0) < it.price) return;
+  const r = withDiff(() => { S.money -= it.price; S.flags.limitedSem = semKey(S); return it.run(); });
+  S.result = { title: `매점 한정 · ${it.name}`, text: r.text + ` (남은 용돈 ${won(S.money)})`, diffs: r.diffs, notes: r.notes };
+  UI.pick = null; SFX.play('rare'); postChecks(); save(); render();
+}
+
+/* ───────── 3. 늦게 핀 꽃 (숨은 성장 특성) ─────────
+   몇 명에 한 명꼴로 숨어 있다. 1·2학년 동안 꾸준히 노력했으면 3학년에 갑자기 피어난다. 노력이 부족하면 피지 않는다. */
+const BLOOM_EFFORT = 22;
+function bloomEffort(s) { const c = s.counts || {}; return (c.study || 0) + (c.exercise || 0) + (c.club || 0) + (c.auto || 0); }
+ev({ id: 'late_bloom', type: 'rare', title: '늦게 핀 꽃', cond: s => !!s.bloomReady && !s.flags.bloomed,
+  text: s => `3학년 ${s.sem}학기 아침, 이상하게 머리가 맑다. 1·2학년 내내 쌓아 온 것들이 한꺼번에 연결되는 느낌이다. 어제까지 어렵던 문제가, 어제까지 버겁던 운동이 오늘은 이상하게 쉽다.`,
+  choices: [
+    { label: '이 느낌을 믿고 끝까지 달린다', run: s => { s.flags.bloomed = 1; s.bloomReady = false; const top = STATS.slice().sort((a, b) => s.stats[b] - s.stats[a]).slice(0, 2); top.forEach(k => G.add(k, 12, true)); G.nick('늦게 핀 꽃'); return '드디어 피었다. 선생님이 "너 요즘 왜 이렇게 달라졌니?" 하고 물었다. 친구들이 "늦게 핀 꽃"이라고 부르기 시작했다.'; } },
+  ] });
+
+/* ───────── 4. 저장 코드 내보내기 · 가져오기 ───────── */
+const SAVE_KEYS = () => [SAVE_KEY, REC_KEY, DEX_KEY, 'yangil.mode', 'yangil.tutorial.v1', 'yangil.bgm', 'yangil.sfx'];
+function exportSaveCode() {
+  const data = { v: 1 }; SAVE_KEYS().forEach(k => { try { const x = localStorage.getItem(k); if (x != null) data[k] = x; } catch (e) {} });
+  return 'YANGIL-' + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+}
+function importSaveCode(code) {
+  try {
+    const raw = String(code || '').trim().replace(/^YANGIL-/, '');
+    const data = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    if (!data || data.v !== 1) throw new Error('bad');
+    SAVE_KEYS().forEach(k => { if (data[k] != null) localStorage.setItem(k, data[k]); });
+    return true;
+  } catch (e) { return false; }
+}
+function saveCodeSection() {
+  return `<div class="savecode">
+    <h3>저장 코드</h3>
+    <p class="fine">다른 기기나 브라우저로 옮길 때 쓰는 코드야. 진행 중인 게임, 졸업 기록, 도감이 모두 들어 있어.</p>
+    <div class="savecode-row"><button class="btn" data-act="save-export">저장 코드 만들기</button><button class="btn" data-act="save-copy" ${UI.saveCode ? '' : 'disabled'}>복사</button></div>
+    ${UI.saveCode ? `<textarea class="share-text" id="save-code-out" readonly aria-label="내 저장 코드">${esc(UI.saveCode)}</textarea>` : ''}
+    <label class="fine" for="save-code-in">다른 기기에서 만든 저장 코드 붙여넣기</label>
+    <textarea class="share-text" id="save-code-in" placeholder="YANGIL-로 시작하는 코드" aria-label="저장 코드 붙여넣기"></textarea>
+    <button class="btn primary" data-act="save-import">이 코드로 불러오기</button>
+  </div>`;
+}
+
+/* ───────── 5. 체육한마당 계주 · Y리그 결승 중계 (위에서 내려다본 화면) ───────── */
+function matchSVG(kind, label) {
+  const me = '#ffd23f';
+  if (kind === 'relay') {
+    const track = 'M70 40 H250 A50 50 0 0 1 250 140 H70 A50 50 0 0 1 70 40Z';
+    const runners = [['#e74c3c', 4.2], ['#3498db', 4.6], ['#2ecc71', 4.9], ['#fff', 4.0, true]];
+    return `<svg class="scene-svg" viewBox="0 0 320 180" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="320" height="180" fill="#5fae5a"/><path d="M0 0 H320 V180 H0Z" fill="url(#sc-vign)" opacity="0"/>
+      <path d="${track}" fill="none" stroke="#c96f4a" stroke-width="26"/><path d="${track}" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="6 6" opacity=".7"/>
+      <rect x="150" y="26" width="3" height="28" fill="#fff"/><text x="160" y="96" text-anchor="middle" font-size="12" fill="#fff" font-family="Jua, sans-serif">체육한마당 반 대항 계주</text>
+      <text x="160" y="112" text-anchor="middle" font-size="8" fill="#eaffea" font-family="sans-serif">마지막 바퀴!</text>
+      ${runners.map(([c, d, isMe], i) => `<g><circle r="${isMe ? 7 : 6}" fill="${isMe ? '#2e3f63' : c}" stroke="${isMe ? me : '#333'}" stroke-width="${isMe ? 3 : 1}"><animateMotion dur="${d}s" repeatCount="indefinite" path="${track}" begin="${-i * .3}s"/></circle>${isMe ? `<text font-size="9" font-family="Jua, sans-serif" fill="${me}" stroke="#2a2420" stroke-width=".6" text-anchor="middle" dy="-10">나<animateMotion dur="${d}s" repeatCount="indefinite" path="${track}" begin="${-i * .3}s"/></text>` : ''}</g>`).join('')}
+    </svg>`;
+  }
+  const players = Array.from({ length: 10 }, (_, i) => { const home = i < 5, x = home ? 70 + (i % 3) * 30 : 250 - (i % 3) * 30, y = 50 + (i % 5) * 20; return { x, y, home, me: i === 2 }; });
+  return `<svg class="scene-svg" viewBox="0 0 320 180" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="320" height="180" fill="#3a2f2a"/><rect x="30" y="20" width="260" height="140" rx="4" fill="#d9a96a" stroke="#fff" stroke-width="2"/>
+    <path d="M160 20 V160" stroke="#fff" stroke-width="2"/><circle cx="160" cy="90" r="18" fill="none" stroke="#fff" stroke-width="2"/>
+    <rect x="30" y="66" width="34" height="48" fill="none" stroke="#fff" stroke-width="2"/><rect x="256" y="66" width="34" height="48" fill="none" stroke="#fff" stroke-width="2"/>
+    <text x="160" y="14" text-anchor="middle" font-size="10" fill="#fff" font-family="Jua, sans-serif">Y리그 결승 · 우리 반 vs 옆 반</text>
+    ${players.map((p, i) => `<g><circle cx="${p.x}" cy="${p.y}" r="${p.me ? 7 : 6}" fill="${p.home ? '#2e3f63' : '#c0392b'}" stroke="${p.me ? me : '#fff'}" stroke-width="${p.me ? 3 : 1}"><animate attributeName="cx" values="${p.x};${p.x + (p.home ? 18 : -18)};${p.x}" dur="${2.4 + (i % 4) * .4}s" repeatCount="indefinite"/></circle>${p.me ? `<text x="${p.x}" y="${p.y - 10}" text-anchor="middle" font-size="9" font-family="Jua, sans-serif" fill="${me}" stroke="#2a2420" stroke-width=".6">나<animate attributeName="x" values="${p.x};${p.x + 18};${p.x}" dur="${2.4 + (i % 4) * .4}s" repeatCount="indefinite"/></text>` : ''}</g>`).join('')}
+    <circle r="4" fill="#ff8c1a" stroke="#7a3b10"><animateMotion dur="3s" repeatCount="indefinite" path="M130 90 L188 70 L230 100 L160 120 L100 80 Z"/></circle>
+  </svg>`;
+}
+
+/* ───────── 6. 동아리 레전드 (판을 넘어 남는 기록) ───────── */
+function legendOf(s) {
+  if (s.flags.president) return '학생회';
+  if (s.club && s.clubPts >= 18) return CLUBS[s.club].name;
+  if (s.autoClub && s.autoPts >= 8) return AUTO_CLUBS[s.autoClub].name;
+  return null;
+}
+function markLegend(rec) {
+  if (!rec.legend) return;
+  const d = loadDex(); d.legends = d.legends || {};
+  (d.legends[rec.legend] = d.legends[rec.legend] || []).push({ name: rec.name, no: rec.no, date: rec.date });
+  store.set(DEX_KEY, d);
+}
+// 새 판에서 그 동아리에 들어가면 선배 레전드 이름이 보인다
+function legendNote(clubName) {
+  const d = loadDex(), l = (d.legends || {})[clubName];
+  return l && l.length ? ` 동아리실 벽에 「레전드 ${l[l.length - 1].name}」 선배의 이름이 걸려 있다.` : '';
+}
+function renderLegendDex(d) {
+  const L = d.legends || {}, keys = Object.keys(L);
+  if (!keys.length) return '<li class="dex-item"><b>아직 레전드가 없다</b><span>동아리 활동 18회 이상, 자율동아리 8회 이상, 또는 전교회장이 되면 이름이 걸린다.</span></li>';
+  return keys.map(k => `<li class="dex-item found"><b>${esc(k)}</b><span>${L[k].map(x => esc(x.name)).join(', ')}</span><small>레전드 ${L[k].length}명</small></li>`).join('');
+}
+
+/* ───────── 7. 학기별 기록 (졸업 화면의 3년 히스토리) ───────── */
+function pushHistory(s) {
+  const lastG = (s.semGrades || []).filter(g => g.year === s.year && g.sem === s.sem).pop();
+  const mem = (s.memories || []).slice(s._memMark || 0); s._memMark = (s.memories || []).length;
+  (s.history = s.history || []).push({ y: s.year, s: s.sem, gpa: lastG ? lastG.grade : null, friends: FRIEND_IDS.filter(id => s.aff[id] >= 50).length,
+    best: mem.length ? mem[mem.length - 1].title : null, nick: s.nicks[s.nicks.length - 1] || null });
+}
+function renderHistory(r) {
+  const h = r.history || [];
+  if (!h.length) return '';
+  return `<div class="paper history"><h3 class="sec-title">3년 기록표</h3>
+    <div class="table-wrap"><table class="hist"><thead><tr><th>학기</th><th>내신</th><th>친한 친구</th><th>기억에 남는 일</th></tr></thead>
+    <tbody>${h.map(x => `<tr><td>${x.y}-${x.s}</td><td>${x.gpa != null ? x.gpa + '등급' : '—'}</td><td>${x.friends}명</td><td>${esc(x.best || '조용한 학기')}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+/* ───────── 8. 의견 보내기 ───────── */
+function feedbackButton(cls) {
+  return FEEDBACK_URL ? `<a class="${cls}" href="${esc(FEEDBACK_URL)}" target="_blank" rel="noopener">의견 보내기</a>` : '';
+}

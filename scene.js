@@ -217,6 +217,8 @@ function sceneBgFor(e, text) {
 }
 // 게임 사건 창의 장면: 나 + 등장 친구(합동 장면이면 두 명)
 function sceneFor(e, c, who, text) {
+  // 체육한마당 계주 · Y리그 결승은 위에서 내려다본 중계 화면
+  if (S.cur && (S.cur.id === 'sports_day' || S.cur.id === 'yleague') && typeof matchSVG === 'function') return matchSVG(S.cur.id === 'sports_day' ? 'relay' : 'court', `${eventTitle(e, c)} 중계`);
   const ids = [];
   if (S.cur && S.cur.id === 'pair_scene' && typeof PAIR_SCENES !== 'undefined') ids.push(PAIR_SCENES[c.i][0], PAIR_SCENES[c.i][1]);
   else if (c && c.a && c.b && CHARACTERS[c.a] && CHARACTERS[c.b]) ids.push(c.a, c.b);

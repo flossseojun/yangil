@@ -186,7 +186,7 @@ function newGame(d) {
     met: mode === 'classic' ? { chaerin: true, teacher: true } : { teacher: true }, aff, club: null, clubPts: 0,
     exams: [], flags: {}, seen: {}, recent: [], rare: [], absurd: 0, nicks: [], ach: [],
     counts: { study: 0, talk: 0, rest: 0, exercise: 0, explore: 0, club: 0, auto: 0 }, visits: {}, studied: [],
-    autoClub: null, autoPts: 0, council: null, councilPts: 0, money: 1000, memories: [], days: [], today: [], cameo: {}, roster: pickRoster(mode), titles: ['newbie'], title: 'newbie', perf: {}, written: {}, semGrades: [], setuk: [], route: null, college: null, daily: d.daily || null, vac: null,
+    autoClub: null, autoPts: 0, council: null, councilPts: 0, money: 1000, memories: [], days: [], today: [], history: [], bloom: Math.random() < 0.15, cameo: {}, roster: pickRoster(mode), titles: ['newbie'], title: 'newbie', perf: {}, written: {}, semGrades: [], setuk: [], route: null, college: null, daily: d.daily || null, vac: null,
     love: {}, crush: null, partner: null, partnerSince: 0, loveNo: {}, waitConfess: 0, loveDay: 0, wrongNote: [],
     favors: {}, pairs: {}, likedPlace: {}, loveTension: 0, loveTouch: 0, coupleItems: [],
     electives: {}, track: null, mastery: {}, dayEvent: false, dayTalk: false,
@@ -330,6 +330,8 @@ function startDay() {
   S.money = (S.money || 0) + ALLOWANCE; S.dayEvent = false; S.dayTalk = false; S.dayLove = false; S.dayCameo = false;
   const order = id => id === 'college_result' || id === 'festival' ? 2 : id === 'exam' ? 1 : 0;
   S.queue = specialsFor(S.year, S.sem, S.day).slice().sort((a, b) => order(a) - order(b));
+  // 늦게 핀 꽃: 3학년 학기 첫날, 1·2학년 동안 충분히 노력했으면 피어난다
+  if (S.year === 3 && S.day === 1 && S.bloom && !S.flags.bloomed && typeof bloomEffort === 'function' && bloomEffort(S) >= BLOOM_EFFORT) { S.bloomReady = true; S.queue.unshift('late_bloom'); }
   // 학교 친구들(실제 친구 출연)은 아침에 먼저 찾아온다. 시험 날은 쉰다.
   if (!S.queue.includes('exam') && Math.random() < 0.75) { const cam = pickCameoEvent(); if (cam) { S.dayCameo = true; S.dayPops++; S.queue.push(cam); } }
   // 부탁·합동 에피소드도 아침에 따로 기회가 있다
@@ -353,6 +355,7 @@ function endDay() {
   recordDay(holiday);
   S.day++; S.dayNo++;
   if (S.day > semDays()) {
+    pushHistory(S);
     S.phase = 'report'; UI.screen = 'report';
     save(); render(); return;
   }
@@ -538,6 +541,7 @@ function performAction(type, arg, mult = 1, note = '', info = {}) {
         const cl = CLUBS[S.club];
         G.grow(cl.stat, 4); S.clubPts++; G.add('rep', 1); G.fat(10 + extra);
         if (clubTag(S) === 'band' && G.talent('voice')) return '합주 중에 보컬 파트를 대신 불렀다. 부원들이 악기를 멈추고 쳐다봤다.';
+        if (!S.flags.legendSeen && typeof legendNote === 'function' && legendNote(cl.name)) { S.flags.legendSeen = 1; return `${cl.name} 활동을 했다.` + legendNote(cl.name) + ' 나도 언젠가 저기 이름을 남길 수 있을까.'; }
         return `${cl.name} 활동을 했다. ` + pick(['선배들이 조금씩 인정해 주기 시작했다.', '오늘은 생각보다 손발이 잘 맞았다.', '발표회 준비가 한 걸음 진척됐다.']);
       }
       case 'council': {
@@ -1066,7 +1070,7 @@ function renderMenu() {
         ['school', '학교 안내', `개교 ${new Date().getFullYear() - 1970}주년, 경기도 양평`]].map(([k, name, sub, off], i) => `
       <button class="locker" data-act="${k}" ${off ? 'disabled' : ''}><span class="locker-no">2-${String(i + 1).padStart(2, '0')}</span><span class="vents" aria-hidden="true"></span><span class="nametag"><b>${name}</b><small>${sub}</small></span></button>`).join('')}
     </nav>
-    <div class="menu-foot"><button class="sfx-btn light" data-act="sfx" aria-pressed="${SFX.on}">효과음 ${SFX.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="bgm" aria-pressed="${BGM.on}">음악 ${BGM.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="settings">설정</button>${joinButton('sfx-btn light')}</div>
+    <div class="menu-foot"><button class="sfx-btn light" data-act="sfx" aria-pressed="${SFX.on}">효과음 ${SFX.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="bgm" aria-pressed="${BGM.on}">음악 ${BGM.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="settings">설정</button>${joinButton('sfx-btn light')}${feedbackButton('sfx-btn light')}</div>
     <p class="fine center">양일고 학생이 만든 팬 게임입니다. 학교 정보는 공개 자료를 참고했어요. 실제 친구들은 본인 허락을 받고 출연했고, 가상 친구와 사건은 지어낸 이야기예요.</p>
   </section>`;
 }
@@ -1212,6 +1216,7 @@ function shopPicker() {
   return `<div class="picker"><div class="picker-head"><b>매점 · 용돈 ${won(S.money)}</b><button class="link" data-act="unpick">닫기</button></div>
     <div class="pick-grid">${Object.entries(SHOP).filter(([, it]) => !it.love || S.mode === 'classic').map(([id, it]) => { const why = can(id);
       return `<button class="pick" data-act="buy" data-arg="${id}" ${why ? 'disabled' : ''}><span class="subj-m">${(it.price / 1000).toFixed(1)}</span><span><b>${it.name}</b><small>${why || it.desc} · ${won(it.price)}</small></span></button>`; }).join('')}</div>
+    ${limitedShopHtml()}
     <p class="fine">하루 용돈 ${won(ALLOWANCE)}. 사는 데 행동력은 들지 않는다.</p></div>`;
 }
 function hangPicker() {
@@ -1439,6 +1444,7 @@ function renderSettings() {
       ${row('fast', '빠른 진행', '이벤트 결과 확인 창을 생략하고 상황판에 바로 보여 준다. 모의고사는 자동으로 응시한다.', SETTINGS.fast)}
       ${row('sfx', '효과음', '종소리·팡파르 같은 효과음', SFX.on)}
     </div>
+    ${saveCodeSection()}
     <p class="fine">설정은 이 브라우저에 저장되고, 진행 중인 게임에도 바로 적용된다.</p>
   </section>`;
 }
@@ -1603,6 +1609,11 @@ document.addEventListener('click', ev => {
     case 'rest': case 'exercise': case 'club': case 'auto': case 'council': doAction(act); break;
     case 'sfx': SFX.toggle(); render(); break;
     case 'bgm': BGM.toggle(); render(); break;
+    case 'buy-limited': buyLimited(arg); break;
+    case 'save-export': UI.saveCode = exportSaveCode(); render(); break;
+    case 'save-copy': try { navigator.clipboard.writeText(UI.saveCode).then(() => toast('저장 코드를 복사했어!'), () => toast('코드를 길게 눌러 직접 복사해 줘.')); } catch (e) { toast('코드를 길게 눌러 직접 복사해 줘.'); } break;
+    case 'save-import': { const code = document.getElementById('save-code-in').value;
+      if (importSaveCode(code)) { toast('불러왔어! 메인 화면에서 「이어하기」를 눌러 줘.'); UI.saveCode = null; UI.screen = 'menu'; render(); } else toast('코드가 올바르지 않아. 처음부터 끝까지 다 복사했는지 확인해 줘.'); break; }
     case 'share': shareResult(+arg); break;
     case 'restart-ask': UI.restart = true; renderRestart(); break;
     case 'restart-no': UI.restart = false; renderRestart(); break;

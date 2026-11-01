@@ -779,3 +779,31 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .ev-scene { margin: 0 -2px 12px; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 16px -10px rgba(0, 0, 0, .5); }
 .ev-scene .scene-svg { display: block; width: 100%; aspect-ratio: 16 / 9; max-height: 34vh; height: auto; }
 .k-sms .ev-scene { margin-top: 4px; }
+
+/* 졸업 특집 양일학보 */
+.newspaper { background: #fbf8f0; color: #2a2620; border: 1px solid #d8cfb8; }
+.np-mast { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; border-bottom: 3px double #2a2620; padding-bottom: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.np-mast b { font-family: var(--f-doc, serif); font-size: 26px; letter-spacing: .08em; }
+.np-mast span { font-size: 12px; color: #6b6355; }
+.np-head { font-family: var(--f-doc, serif); font-size: 22px; line-height: 1.35; margin: 4px 0 4px; }
+.np-sub { margin: 0 0 10px; font-size: 14px; color: #6b6355; font-weight: 700; }
+.np-body { margin: 0 0 12px; font-size: 14.5px; line-height: 1.75; text-align: justify; }
+.np-comments { list-style: none; margin: 0; padding: 10px 0 0; border-top: 1px dashed #c9bfa6; display: grid; gap: 10px; }
+.np-comments li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; }
+.np-comments p { margin: 1px 0 0; font-size: 14px; }
+.np-comments small { color: #b0485a; font-size: 12px; }
+.epi-dot.sm { width: 30px; height: 30px; font-size: 13px; }
+/* 매점 한정 상품 */
+.limited-head { margin: 12px 0 6px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.limited-head em { font-style: normal; color: var(--muted); font-weight: 400; }
+.pick-grid.limited .pick { border-color: var(--marker); background: color-mix(in srgb, var(--marker) 12%, var(--card)); }
+/* 3년 기록표 */
+.table-wrap { overflow-x: auto; }
+.hist { width: 100%; border-collapse: collapse; font-size: 14px; }
+.hist th, .hist td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.hist td:last-child { white-space: normal; min-width: 140px; }
+.hist th { font-size: 12.5px; color: var(--muted); font-weight: 400; }
+/* 저장 코드 */
+.savecode { margin-top: 18px; display: grid; gap: 8px; }
+.savecode h3 { margin: 0; font-size: 17px; }
+.savecode-row { display: flex; gap: 8px; flex-wrap: wrap; }
