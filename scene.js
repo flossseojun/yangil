@@ -154,7 +154,7 @@ const FRIEND_LOOKS = {
   hyunwoo:   { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'glasses' }, prop: 'soccer' },
   jio:       { av: { hair: 'twoblock', hairColor: '#2a2420', skin: '#fcebdf', face: 'wink', acc: 'none' } },
   younggeun: { av: { hair: 'curly', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'glasses' } },
-  sia:       { av: { hair: 'long', hairColor: '#1e1b1a', skin: '#fcebdf', face: 'smile', acc: 'none', build: 'chubby' }, tall: true },
+  sia:       { av: { hair: 'long', hairColor: '#1e1b1a', skin: '#fcebdf', face: 'smile', acc: 'none', build: 'slim' }, tall: true },
   yejunsim:  { av: { hair: 'twoblock', hairColor: '#1e1b1a', skin: '#b97f55', face: 'proud', acc: 'none' }, tall: true },
   jejun:     { av: { hair: 'curly', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'glasses' } },
   sihun:     { av: { hair: 'twoblock', hairColor: '#7a4b2a', skin: '#fcebdf', face: 'smile', acc: 'none', nose: true } },
