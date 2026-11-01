@@ -353,6 +353,7 @@ function endDay() {
   romanceEndDay();
   if (S.partner && S.dayNo % 2 && !S.loveSecret) S.love[S.partner] = clamp(S.love[S.partner] - 1);
   recordDay(holiday);
+  const prevLabel = dateLabel();
   S.day++; S.dayNo++;
   if (S.day > semDays()) {
     pushHistory(S);
@@ -360,6 +361,7 @@ function endDay() {
     save(); render(); return;
   }
   startDay();
+  if (typeof fxDayTurn === 'function') fxDayTurn(prevLabel);
   const today = specialsFor(S.year, S.sem, S.day);
   toast((holiday ? `${holiday}, 하루 푹 쉬었다! 피로 -${sleep}` : caf ? `에너지 음료 때문에 잠을 설쳤다… 밤사이 피로 -${sleep}` : `밤사이 피로 -${sleep}`) + (today.length ? ` · 오늘은 ${today.map(id => specialLabel(id, S.day)).join(', ')}!` : ''));
   render();
@@ -407,6 +409,7 @@ function nextSemester() {
   S.day = 1; S.phase = 'day';
   S.semStart = snapshot();
   beginSemester();
+  if (typeof fxSemesterTitle === 'function') fxSemesterTitle();
 }
 
 const ACTIONS = {
@@ -422,7 +425,15 @@ const ACTIONS = {
 };
 
 // 행동을 고르면 먼저 미니게임을 하고, 결과 배수로 활동 효과가 정해진다
+// 행동 컷인: 고를 대상이 정해진 행동이면 짧은 장면을 보여 준 뒤 진행한다
 function doAction(type, arg) {
+  if (S.ap <= 0 || S.cur || MINI.st) return;
+  const needsPick = (type === 'study' && arg === undefined) || ((type === 'talk' || type === 'explore') && !arg) || (type === 'hangout' && !(arg || '').includes('|'));
+  if (needsPick || typeof fxCutin !== 'function' || UI.cutting) return doActionCore(type, arg);
+  UI.cutting = true; UI.pick = null; render();
+  fxCutin(type, arg, () => { UI.cutting = false; doActionCore(type, arg); });
+}
+function doActionCore(type, arg) {
   if (S.ap <= 0 || S.cur || MINI.st) return;
   if (type === 'study' && arg === undefined) { UI.pick = 'study'; render(); return; }
   if (type === 'talk' && !arg) { UI.pick = 'talk'; render(); return; }
@@ -453,7 +464,7 @@ function sigEventOf(id) {
 }
 function performAction(type, arg, mult = 1, note = '', info = {}) {
   S._sigFrom = null;
-  S._act = type;
+  S._act = type; S._actArg = arg;
   S._eff = (S.fatigue >= 75 ? 0.6 : 1) * (S.slot === 0 && G.has('sleepy') ? 0.6 : 1) * mult * ACT_BOOST;
   const extra = G.has('hot') ? 3 : 0;
   const slotName = SLOTS[S.slot];
@@ -1007,6 +1018,7 @@ function render() {
   $app().dataset.screen = UI.screen;
   renderModal();
   renderTutorial();
+  if (typeof fxAfterRender === 'function') fxAfterRender();
   if (UI.screen === 'ending') afterEndingRender();
   if (UI.screen === 'gallery') afterGalleryRender();
 }
@@ -1173,6 +1185,7 @@ function renderGame() {
       <ol class="slots">${SLOTS.map((n, i) => `<li class="${i < S.slot ? 'done' : i === S.slot && S.ap > 0 ? 'now' : ''}">${n}</li>`).join('')}</ol>
       <p class="menu-strip"><b>오늘의 급식</b> ${todayMenu(S).map(esc).join(' · ')}</p>
       <div class="situation">
+        ${homeSceneHtml()}
         ${res ? `<p class="eyebrow">${esc(res.title)}</p><p class="sit-text">${esc(res.text)}</p>${diffChips(res.diffs)}${notesHtml(res.notes)}`
           : `<p class="eyebrow">현재 상황 · ${S.ap > 0 ? SLOTS[Math.min(S.slot, SLOTS.length - 1)] : '하교'}</p><h2>오늘은 어떻게 보낼까?</h2><p class="sit-text">${S.ap > 0 ? '행동을 하나 고르자. 행동력은 하루 2번.' : '오늘 할 일은 끝났다.'}</p>`}
       </div>
@@ -1432,6 +1445,7 @@ function nextSemesterAfterVacation() {
   S.day = 1; S.phase = 'day';
   S.semStart = snapshot();
   beginSemester();
+  if (typeof fxSemesterTitle === 'function') fxSemesterTitle();
 }
 
 function renderSettings() {
@@ -1442,6 +1456,7 @@ function renderSettings() {
     <div class="settings">
       ${row('miniAuto', '미니게임 자동 넘기기', '퀴즈·타이밍·기억력 미니게임을 건너뛰고 바로 진행한다 (효율 ×0.8, 오답노트 복습은 그대로)', SETTINGS.miniAuto)}
       ${row('fast', '빠른 진행', '이벤트 결과 확인 창을 생략하고 상황판에 바로 보여 준다. 모의고사는 자동으로 응시한다.', SETTINGS.fast)}
+      ${row('fx', '화면 연출', '행동 컷인·숫자 효과·날짜 넘김·계절 효과. 기기의 동작 줄이기가 켜져 있으면 자동으로 꺼진다.', SETTINGS.fx !== false)}
       ${row('sfx', '효과음', '종소리·팡파르 같은 효과음', SFX.on)}
     </div>
     ${saveCodeSection()}
@@ -1630,7 +1645,7 @@ document.addEventListener('click', ev => {
     case 'buy': if (SHOP[arg].gift) { UI.pick = 'gift'; render(); } else buyItem(arg); break;
     case 'gift': buyItem('bread', arg); break;
     case 'settings': UI.screen = 'settings'; render(); break;
-    case 'set-toggle': if (arg === 'sfx') SFX.toggle(); else { SETTINGS[arg] = !SETTINGS[arg]; saveSettings(); } render(); break;
+    case 'set-toggle': if (arg === 'sfx') SFX.toggle(); else if (arg === 'fx') { SETTINGS.fx = SETTINGS.fx === false; saveSettings(); } else { SETTINGS[arg] = !SETTINGS[arg]; saveSettings(); } render(); break;
     case 'cer-next': UI.cer = (UI.cer || 0) + 1; render(); window.scrollTo(0, 0); break;
     case 'cer-end': graduate(); break;
     case 'star': { const st = UI.stars = UI.stars || [], i = +arg, k = st.indexOf(i);
