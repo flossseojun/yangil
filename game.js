@@ -1013,7 +1013,7 @@ function joinButton(cls) {
 }
 
 function render() {
-  const fn = { menu: renderMenu, create: renderCreate, game: renderGame, report: renderReport, ending: renderEnding, gallery: renderGallery, dex: renderDex, school: renderSchool, course: renderCourse, vacation: renderVacation, ceremony: renderCeremony, settings: renderSettings }[UI.screen];
+  const fn = (typeof META_SCREENS !== 'undefined' && META_SCREENS[UI.screen]) || { menu: renderMenu, create: renderCreate, game: renderGame, report: renderReport, ending: renderEnding, gallery: renderGallery, dex: renderDex, school: renderSchool, course: renderCourse, vacation: renderVacation, ceremony: renderCeremony, settings: renderSettings }[UI.screen];
   $app().innerHTML = fn();
   $app().dataset.screen = UI.screen;
   renderModal();
@@ -1074,11 +1074,15 @@ function renderMenu() {
       <div class="chalk-tray"><i></i><i></i><i></i></div>
     </div>
     <button class="ledge-btn" data-act="new">새 인생 시작</button>
+    ${typeof newsBoardHtml === 'function' ? newsBoardHtml() : ''}
     <nav class="lockers" aria-label="메뉴">
       ${[['continue', '이어하기', sv ? `${esc(sv.name)}, ${sv.year}학년 ${sv.sem}학기` : '저장된 게임 없음', !sv],
         ['gallery', '기록 갤러리', `졸업생 ${recs.length}명`],
         ['dex', '도감', `엔딩 ${found}개 발견 (전체 ${ENDINGS.length})`],
         ['daily', '오늘의 주인공', '오늘은 모두 같은 주인공으로'],
+        ['challenge', '그날 속으로', '명장면 챌린지'],
+        ['clubhouse', '동창회', '졸업생 대항전'],
+        ['hall', '명예의 전당', '사연 있는 졸업생'],
         ['school', '학교 안내', `개교 ${new Date().getFullYear() - 1970}주년, 경기도 양평`]].map(([k, name, sub, off], i) => `
       <button class="locker" data-act="${k}" ${off ? 'disabled' : ''}><span class="locker-no">2-${String(i + 1).padStart(2, '0')}</span><span class="vents" aria-hidden="true"></span><span class="nametag"><b>${name}</b><small>${sub}</small></span></button>`).join('')}
     </nav>
@@ -1107,6 +1111,7 @@ function renderCreate() {
         <label class="field-l" for="name-input">이름</label>
         <input id="name-input" class="name-input" maxlength="8" value="${esc(d.name)}" placeholder="이름을 적어 줘" autocomplete="off" required>
         <div class="seg gender" role="radiogroup" aria-label="성별">${Object.entries(GENDER_LABEL).map(([k, l]) => `<button role="radio" aria-checked="${d.gender === k}" class="${d.gender === k ? 'on' : ''}" data-act="gender" data-arg="${k}">${l}</button>`).join('')}</div>
+        ${typeof entryGradeHtml === 'function' ? entryGradeHtml(d.stats) : ''}
         <div class="stats">${STATS.map(k => statBar(STAT_LABEL[k], d.stats[k])).join('')}</div>
       </div>
     </div>
@@ -1595,6 +1600,7 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-act]');
   if (!b || b.disabled) return;
   const act = b.dataset.act, arg = b.dataset.arg;
+  if (typeof metaAction === 'function' && metaAction(act, arg)) return;
   switch (act) {
     case 'new': UI.draft = Object.assign(rollCharacter(), { rerolls: 3, name: '' }); UI.screen = 'create'; render(); document.getElementById('name-input').focus(); break;
     case 'reroll': { const nm = document.getElementById('name-input').value.trim(); const r = UI.draft.rerolls - 1; UI.draft = Object.assign(rollCharacter(nm, UI.draft.gender), { rerolls: r, avatar: UI.draft.avatar, name: nm }); render(); break; }
