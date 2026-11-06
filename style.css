@@ -882,3 +882,17 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .hall-no { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--marker); color: var(--marker-ink, #3a2e00); font-weight: 700; }
 .hall-list p { margin: 4px 0 0; font-size: 14px; } .hall-empty p { margin: 0 0 10px; line-height: 1.7; }
 @media (min-width: 761px) { .lockers { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* 날씨 · 옷장 · 단체사진 */
+.sit-weather { position: absolute; right: 8px; top: 8px; font-size: 11.5px; padding: 2px 9px; border-radius: 99px; background: rgba(0, 0, 0, .45); color: #fff; }
+.weather-line { margin: -4px 0 10px; font-size: 13.5px; color: var(--muted, #5f6b64); }
+.closet-top { display: flex; gap: 12px; align-items: center; margin: 4px 0 8px; }
+.closet-me { flex: 0 0 84px; width: 84px; height: 84px; border-radius: 14px; background: #eef3f7; overflow: hidden; }
+.closet-me svg, .closet-thumb svg { width: 100%; height: 100%; display: block; }
+.closet-slot { margin: 10px 0 6px; font-size: 13px; color: var(--muted, #5f6b64); }
+.closet-item { align-items: center; }
+.closet-thumb { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 10px; background: #eef3f7; overflow: hidden; }
+.closet-item.on { outline: 2px solid #ffd23f; outline-offset: -2px; }
+.group-photo-frame { background: #fff; padding: 8px 8px 22px; border-radius: 6px; box-shadow: 0 10px 26px -14px rgba(0, 0, 0, .5); transform: rotate(-.6deg); max-width: 640px; margin: 8px auto 10px; }
+.group-photo-svg { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; border-radius: 3px; }
+.group-names { text-align: center; line-height: 1.7; }

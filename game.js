@@ -181,7 +181,7 @@ function newGame(d) {
   const mode = d.mode === 'classic' ? 'classic' : 'real';
   if (mode === 'classic') aff.chaerin = 10;
   S = {
-    v: 1, mode, origin: { stats: { ...d.stats }, traits: d.traits, talent: d.talent, daily: d.daily || null }, avatar: d.avatar || randomAvatar(d.gender), name: d.name, gender: d.gender, stats: { ...d.stats }, traits: d.traits, talent: d.talent, talentRevealed: false,
+    v: 1, mode, origin: { stats: { ...d.stats }, traits: d.traits, talent: d.talent, daily: d.daily || null }, avatar: Object.assign({}, d.avatar || randomAvatar(d.gender), { top: null, head: null, neck: null }), closet: [], name: d.name, gender: d.gender, stats: { ...d.stats }, traits: d.traits, talent: d.talent, talentRevealed: false,
     fatigue: 15, year: 1, sem: 1, day: 1, dayNo: 1, ap: AP_MAX, slot: 0,
     met: mode === 'classic' ? { chaerin: true, teacher: true } : { teacher: true }, aff, club: null, clubPts: 0,
     exams: [], flags: {}, seen: {}, recent: [], rare: [], absurd: 0, nicks: [], ach: [],
@@ -1194,7 +1194,7 @@ function renderGame() {
         ${res ? `<p class="eyebrow">${esc(res.title)}</p><p class="sit-text">${esc(res.text)}</p>${diffChips(res.diffs)}${notesHtml(res.notes)}`
           : `<p class="eyebrow">현재 상황 · ${S.ap > 0 ? SLOTS[Math.min(S.slot, SLOTS.length - 1)] : '하교'}</p><h2>오늘은 어떻게 보낼까?</h2><p class="sit-text">${S.ap > 0 ? '행동을 하나 고르자. 행동력은 하루 2번.' : '오늘 할 일은 끝났다.'}</p>`}
       </div>
-      ${UI.pick === 'shop' ? shopPicker() : UI.pick === 'gift' ? giftPicker() : UI.pick === 'title' ? titlePicker() : UI.pick === 'study' ? studyPicker() : UI.pick === 'talk' ? `
+      ${UI.pick === 'shop' ? shopPicker() : UI.pick === 'closet' && typeof closetPicker === 'function' ? closetPicker() : UI.pick === 'gift' ? giftPicker() : UI.pick === 'title' ? titlePicker() : UI.pick === 'study' ? studyPicker() : UI.pick === 'talk' ? `
         <div class="picker"><div class="picker-head"><b>누구와 이야기할까?</b><button class="link" data-act="unpick">취소</button></div>
           <div class="pick-grid">${friends.map(id => `<button class="pick" data-act="talk" data-arg="${id}">${avatar(id)}<span><b>${esc(CHARACTERS[id].name)}${S.partner === id ? ' ♥' : S.crush === id ? ' ♡' : ''}</b><small>${esc(CHARACTERS[id].role)}</small></span></button>`).join('')}</div></div>`
       : UI.pick === 'hangout' ? hangPicker()
@@ -1205,6 +1205,7 @@ function renderGame() {
           <button class="action" data-act="${k}" ${S.ap > 0 ? '' : 'disabled'}><span class="stamp">${a.mark}</span><span><b>${a.label}</b><small>${a.hint}</small></span></button>`).join('')}</div>`}
       <div class="day-end">
         <button class="btn" data-act="shop">매점 · ${won(S.money)}</button>
+        <button class="btn" data-act="closet">옷장</button>
         <button class="btn ${S.ap === 0 ? 'primary' : ''}" data-act="endday">${S.ap === 0 ? '하루 마치기 →' : `하루 일찍 마치기 (남은 행동력 → 휴식)`}</button>
       </div>
     </section>
@@ -1508,6 +1509,13 @@ function renderCeremony() {
     <h2 class="cer-title">3년 추억 앨범</h2>
     ${mem.length ? `<p class="sit-text center">가장 기억에 남는 장면에 ★을 찍어 줘. <b>명장면 ${st.length} / 3</b> · 졸업 카드에 들어가.</p>
     <div class="album">${mem.map((m, i) => `<button type="button" class="polaroid t-${m.type} ${st.includes(i) ? 'starred' : ''}" style="--r:${(i % 4 - 1.5) * 1.6}deg" data-act="star" data-arg="${i}" aria-pressed="${st.includes(i)}"><span class="when">${esc(m.when)}</span><b>${esc(m.title)}</b><span class="cap">${esc(m.choice || '')}</span><span class="star-mark" aria-hidden="true">★</span></button>`).join('')}</div>` : '<p class="sit-text center">앨범이 비어 있다. 조용한 3년이었다.</p>'}
+    <div class="create-actions center"><button class="btn primary big" data-act="${typeof groupPhotoHtml === 'function' ? 'cer-next' : 'cer-end'}">${typeof groupPhotoHtml === 'function' ? '단체사진 찍기 →' : '졸업 엔딩 공개 →'}</button></div>
+  </section>`; }
+  if (step === 3 && typeof groupPhotoHtml === 'function') { S.photo = photoIds(S); return `
+  <section class="ceremony">${head}
+    <h2 class="cer-title">졸업 단체사진</h2>
+    <p class="sit-text center">"자, 다들 모여! 하나, 둘, 셋 — 양일!" 가장 친한 친구일수록 내 옆에 섰다.</p>
+    ${groupPhotoHtml(photoOfState())}
     <div class="create-actions center"><button class="btn primary big" data-act="cer-end">졸업 엔딩 공개 →</button></div>
   </section>`; }
   return '';
