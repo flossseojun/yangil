@@ -17,6 +17,7 @@ function entryGradeHtml(stats) {
 
 /* ───────── 양일고 소식판 (업데이트 소식) ───────── */
 const NEWS = [
+  ['11.11', '명예의 전당 입성 조건 공개: 전설 엔딩 + S등급 + 내신 1점대!'],
   ['11.06', '날씨가 생겼어요(장마·폭염·첫눈) · 매점 옆 옷장 오픈 · 졸업식 단체사진!'],
   ['11.02', '「그날 속으로」 명장면 챌린지 · 동창회 대항전 · 명예의 전당이 열렸어요!'],
   ['11.01', '화면 연출 업데이트: 계절이 바뀌고, 행동할 때 짧은 장면이 나와요'],
@@ -31,11 +32,37 @@ function newsBoardHtml() {
 /* ───────── 명예의 전당 ─────────
    친구들이 보낸 졸업 카드 중에서 골라 직접 적어 넣는다. { name, ending, story, date } */
 const HALL_OF_FAME = [];
+// 명예의 전당 입성 조건: 전설 엔딩 + S등급 + 내신 1점대
+function hallChecks(r) {
+  const rr = typeof rarityOf === 'function' ? rarityOf(r) : null;
+  return [
+    { label: '전설 엔딩', sub: '100명 중 2명 미만이 보는 엔딩', ok: !!rr && rr.tier[0] === '전설', val: rr ? rr.tier[0] : '-' },
+    { label: 'S등급', sub: '졸업 점수 103점 이상', ok: r.rank === 'S', val: `${r.rank}등급` },
+    { label: '내신 1점대', sub: '내신 평균 2.0등급 미만', ok: r.gpa < 2, val: `${r.gpa}등급` },
+  ];
+}
+const hallOk = r => hallChecks(r).every(c => c.ok);
+function hallCheckHtml(r) {
+  const cs = hallChecks(r), n = cs.filter(c => c.ok).length, ok = n === 3;
+  return `<div class="paper hall-check ${ok ? 'in' : ''}">
+    <h3 class="sec-title">${ok ? '🏆 명예의 전당 입성!' : `명예의 전당 도전 · ${n} / 3`}</h3>
+    <ul class="hall-cond">${cs.map(c => `<li class="${c.ok ? 'ok' : ''}"><span>${c.ok ? '✓' : '✗'}</span><b>${c.label}</b><small>${c.sub} · 나: ${esc(c.val)}</small></li>`).join('')}</ul>
+    <p class="fine">${ok ? '세 조건을 모두 채운 진짜 최고 기록이에요! 졸업 카드를 「의견 보내기」로 보내면 명예의 전당에 이름을 올려 드려요.' : n === 2 ? '하나만 더 채우면 명예의 전당이에요!' : '전설 엔딩 · S등급 · 내신 1점대를 한 판에 모두 채우면 명예의 전당에 들어가요.'}</p></div>`;
+}
 function renderHall() {
+  const recs = loadRecords(), mine = recs.filter(hallOk);
+  const near = recs.filter(r => !hallOk(r)).map(r => ({ r, n: hallChecks(r).filter(c => c.ok).length })).filter(x => x.n >= 1).sort((a, b) => b.n - a.n || a.r.gpa - b.r.gpa).slice(0, 3);
+  const row = (r, extra) => `<li><span class="hall-no">${r.rank}</span><div><b>${esc(r.name)}</b><small>${esc(endingOf(r.ending).name)} · 내신 ${r.gpa} · No.${String(r.no).padStart(3, '0')}</small>${extra || ''}</div></li>`;
   return `<section class="dex hall">
-    <header class="sheet-head row"><div><p class="eyebrow">사연 있는 졸업생</p><h2>명예의 전당</h2></div><button class="link" data-act="menu">← 메인으로</button></header>
+    <header class="sheet-head row"><div><p class="eyebrow">진짜 최고 기록</p><h2>명예의 전당</h2></div><button class="link" data-act="menu">← 메인으로</button></header>
+    <div class="paper"><h3 class="sec-title">입성 조건 · 세 가지를 한 판에</h3>
+      <ul class="hall-cond big"><li><span>1</span><b>전설 엔딩</b><small>100명 중 2명 미만이 보는 엔딩</small></li><li><span>2</span><b>S등급</b><small>졸업 점수 103점 이상</small></li><li><span>3</span><b>내신 1점대</b><small>내신 평균 2.0등급 미만</small></li></ul></div>
+    <div class="paper"><h3 class="sec-title">내 졸업생 중 입성 · ${mine.length}명</h3>
+      ${mine.length ? `<ul class="hall-list">${mine.map(r => row(r, '<p>🏆 세 조건 모두 달성</p>')).join('')}</ul>` : '<p class="fine">아직 없어요. 가장 가까웠던 기록은 아래에 있어요.</p>'}
+      ${near.length ? `<h4 class="closet-slot">아깝게 놓친 기록</h4><ul class="hall-list">${near.map(x => row(x.r, `<p>${x.n} / 3 · 못 채운 것: ${hallChecks(x.r).filter(c => !c.ok).map(c => c.label).join(', ')}</p>`)).join('')}</ul>` : ''}</div>
+    <div class="paper"><h3 class="sec-title">헌액된 졸업생</h3>
     ${HALL_OF_FAME.length ? `<ul class="hall-list">${HALL_OF_FAME.map((h, i) => `<li><span class="hall-no">${i + 1}</span><div><b>${esc(h.name)}</b><small>${esc(h.ending)} · ${esc(h.date || '')}</small><p>${esc(h.story)}</p></div></li>`).join('')}</ul>`
-      : `<div class="paper hall-empty"><p><b>아직 헌액된 졸업생이 없어요.</b></p><p>졸업 화면에서 「결과 공유하기」로 카드를 만든 뒤, 「의견 보내기」로 졸업 카드와 3년의 사연을 보내 주세요. 골라서 이곳에 이름을 올려 드려요.</p>${feedbackButton('btn primary')}</div>`}
+      : `<p><b>아직 헌액된 졸업생이 없어요.</b></p><p class="fine">세 조건을 모두 채웠다면 졸업 화면에서 카드를 만든 뒤, 「의견 보내기」로 졸업 카드를 보내 주세요. 확인해서 이곳에 이름을 올려 드려요.</p>${feedbackButton('btn primary')}`}</div>
   </section>`;
 }
 

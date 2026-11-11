@@ -896,3 +896,13 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .group-photo-frame { background: #fff; padding: 8px 8px 22px; border-radius: 6px; box-shadow: 0 10px 26px -14px rgba(0, 0, 0, .5); transform: rotate(-.6deg); max-width: 640px; margin: 8px auto 10px; }
 .group-photo-svg { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; border-radius: 3px; }
 .group-names { text-align: center; line-height: 1.7; }
+
+/* 명예의 전당 조건 */
+.hall-cond { list-style: none; margin: 6px 0 8px; padding: 0; display: grid; gap: 6px; }
+.hall-cond li { display: grid; grid-template-columns: 26px 1fr; column-gap: 8px; align-items: center; padding: 6px 10px; border-radius: 10px; background: rgba(0, 0, 0, .04); }
+.hall-cond li span { grid-row: span 2; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: #d9534f; color: #fff; font-weight: 700; font-size: 13px; }
+.hall-cond li.ok span, .hall-cond.big li span { background: #2b4a3c; }
+.hall-cond li.ok { background: rgba(255, 210, 63, .25); }
+.hall-cond small { color: var(--muted, #5f6b64); font-size: 12px; }
+.hall-check.in { border: 2px solid #ffd23f; background: linear-gradient(#fffbe8, #fff); }
+.hall-list li small { display: block; }

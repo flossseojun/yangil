@@ -84,6 +84,7 @@ function renderEnding() {
         <p class="fine">다운로드가 막혀 있으면 카드 이미지를 길게 누르거나 우클릭해서 저장하세요.</p>
       </div>
     </div>
+    ${typeof hallCheckHtml === 'function' ? hallCheckHtml(r) : ''}
     ${renderNewspaper(r)}
     ${renderBest(r)}
     ${r.photo && typeof groupPhotoHtml === 'function' ? groupPhotoHtml(photoOfRecord(r)) : ''}
