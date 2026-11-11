@@ -2,7 +2,7 @@
 // 판마다 일부만 뽑혀 나오고(pickRoster), club이 있는 친구는 그 자율동아리에 들면 꼭 만난다.
 const MORE_CAMEOS = {
   jiyong:    { name: '신지용', role: '버터구이 · 알 인큐베이터 연구가', color: '#c98a2b', club: 'squid', desc: '버터구이 부원이자 공학부. 알 인큐베이터를 직접 만드는 게 꿈이자 취미다.', title: '부화 동지' },
-  geonwoo:   { name: '박건우', role: '알파카 인형을 든 알파카상', color: '#3b5bab', desc: '알파카 인형 "파카"를 늘 들고 다닌다. 본인도 알파카를 닮았고, 세상에서 알파카를 제일 좋아한다.', title: '알파카즈 멤버' },
+  geonwoo:   { name: '박건우', role: '연 매출 1000억 고딩 사업가', color: '#3b5bab', desc: '고등학생인데 벌써 연 매출 1000억 원짜리 회사의 대표다. 쉬는 시간엔 화상 회의를 하고, 회사 로고는 알파카다. 알파카 인형 "파카"를 늘 들고 다니고, 본인도 알파카를 닮았다.', title: '1000억 사장님' },
   yunsu:     { name: '송윤수', role: '포켓몬 챔피언스 결투의 대장', color: '#2a8fbf', desc: '포켓몬 챔피언스 배틀이라면 학교에서 아무도 못 이긴다. 역전할 때마다 외치는 명대사는 "지옥에서 누가 돌아왔게?"', title: '결투의 동반자' },
   eunseong:  { name: '천은성', role: '운동장의 에너자이저', color: '#e86a5c', desc: '활발하고 착하고 운동까지 잘한다. 은성이가 있으면 체육 시간이 축제가 된다.', title: '운동장 메이트' },
   yunbo:     { name: '심윤보', role: '수학 모의고사 전교 1등', color: '#5b6fa8', desc: '2학년 수학 모의고사 전교 1등. 어려운 문제도 보조선 하나로 끝낸다.', title: '수학 제자' },
@@ -986,7 +986,7 @@ const TALK_LINES = [
 const TALK_SIG = {
   ryun: ['어… 나 오늘 약속이 두 개인 것 같은데. 괜찮아, 동선 다 짜 놨어.', 'likes:curious'], seojun: ['오늘의 포켓몬 퀴즈! 151번은?', 'likes:playful'], yejun: ['오늘 그늘 명당은 은행나무길 세 번째 벤치야.', 'likes:sincere'],
   mingyeol: ['방금 생각난 개그 있는데 들어 볼래?', 'likes:playful'], jaewon: ['오늘 운동장에 비둘기 없지? 확인 좀…', 'likes:sincere'], jiyong: ['인큐베이터 온도 25도 유지 중. 적정 온도 딱이야.', 'likes:curious'],
-  geonwoo: ['파카가 오늘 너 보고 싶대. 진짜야.', 'likes:playful'], yunsu: ['포켓몬 챔피언스 한 판? 오늘도 내가 이긴다.', 'likes:playful'], eunseong: ['내일 아침에도 같이 뛰자!', 'likes:playful'],
+  geonwoo: ['방금 회의 끝났어. 오늘 매출? 비밀. 파카가 너 보고 싶대.', 'likes:playful'], yunsu: ['포켓몬 챔피언스 한 판? 오늘도 내가 이긴다.', 'likes:playful'], eunseong: ['내일 아침에도 같이 뛰자!', 'likes:playful'],
   yunbo: ['이 문제 보조선 하나면 끝나.', 'likes:sincere'], isan: ['오늘 스쿼트 했어? 자세 봐 줄게!', 'likes:playful'], soyul: ['높은 데 물건 필요하면 말해.', 'likes:sincere'],
   siwoo: ['매점 리모델링 도면 2차 수정본 나왔어.', 'likes:curious'], hyunwoo: ['어제 경기 봤어? 그 역전골 전술적으로 완벽했어.', 'likes:curious'], jio: ['점심에 공 차자. 크로스 올려 줄게.', 'likes:playful'],
   younggeun: ['Knock knock. 영어 개그 하나 간다.', 'likes:playful'], sia: ['오늘 밤 맑대. 목성 보일 거야.', 'likes:curious'], yejunsim: ['회의 5분 만에 끝내는 법 알려 줄까?', 'likes:sincere'],
