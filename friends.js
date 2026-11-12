@@ -16,8 +16,8 @@ const MORE_CAMEOS = {
 Object.assign(CAMEOS, MORE_CAMEOS);
 CAMEO_IDS.push(...Object.keys(MORE_CAMEOS));
 
-// 실제 친구 모드는 6명이 주인공 친구, 연애 모드는 4명이 조연(+선배·후배)
-const ROSTER_SIZE = { real: 6, classic: 4 };
+// 실제 친구 모드는 12명이 주인공 친구, 연애 모드는 4명이 조연(+선배·후배)
+const ROSTER_SIZE = { real: 12, classic: 4 };
 function pickRoster(mode = 'real') {
   return CAMEO_IDS.filter(id => !CAMEOS[id].fixed).sort(() => Math.random() - 0.5).slice(0, ROSTER_SIZE[mode] || 8);
 }

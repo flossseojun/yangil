@@ -170,10 +170,10 @@ function wearItem(id) {
 /* ───────── 3. 졸업 단체사진 ───────── */
 // 가장 친한 친구가 내 바로 옆에, 그다음은 바깥쪽과 뒷줄로 선다
 function photoIds(s) {
-  return Object.keys(CHARACTERS).filter(id => s.met[id] && !CHARACTERS[id].isTeacher && id !== 'teacher').sort((a, b) => s.aff[b] - s.aff[a]).slice(0, 10);
+  return Object.keys(CHARACTERS).filter(id => s.met[id] && !CHARACTERS[id].isTeacher && id !== 'teacher').sort((a, b) => s.aff[b] - s.aff[a]).slice(0, 11);
 }
 function photoLayout(ids) {
-  const front = ids.slice(0, 4), back = ids.slice(4, 10);
+  const front = ids.slice(0, 4), back = ids.slice(4, 11);
   // 앞줄: [3, 1, 나, 0, 2]
   const order = [front[3], front[1], 'ME', front[0], front[2]].filter(Boolean);
   const backOrder = []; back.forEach((id, i) => i % 2 ? backOrder.unshift(id) : backOrder.push(id));
@@ -189,7 +189,7 @@ function groupPhotoSVG(p) {
     const extra = id === 'ME' ? `<g transform="translate(${cx + sz * .3} ${yBase - sz * .22})"><path d="M-9 -16 L0 4 L9 -16Z" fill="#7fbf6a"/><circle cx="-5" cy="-17" r="5" fill="#ff8fab"/><circle cx="5" cy="-18" r="5" fill="#ffd23f"/><circle cx="0" cy="-23" r="5" fill="#fff"/><circle cx="0" cy="-15" r="4.5" fill="#ff6f91"/></g><g transform="translate(${cx - sz * .32} ${yBase - sz * .16}) rotate(-25)"><rect x="-12" y="-3.5" width="24" height="7" rx="3.5" fill="#f4ecd8" stroke="#c9b48a"/><rect x="-2" y="-3.5" width="4" height="7" fill="#c23b2e"/></g>` : '';
     return svg + extra;
   };
-  const bSlots = back.map((_, i) => W / 2 + (i - (back.length - 1) / 2) * 52);
+  const bSlots = back.map((_, i) => W / 2 + (i - (back.length - 1) / 2) * (back.length > 6 ? 46 : 52));
   const fSlots = order.map((_, i) => W / 2 + (i - (order.length - 1) / 2) * 66);
   return `<svg class="group-photo-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="졸업 단체사진" xmlns="http://www.w3.org/2000/svg">
     <defs><linearGradient id="gp-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd4f5"/><stop offset="1" stop-color="#e9f6fd"/></linearGradient></defs>
