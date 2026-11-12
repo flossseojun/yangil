@@ -14,7 +14,11 @@ const NICK_KEY = 'yangil.nick';
 const BAD_WORDS = ['시발', '씨발', 'ㅅㅂ', '병신', 'ㅂㅅ', '개새', '좆', '존나', '니애미', '느금', '애미', '애비', '썅', 'fuck', 'shit'];
 
 const RANK = { ready: null, db: null, uid: null, err: '', cache: {}, loading: {} };
-const nickOf = () => { try { return localStorage.getItem(NICK_KEY) || ''; } catch (e) { return ''; } };
+// 닉네임은 기기에 저장한다. 저장이 막힌 브라우저에서는 이번 접속 동안만 기억한다.
+const nickOf = () => { try { return localStorage.getItem(NICK_KEY) || RANK.memNick || ''; } catch (e) { return RANK.memNick || ''; } };
+function setNick(v) { RANK.memNick = v; try { localStorage.setItem(NICK_KEY, v); } catch (e) {} }
+// 랭킹에 올릴 기록: 새 점수 계산(난이도 조정 뒤)으로 만든 기록만 (sv 2 이상)
+const rankable = r => (r.sv || 0) >= 2 && !r.rankSent;
 function nickProblem(n) {
   n = (n || '').trim();
   if (n.length < 2 || n.length > 10) return '닉네임은 2~10자로 적어 줘';
@@ -40,7 +44,7 @@ function rankInit() {
 // 졸업 기록 올리기: 점수 기록 1개 + 내 엔딩 수집 현황(한 사람당 문서 1개)을 한 번에 쓴다
 async function rankSubmit(rec) {
   const nick = nickOf();
-  if (!FIREBASE_CONFIG || !nick || !rec || rec.rankSent) return;
+  if (!FIREBASE_CONFIG || !nick || !rec || !rankable(rec)) return false;
   if (!(await rankInit())) return;
   const dex = loadDex(), endings = Object.keys(dex.endings || {}).filter(id => typeof endingOf === 'function' && endingOf(id)).slice(0, 30);
   const hall = typeof hallOk === 'function' ? hallOk(rec) : false;
@@ -50,8 +54,23 @@ async function rankSubmit(rec) {
   try {
     await b.commit();
     rec.rankSent = true; markRecordSent(rec.no); RANK.cache = {};
-    toast(`랭킹에 올렸어 · ${rec.score}점`);
-  } catch (e) { console.warn(e); toast('랭킹에 올리지 못했어. 잠시 뒤 랭킹 화면에서 다시 올려 줘'); }
+    if (!quietRank) toast(`랭킹에 올렸어 · ${rec.score}점`);
+    return true;
+  } catch (e) { console.warn(e); return false; }
+}
+// 아직 못 올린 기록을 오래된 것부터 하나씩 자동으로 올린다 (서버 규칙상 20초에 한 번)
+let quietRank = false;
+function rankDrain(delay = 3000) {
+  if (!FIREBASE_CONFIG || !nickOf() || RANK.draining) return;
+  RANK.draining = true;
+  const step = async () => {
+    const next = loadRecords().filter(rankable).sort((a, b) => a.no - b.no)[0];
+    if (!next || !nickOf()) { RANK.draining = false; return; }
+    quietRank = true; await rankSubmit(next); quietRank = false;
+    if (UI.screen === 'hall' || UI.screen === 'ending') render();
+    setTimeout(step, 21000);
+  };
+  setTimeout(step, delay);
 }
 function markRecordSent(no) { const recs = loadRecords(); const r = recs.find(x => x.no === no); if (r) { r.rankSent = true; store.set(REC_KEY, recs); } }
 
@@ -90,7 +109,16 @@ function nickBoxHtml(context) {
 function rankEndingHtml(r) {
   if (!FIREBASE_CONFIG) return '';
   if (!nickOf()) return nickBoxHtml('ending');
-  return `<p class="fine rank-status">${r.rankSent ? `랭킹에 올라갔어요 · 닉네임 ${esc(nickOf())}` : `랭킹에 올리는 중… · 닉네임 ${esc(nickOf())}`} · <button class="link" data-act="hall" data-arg="score">랭킹 보기</button></p>`;
+  return `<p class="fine rank-status">${r.rankSent ? `랭킹에 올라갔어요 · ${esc(nickOf())}` : `랭킹에 올리는 중… 인터넷이 연결되면 자동으로 올라가요 · ${esc(nickOf())}`} · <button class="link" data-act="hall" data-arg="score">랭킹 보기</button></p>`;
+}
+// 게임을 시작하기 전에 닉네임부터 정한다
+function renderNickGate() {
+  return `<section class="dex nick-gate">
+    <header class="sheet-head row"><div><p class="eyebrow">입학 전에 하나만</p><h2>랭킹 닉네임 정하기</h2></div><button class="link" data-act="menu">← 메인으로</button></header>
+    <div class="paper"><p>졸업할 때마다 기록이 이 닉네임으로 <b>랭킹에 자동으로</b> 올라가요. 실명 대신 별명을 써도 돼요.</p>
+      <div class="nick-row"><input id="nick-input" maxlength="10" placeholder="2~10자" value="${esc(nickOf())}" autofocus><button class="btn primary" data-act="nick-save" data-arg="gate">정하고 시작하기</button></div>
+      <p class="fine">닉네임은 나중에 랭킹 화면에서 바꿀 수 있어요. 기기(브라우저)마다 따로 저장돼요.</p></div>
+  </section>`;
 }
 
 function renderRankHall() {
@@ -115,8 +143,8 @@ function renderRankHall() {
       return `<li class="rank-row${meCls}"><span class="rank-no${i < 3 && tab !== 'hall' ? ' top' + (i + 1) : ''}">${tab === 'hall' ? '🏆' : i + 1}</span><div><b>${esc(x.nick)}${x.uid === me ? ' (나)' : ''}</b><small>${sub}</small></div>${right}</li>`;
     }).join('')}</ol>`;
     // 아직 못 올린 내 기록 다시 올리기
-    const unsent = nickOf() ? loadRecords().filter(r => !r.rankSent).slice(0, 1) : [];
-    if (unsent.length) body += `<p class="fine">아직 랭킹에 안 올라간 기록이 있어요. <button class="link" data-act="rank-retry" data-arg="${unsent[0].no}">${esc(unsent[0].name)} · ${unsent[0].score}점 올리기</button></p>`;
+    const unsent = nickOf() ? loadRecords().filter(rankable).length : 0;
+    if (unsent) { body += `<p class="fine">아직 안 올라간 기록 ${unsent}개를 자동으로 올리는 중이에요 (20초에 하나씩).</p>`; rankDrain(500); }
     if (nickOf()) body += `<p class="fine">닉네임 ${esc(nickOf())} · <button class="link" data-act="nick-edit">바꾸기</button></p>`;
   }
   if (tab === 'hall') {
@@ -128,25 +156,30 @@ function renderRankHall() {
 }
 
 META_SCREENS.hall = () => renderRankHall();
+META_SCREENS.nick = () => renderNickGate();
 const _rankMeta = metaAction;
 metaAction = function (act, arg) {
   if (act === 'hall' && arg) { UI.rankTab = arg; UI.screen = 'hall'; render(); window.scrollTo(0, 0); return true; }
   if (act === 'rank-tab') { UI.rankTab = arg; render(); return true; }
-  if (act === 'nick-edit') { try { localStorage.removeItem(NICK_KEY); } catch (e) {} render(); return true; }
+  // 닉네임 없이 게임을 시작하려 하면 닉네임 화면으로 보낸다
+  if (FIREBASE_CONFIG && !nickOf() && (act === 'new' || act === 'continue' || act === 'daily')) { UI.afterNick = act; UI.screen = 'nick'; render(); window.scrollTo(0, 0); return true; }
+  if (act === 'nick-edit') { RANK.memNick = ''; try { localStorage.removeItem(NICK_KEY); } catch (e) {} render(); return true; }
   if (act === 'nick-save') {
     const v = (document.getElementById('nick-input') || {}).value || '', why = nickProblem(v);
     if (why) { toast(why); return true; }
-    try { localStorage.setItem(NICK_KEY, v.trim()); } catch (e) { toast('이 브라우저에서는 닉네임을 저장할 수 없어요'); return true; }
-    toast('닉네임을 저장했어');
-    if (arg === 'ending' && UI.rec) rankSubmit(UI.rec).then(() => render()); else render();
+    setNick(v.trim()); toast('닉네임을 정했어');
+    rankDrain(1000);
+    if (arg === 'gate') { const go = UI.afterNick || 'new'; UI.afterNick = null; UI.screen = 'menu'; render(); const btn = document.querySelector(`[data-act="${go}"]`); if (btn) btn.click(); }
+    else render();
     return true;
   }
-  if (act === 'rank-retry') { const r = loadRecords().find(x => x.no === +arg); if (r) rankSubmit(r).then(() => render()); return true; }
   return _rankMeta(act, arg);
 };
 // 졸업하면 자동으로 올린다
 const _rankGraduate = graduate;
 graduate = function () {
   _rankGraduate();
-  if (UI.rec && FIREBASE_CONFIG && nickOf()) rankSubmit(UI.rec).then(() => { if (UI.screen === 'ending') render(); });
+  if (UI.rec && FIREBASE_CONFIG && nickOf()) rankSubmit(UI.rec).then(() => { if (UI.screen === 'ending') render(); rankDrain(21000); });
 };
+// 접속할 때 못 올린 기록이 있으면 자동으로 올린다
+if (FIREBASE_CONFIG && nickOf()) rankDrain(4000);

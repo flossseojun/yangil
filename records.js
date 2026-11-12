@@ -18,7 +18,7 @@ function saveRecord(s, j) {
     friends, ach: s.ach.slice(), rare: s.rare.slice(), nicks: s.nicks.slice(), club: s.club, absurd: s.absurd,
     bestExam: s.exams.reduce((a, e) => Math.max(a, e.score), 0), date: new Date().toISOString(),
     track: s.track, electives: s.electives, autoClub: s.autoClub, setuk: (s.setuk || []).length, setukTop: (s.setuk || []).slice(-2).map(x => x.text),
-    photo: s.photo || null, history: (s.history || []).slice(), bloom: !!s.flags.bloomed, legend: legendOf(s),
+    sv: 2, photo: s.photo || null, history: (s.history || []).slice(), bloom: !!s.flags.bloomed, legend: legendOf(s),
     days: (s.days || []).map(d => ({ y: d.y, s: d.s, date: d.date, k: d.k, rare: d.rare, n: d.n, a: d.a, h: d.h })), best: (s.best || []).slice(0, 3),
     college: s.college, daily: s.daily, memories: albumPicks(s.memories || [], 8), rolling: rollingList(s).filter(r => r.id !== 'teacher').slice(0, 4).map(r => ({ name: r.name, msg: r.msg })), title: TITLES[s.title || 'newbie'].name, titleCount: (s.titles || []).length, cameo: Object.assign({}, s.cameo || {}), president: s.flags.president ? 'president' : s.flags.vicePresident ? 'vice' : null, council: s.council ? COUNCIL_DEPTS[s.council].name : null, partner: s.partner ? { id: s.partner, love: s.love[s.partner], secret: !!s.loveSecret } : null, scale: 5, suneung: s.suneung ? s.suneung.grade : null, gradNo: SCHOOL.lastGradNo + (2026 + 2 - SCHOOL.lastGradYear),
   };
