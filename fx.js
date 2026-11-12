@@ -29,12 +29,15 @@ const ACT_BG = { study: 'library', exercise: 'field', talk: 'hallway', rest: 'ro
 const ACT_PROP = { study: 'pencil', exercise: 'whistle', explore: 'magnifier', talk: 'bubble', rest: 'zzz', club: 'note', auto: 'flask', council: 'clipboard', hangout: 'bubble' };
 function homeScene() {
   const d = dateOf(S.year, S.sem, S.day), season = seasonOf(d.getMonth() + 1), done = S.ap <= 0;
-  let bg = S.slot >= 1 ? 'ginkgo' : 'classroom', cast = [{ me: true, av: S.avatar || randomAvatar(S.gender) }];
+  // 행동 결과에 맞춘 내 표정·몸짓
+  const ACT_MOOD = { exercise: { expr: 'laugh', pose: 'cheer' }, rest: { expr: 'sleepy' }, study: { expr: 'proud' }, talk: { expr: 'laugh' }, hangout: { expr: 'laugh', pose: 'v' }, explore: { expr: 'surprised' }, club: { expr: 'smile', pose: 'v' } };
+  const myMood = S.fatigue >= 75 ? { expr: 'sleepy' } : S.result && S._act && ACT_MOOD[S._act] ? ACT_MOOD[S._act] : {};
+  let bg = S.slot >= 1 ? 'ginkgo' : 'classroom', cast = [{ me: true, av: S.avatar || randomAvatar(S.gender), ...myMood }];
   const r = S.result, act = r && S._act;
   if (act) {
     bg = act === 'explore' && typeof LOC_BG !== 'undefined' ? LOC_BG[S._actArg] || 'hallway' : ACT_BG[act] || bg;
     const fid = act === 'talk' || act === 'hangout' ? String(S._actArg || '').split('|')[0] : null;
-    if (fid && CHARACTERS[fid] && fid !== 'teacher') cast.push({ id: fid });
+    if (fid && CHARACTERS[fid] && fid !== 'teacher') cast.push({ id: fid, expr: 'laugh', pose: act === 'talk' ? 'wave' : null });
   }
   if (!act && specialsFor(S.year, S.sem, S.day).includes('exam')) bg = 'classroom';
   let svg = sceneSVG({ bg, cast, label: `${SEASON_NAME[season]} · ${SCENE_BG_NAME[bg] || ''} 장면` });

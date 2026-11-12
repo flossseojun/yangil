@@ -1100,7 +1100,7 @@ function renderMenu() {
 }
 
 const MODES = {
-  real: { name: '실제 친구 모드', desc: '친구가 전부 실제 친구들이야. 판마다 6명이 뽑힌다. 연애는 없다.' },
+  real: { name: '실제 친구 모드', desc: '친구가 전부 실제 친구들이야. 판마다 12명이 뽑힌다. 연애는 없다.' },
   classic: { name: '연애 모드', desc: '가상 친구 4명과 우정·연애. 실제 친구들은 우정 에피소드에 조연으로 나온다.' },
 };
 UI.mode = (() => { try { return localStorage.getItem('yangil.mode') === 'classic' ? 'classic' : 'real'; } catch (e) { return 'real'; } })();

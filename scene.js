@@ -191,7 +191,7 @@ function sceneSVG({ bg = 'classroom', cast = [], extras = [], label = '장면' }
   const people = cast.map((c, i) => {
     const look = c.me ? { av: c.av, me: true } : lookOf(c.id);
     const size = (look.tall ? 128 : look.small ? 96 : 108) * (n >= 3 ? .92 : 1), x = slots[i] - size / 2, y = H - size + 4;
-    let svg = avatarSVG(look.av, '').replace('<svg class="avatar-svg"', `<svg x="${x}" y="${y}" width="${size}" height="${size}"`);
+    let svg = avatarSVG(look.av, '', { expr: c.expr, pose: c.pose }).replace('<svg class="avatar-svg"', `<svg x="${x}" y="${y}" width="${size}" height="${size}"`);
     if (look.jacket) svg = svg.replace('fill="#2e3f63"', `fill="${look.jacket}"`);
     const shadow = `<ellipse cx="${slots[i]}" cy="${H - 2}" rx="${size * .34}" ry="5" fill="#000" opacity=".18"/>`;
     const prop = look.prop && PROPS[look.prop] ? PROPS[look.prop](slots[i] + size * 0.36, y + size * 0.72) : '';
@@ -215,6 +215,25 @@ function sceneBgFor(e, text) {
   const hit = SCENE_WORDS.find(([re]) => re.test(t));
   return hit ? hit[1] : e.type === 'story' ? 'hallway' : 'classroom';
 }
+// 사건의 종류와 글을 보고 나와 친구의 표정·몸짓을 고른다 (앞에 있는 규칙이 먼저)
+const MOOD_RULES = [
+  [/울었|눈물|울먹|서운|아쉽|졌다|떨어졌|망했/, { me: { expr: 'sad' }, friend: { expr: 'sad' } }],
+  [/화가|짜증|버럭|씩씩거|노려/, { me: { expr: 'embarrassed' }, friend: { expr: 'angry' } }],
+  [/합격|우승|이겼|1등|축하|해냈|완판|골!|성공/, { me: { expr: 'laugh', pose: 'cheer' }, friend: { expr: 'laugh', pose: 'v' } }],
+  [/설레|두근|좋아해|고백|하트/, { me: { expr: 'love' }, friend: { expr: 'embarrassed' } }],
+  [/깜짝|갑자기|헉|으악|비명|얼어붙|나타났/, { me: { expr: 'surprised' }, friend: { expr: 'surprised' } }],
+  [/당황|땀|어색|민망|모른 척/, { me: { expr: 'embarrassed' }, friend: { expr: 'laugh' } }],
+  [/졸|하품|피곤|낮잠/, { me: { expr: 'sleepy' }, friend: { expr: 'smile' } }],
+  [/안녕|반가|처음 만|손을 흔/, { me: { expr: 'smile' }, friend: { expr: 'smile', pose: 'wave' } }],
+  [/사진|찰칵|셀카|브이/, { me: { expr: 'wink', pose: 'v' }, friend: { expr: 'laugh', pose: 'v' } }],
+  [/웃|ㅋㅋ|장난|농담|최고/, { me: { expr: 'laugh' }, friend: { expr: 'laugh' } }],
+];
+function sceneMood(e, text) {
+  const t = (typeof e.title === 'string' ? e.title : '') + ' ' + (text || '');
+  const hit = MOOD_RULES.find(([re]) => re.test(t));
+  let m = hit ? hit[1] : e.type === 'absurd' || e.type === 'rare' ? { me: { expr: 'surprised' }, friend: { expr: 'laugh' } } : e.type === 'love' ? { me: { expr: 'embarrassed' }, friend: { expr: 'smile' } } : { me: {}, friend: {} };
+  return { me: m.me || {}, friend: m.friend || {}, friend2: m.friend || {} };
+}
 // 게임 사건 창의 장면: 나 + 등장 친구(합동 장면이면 두 명)
 function sceneFor(e, c, who, text) {
   // 체육한마당 계주 · Y리그 결승은 위에서 내려다본 중계 화면
@@ -224,7 +243,8 @@ function sceneFor(e, c, who, text) {
   else if (c && c.a && c.b && CHARACTERS[c.a] && CHARACTERS[c.b]) ids.push(c.a, c.b);
   else if (who && who !== 'teacher') ids.push(who);
   const meAv = S.avatar || randomAvatar(S.gender);
-  const cast = ids.length === 2 ? [{ id: ids[0] }, { me: true, av: meAv }, { id: ids[1] }] : [{ me: true, av: meAv }].concat(ids.map(id => ({ id })));
+  const mood = sceneMood(e, text);
+  const cast = ids.length === 2 ? [{ id: ids[0], ...mood.friend }, { me: true, av: meAv, ...mood.me }, { id: ids[1], ...mood.friend2 }] : [{ me: true, av: meAv, ...mood.me }].concat(ids.map(id => ({ id, ...(/비둘기/.test(text) && id === 'jaewon' ? { expr: 'surprised' } : mood.friend) })));
   const extras = [];
   if (/비둘기/.test(text)) extras.push('pigeons');
   if (/할리/.test(text)) extras.push('motorcycle');

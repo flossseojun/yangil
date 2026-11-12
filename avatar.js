@@ -24,7 +24,7 @@ const AVATAR_KEYS = Object.keys(AVATAR_PARTS);
 
 function randomAvatar(gender, rng = Math.random) {
   const P = arr => arr[Math.floor(rng() * arr.length)].id;
-  const hairs = gender === 'f' ? ['bob', 'long', 'ponytail', 'short', 'curly'] : ['short', 'twoblock', 'curly', 'buzz', 'bob'];
+  const hairs = gender === 'f' ? ['bob', 'long', 'ponytail', 'short', 'curly', 'bangs', 'halfup', 'twintail', 'bun'] : ['short', 'twoblock', 'curly', 'buzz', 'bob', 'side', 'center', 'wolf', 'spiky'];
   return { hair: hairs[Math.floor(rng() * hairs.length)], hairColor: rng() < 0.75 ? P(AVATAR_PARTS.hairColor.slice(0, 3)) : P(AVATAR_PARTS.hairColor),
     skin: P(AVATAR_PARTS.skin.slice(0, 3)), face: P(AVATAR_PARTS.face), acc: rng() < 0.6 ? 'none' : P(AVATAR_PARTS.acc) };
 }
