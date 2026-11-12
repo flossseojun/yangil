@@ -414,14 +414,14 @@ function nextSemester() {
 
 const ACTIONS = {
   study:    { label: '자습하기', mark: '공', hint: '과목 선택 · 공부↑ · 피로↑' },
-  talk:     { label: '친구와 대화', mark: '話', hint: '친밀도 · 사교성↑' },
+  talk:     { label: '친구와 대화', mark: '말', hint: '친밀도 · 사교성↑' },
   rest:     { label: '휴식하기', mark: '쉼', hint: '피로 회복' },
-  exercise: { label: '운동하기', mark: '體', hint: '체력↑ · 피로↑' },
-  explore:  { label: '학교 탐험', mark: '探', hint: '장소 이벤트 · 비밀' },
-  club:     { label: '동아리 활동', mark: '部', hint: '전문 능력 · 발표회 준비' },
-  auto:     { label: '자율동아리', mark: '自', hint: '이과 탐구 · 세특 · 진로' },
-  council:  { label: '학생회 활동', mark: '會', hint: '행사 운영 · 평판↑ · 선거에 유리' },
-  hangout:  { label: '약속 잡기', mark: '約', hint: '친구와 방과후·주말 약속 · 친밀도↑↑' },
+  exercise: { label: '운동하기', mark: '운', hint: '체력↑ · 피로↑' },
+  explore:  { label: '학교 탐험', mark: '탐', hint: '장소 이벤트 · 비밀' },
+  club:     { label: '동아리 활동', mark: '부', hint: '전문 능력 · 발표회 준비' },
+  auto:     { label: '자율동아리', mark: '자', hint: '이과 탐구 · 세특 · 진로' },
+  council:  { label: '학생회 활동', mark: '회', hint: '행사 운영 · 평판↑ · 선거에 유리' },
+  hangout:  { label: '약속 잡기', mark: '약', hint: '친구와 방과후·주말 약속 · 친밀도 크게↑' },
 };
 
 // 행동을 고르면 먼저 미니게임을 하고, 결과 배수로 활동 효과가 정해진다
@@ -1008,6 +1008,14 @@ function renderRestart() {
 function closeTutorial() { UI.tut = null; try { localStorage.setItem(TUT_KEY, '1'); } catch (e) {} renderTutorial(); }
 
 // 출연 신청: 구글 폼 주소가 있으면 새 탭으로 연다
+// 위쪽 바의 작은 선 아이콘 (16px, 선 굵기 1.5)
+const UI_SVG = d => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const UI_ICON = {
+  help: UI_SVG('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/>'),
+  sound: UI_SVG('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>'),
+  mute: UI_SVG('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6"/><path d="m21 9-5 6"/>'),
+  music: UI_SVG('<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>'),
+};
 function joinButton(cls) {
   return JOIN_FORM_URL ? `<a class="${cls}" href="${esc(JOIN_FORM_URL)}" target="_blank" rel="noopener">나도 출연 신청</a>` : `<button class="${cls}" data-act="join">나도 출연 신청</button>`;
 }
@@ -1157,9 +1165,9 @@ function renderGame() {
     <div class="ap" aria-label="행동력 ${S.ap} / ${AP_MAX}">${Array.from({ length: AP_MAX }, (_, i) => `<i class="${i < S.ap ? 'on' : ''}"></i>`).join('')}<span>${S.ap} / ${AP_MAX}</span></div>
     <div class="top-tools">
     <button class="sfx-btn" data-act="restart-ask" aria-label="처음부터 다시 시작">다시 시작</button>
-    <button class="sfx-btn" data-act="tut-open" aria-label="게임 설명 다시 보기">도움말</button>
-    <button class="sfx-btn" data-act="sfx" aria-pressed="${SFX.on}">소리 ${SFX.on ? '켜짐' : '꺼짐'}</button>
-    <button class="sfx-btn" data-act="bgm" aria-pressed="${BGM.on}">음악 ${BGM.on ? '켜짐' : '꺼짐'}</button>
+    <button class="sfx-btn icon" data-act="tut-open" aria-label="게임 설명 다시 보기" title="도움말">${UI_ICON.help}</button>
+    <button class="sfx-btn icon" data-act="sfx" aria-pressed="${SFX.on}" aria-label="효과음 ${SFX.on ? '켜짐' : '꺼짐'}" title="효과음 ${SFX.on ? '켜짐' : '꺼짐'}">${SFX.on ? UI_ICON.sound : UI_ICON.mute}</button>
+    <button class="sfx-btn icon" data-act="bgm" aria-pressed="${BGM.on}" aria-label="음악 ${BGM.on ? '켜짐' : '꺼짐'}" title="음악 ${BGM.on ? '켜짐' : '꺼짐'}">${UI_ICON.music}</button>
     </div>
     <div class="statline">${STATS.map(k => `<span>${STAT_LABEL[k]} <b>${Math.round(S.stats[k])}</b></span>`).join('')}<span class="${fatigueCls}">피로 <b>${S.fatigue}</b></span></div>
   </header>
@@ -1215,8 +1223,11 @@ function renderGame() {
       <h3 class="sec-title">인간관계</h3>
       <ul class="friends">${friends.map(id => { const t = affTier(S.aff[id]); const n = (S.cameo || {})[id] || 0; const lab = S.partner === id ? `${S.loveSecret ? '비밀 연애' : '연인'} ♥${S.love[id]}${(S.loveTension || 0) >= 20 ? ` · 서운함 ${S.loveTension}` : ''}${(S.coupleItems || []).length ? ` · 커플템 ${S.coupleItems.length}` : ''}` : S.crush === id ? `썸 ♡${S.love[id]}` : CHARACTERS[id].isTeacher ? TEACHER_TIER_LABEL[t] : S.mode === 'classic' ? TIER_LABEL[t] : `${TIER_LABEL[t]} <span class="stars">${'★'.repeat(n)}${'☆'.repeat(3 - n)}</span>`; return `
         <li>${avatar(id, 'sm')}<div><b>${esc(CHARACTERS[id].name)}</b><span class="heart"><i style="width:${S.aff[id]}%"></i></span></div><small>${lab}</small></li>`; }).join('')}
-        ${S.mode === 'classic' ? FRIEND_IDS.filter(id => !S.met[id]).map(() => '<li class="unknown"><span class="avatar sm">?</span><div><b>아직 못 만난 친구</b><span class="heart"></span></div><small>탐험해 보자</small></li>').join('')
-          : FRIEND_IDS.filter(id => !S.met[id]).map(id => `<li class="unknown">${avatar(id, 'sm')}<div><b>${esc(CHARACTERS[id].name)}</b><small>${esc(CHARACTERS[id].role)}</small></div><small>아직 못 만남</small></li>`).join('')}
+        ${(() => { const un = FRIEND_IDS.filter(id => !S.met[id]); if (!un.length) return '';
+          const toggle = `<li class="unmet-toggle"><button class="link" data-act="unmet" aria-expanded="${!!UI.showUnmet}">아직 못 만난 친구 ${un.length}명 · ${UI.showUnmet ? '접기' : '펼치기'}</button></li>`;
+          if (!UI.showUnmet) return toggle;
+          return toggle + (S.mode === 'classic' ? un.map(() => '<li class="unknown"><span class="avatar sm">?</span><div><b>아직 못 만난 친구</b><span class="heart"></span></div><small>탐험해 보자</small></li>').join('')
+            : un.map(id => `<li class="unknown">${avatar(id, 'sm')}<div><b>${esc(CHARACTERS[id].name)}</b><small>${esc(CHARACTERS[id].role)}</small></div><small>아직 못 만남</small></li>`).join('')); })()}
       </ul>
       ${S.mode === 'classic' ? `<h3 class="sec-title">학교 친구들</h3>
       <ul class="friends">${rosterIds(S).map(id => { const n = (S.cameo || {})[id] || 0; return `<li class="${n ? '' : 'unknown'}">${avatar(id, 'sm')}<div><b>${esc(CAMEOS[id].name)}</b><small>${esc(CAMEOS[id].role)}</small></div><small class="stars">${'★'.repeat(n)}${'☆'.repeat(3 - n)}</small></li>`; }).join('')}</ul>` : ''}

@@ -3,14 +3,14 @@
 
 /* ───────── 1. 날씨 ───────── */
 const WEATHER = {
-  sunny:   { icon: '☀️', name: '맑음', tip: '하늘이 높고 맑다.' },
-  rain:    { icon: '☔', name: '비', tip: '우산 챙겼어?' },
-  monsoon: { icon: '🌧️', name: '장마', tip: '며칠째 비가 그치지 않는다.' },
-  heat:    { icon: '🥵', name: '폭염', tip: '폭염 특보! 에어컨 앞자리 쟁탈전.' },
-  dust:    { icon: '😷', name: '미세먼지', tip: '미세먼지 나쁨. 체육은 실내에서.' },
-  cold:    { icon: '🥶', name: '한파', tip: '손이 꽁꽁. 핫팩이 귀하다.' },
-  snow:    { icon: '❄️', name: '눈', tip: '눈이 소복소복 쌓였다.' },
-  firstsnow: { icon: '❄️', name: '첫눈', tip: '올해 첫눈이다!' },
+  sunny:   { icon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>', name: '맑음', tip: '하늘이 높고 맑다.' },
+  rain:    { icon: '<path d="M20 15.5A4.5 4.5 0 0 0 17.5 7a6 6 0 0 0-11.5 1.5A4 4 0 0 0 6 16"/><path d="M8 19v2M12 17v2M16 19v2"/>', name: '비', tip: '우산 챙겼어?' },
+  monsoon: { icon: '<path d="M20 15.5A4.5 4.5 0 0 0 17.5 7a6 6 0 0 0-11.5 1.5A4 4 0 0 0 6 16"/><path d="M8 17v4M12 15v6M16 17v4"/>', name: '장마', tip: '며칠째 비가 그치지 않는다.' },
+  heat:    { icon: '<path d="M10 13.5V5a2 2 0 1 1 4 0v8.5a4 4 0 1 1-4 0Z"/><path d="M18 4l1.5-1.5M20 8h2M18 12l1.5 1.5"/>', name: '폭염', tip: '폭염 특보! 에어컨 앞자리 쟁탈전.' },
+  dust:    { icon: '<path d="M3 8h11a3 3 0 1 0-3-3"/><path d="M3 12h16a3 3 0 1 1-3 3"/><path d="M3 16h7"/>', name: '미세먼지', tip: '미세먼지 나쁨. 체육은 실내에서.' },
+  cold:    { icon: '<path d="M12 3v18M5 7l14 10M19 7 5 17"/><path d="M9 4l3 2 3-2M9 20l3-2 3 2"/>', name: '한파', tip: '손이 꽁꽁. 핫팩이 귀하다.' },
+  snow:    { icon: '<path d="M12 2v20M4.9 6.5l14.2 11M19.1 6.5 4.9 17.5"/>', name: '눈', tip: '눈이 소복소복 쌓였다.' },
+  firstsnow: { icon: '<path d="M12 2v20M4.9 6.5l14.2 11M19.1 6.5 4.9 17.5"/><circle cx="12" cy="12" r="2.5"/>', name: '첫눈', tip: '올해 첫눈이다!' },
 };
 // 달마다 날씨 확률 (나머지는 맑음)
 const WEATHER_ODDS = {
@@ -25,6 +25,7 @@ function rollWeather() {
   if (w === 'snow' && !S.flags['firstSnow' + S.year]) { S.flags['firstSnow' + S.year] = 1; w = 'firstsnow'; }
   return w;
 }
+const weatherIcon = w => UI_SVG(WEATHER[w].icon);
 const weatherNow = () => (S && WEATHER[S.weather]) ? S.weather : 'sunny';
 const isRain = w => w === 'rain' || w === 'monsoon';
 const isSnow = w => w === 'snow' || w === 'firstsnow';
@@ -45,7 +46,7 @@ startDay = function () {
     G.add('luck', 2, true); line = '올해 첫눈이 내렸다! 반 전체가 창문에 달라붙었다. (운 +2)';
     S.memories = (S.memories || []).concat({ when: `${S.year}학년 ${dateOf(S.year, S.sem, S.day).getMonth() + 1}월`, title: '첫눈 오는 날', choice: '창문에 달라붙어 눈 구경', type: 'daily' }).slice(-60);
   }
-  if (line) { S.log.unshift(`${S.year}-${S.sem} · ${dateLabel()} 아침 — ${WEATHER[w].icon} ${line}`); S.weatherLine = line; } else S.weatherLine = '';
+  if (line) { S.log.unshift(`${S.year}-${S.sem} · ${dateLabel()} 아침 — ${WEATHER[w].name} · ${line}`); S.weatherLine = line; } else S.weatherLine = '';
   save();
 };
 
@@ -53,21 +54,21 @@ startDay = function () {
 function weatherTweak(type, arg) {
   const w = weatherNow(), fid = String(arg || '').split('|')[0], name = fid && CHARACTERS[fid] ? CHARACTERS[fid].name : '';
   if (type === 'exercise') {
-    if (w === 'sunny') { G.add('stamina', 1, true); return '☀️ 날씨가 좋아서 한 바퀴 더 뛰었다.'; }
-    if (w === 'heat') { G.fat(4); return '🥵 더위를 먹었다. 그늘에서 한참 쉬었다.'; }
-    if (w === 'dust') { G.fat(3); return '😷 마스크 쓰고 뛰니 숨이 턱턱 막혔다.'; }
-    if (isRain(w)) return '☔ 운동장이 진흙탕이라 체육관에서 했다.';
-    if (isSnow(w)) { G.add('luck', 1, true); return '❄️ 운동장 한가운데 눈사람을 세웠다.'; }
+    if (w === 'sunny') { G.add('stamina', 1, true); return '날씨가 좋아서 한 바퀴 더 뛰었다.'; }
+    if (w === 'heat') { G.fat(4); return '더위를 먹었다. 그늘에서 한참 쉬었다.'; }
+    if (w === 'dust') { G.fat(3); return '마스크 쓰고 뛰니 숨이 턱턱 막혔다.'; }
+    if (isRain(w)) return '운동장이 진흙탕이라 체육관에서 했다.';
+    if (isSnow(w)) { G.add('luck', 1, true); return '운동장 한가운데 눈사람을 세웠다.'; }
   }
-  if (type === 'rest' && isRain(w)) { G.fat(-4); return '☔ 빗소리를 들으며 꿀잠을 잤다.'; }
-  if (type === 'study' && isRain(w)) { G.add('study', 1, true); return '☔ 빗소리 덕분에 집중이 잘 됐다.'; }
+  if (type === 'rest' && isRain(w)) { G.fat(-4); return '빗소리를 들으며 꿀잠을 잤다.'; }
+  if (type === 'study' && isRain(w)) { G.add('study', 1, true); return '빗소리 덕분에 집중이 잘 됐다.'; }
   if ((type === 'talk' || type === 'hangout') && fid && S.aff[fid] !== undefined) {
-    if (isRain(w)) { G.aff(fid, 2); return `☔ ${name}${josa(name, '과', '와')} 우산 하나를 같이 썼다.`; }
-    if (isSnow(w)) { G.aff(fid, 3); return `❄️ ${name}${josa(name, '과', '와')} 눈싸움을 했다. 둘 다 머리가 하얘졌다.`; }
-    if (w === 'cold') { G.aff(fid, 1); return `🥶 ${name}에게 핫팩 하나를 나눠 줬다.`; }
-    if (w === 'heat' && type === 'hangout') { G.fat(2); return `🥵 ${name}${josa(name, '과', '와')} 아이스크림을 하나씩 물고 다녔다.`; }
+    if (isRain(w)) { G.aff(fid, 2); return `${name}${josa(name, '과', '와')} 우산 하나를 같이 썼다.`; }
+    if (isSnow(w)) { G.aff(fid, 3); return `${name}${josa(name, '과', '와')} 눈싸움을 했다. 둘 다 머리가 하얘졌다.`; }
+    if (w === 'cold') { G.aff(fid, 1); return `${name}에게 핫팩 하나를 나눠 줬다.`; }
+    if (w === 'heat' && type === 'hangout') { G.fat(2); return `${name}${josa(name, '과', '와')} 아이스크림을 하나씩 물고 다녔다.`; }
   }
-  if (type === 'explore' && isSnow(w)) { G.add('luck', 1, true); return '❄️ 아무도 안 밟은 눈길에 첫 발자국을 찍었다.'; }
+  if (type === 'explore' && isSnow(w)) { G.add('luck', 1, true); return '아무도 안 밟은 눈길에 첫 발자국을 찍었다.'; }
   return '';
 }
 const _lifePerform = performAction;
@@ -115,9 +116,9 @@ seasonOverlay = function (season) {
 const _lifeHomeHtml = homeSceneHtml;
 homeSceneHtml = function () {
   const html = _lifeHomeHtml(), w = WEATHER[weatherNow()];
-  const badge = `<span class="sit-weather" title="${esc(w.tip)}">${w.icon} ${w.name}</span>`;
+  const badge = `<span class="sit-weather" title="${esc(w.tip)}">${weatherIcon(weatherNow())}${w.name}</span>`;
   const i = html.lastIndexOf('</div>');
-  return html.slice(0, i) + badge + html.slice(i) + (S.weatherLine && S.slot === 0 && !S.result ? `<p class="weather-line">${WEATHER[weatherNow()].icon} ${esc(S.weatherLine)}</p>` : '');
+  return html.slice(0, i) + badge + html.slice(i) + (S.weatherLine && S.slot === 0 && !S.result ? `<p class="weather-line">${weatherIcon(weatherNow())}<span>${esc(S.weatherLine)}</span></p>` : '');
 };
 
 /* ───────── 2. 옷장 ───────── */
@@ -233,5 +234,6 @@ metaAction = function (act, arg) {
   if (act === 'closet') { UI.pick = UI.pick === 'closet' ? null : 'closet'; render(); return true; }
   if (act === 'wear') { wearItem(arg); return true; }
   if (act === 'photo-save') { savePhoto(); return true; }
+  if (act === 'unmet') { UI.showUnmet = !UI.showUnmet; render(); return true; }
   return _lifeMeta(act, arg);
 };
