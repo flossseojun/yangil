@@ -1,6 +1,14 @@
 // 온라인 랭킹 (Firebase Firestore + 익명 로그인)
 // FIREBASE_CONFIG에 Firebase 콘솔의 웹 앱 설정을 넣으면 켜진다. 비어 있으면 랭킹 탭은 "준비 중"으로 보인다.
-const FIREBASE_CONFIG = null;
+// 공개돼도 괜찮은 웹 앱 설정값이다. 데이터는 Firestore 보안 규칙(firebase/firestore.rules)이 지킨다.
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyDna3Ns5wBfQSWNeGmc4yPsuXh816QeOIU',
+  authDomain: 'yangil.firebaseapp.com',
+  projectId: 'yangil',
+  storageBucket: 'yangil.firebasestorage.app',
+  messagingSenderId: '876969371374',
+  appId: '1:876969371374:web:434d7c884e2fc8e52835ff',
+};
 const FB_VER = '10.12.2';
 const NICK_KEY = 'yangil.nick';
 const BAD_WORDS = ['시발', '씨발', 'ㅅㅂ', '병신', 'ㅂㅅ', '개새', '좆', '존나', '니애미', '느금', '애미', '애비', '썅', 'fuck', 'shit'];
