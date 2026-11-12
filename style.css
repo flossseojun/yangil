@@ -965,3 +965,4 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .nick-row { display: flex; gap: 8px; } .nick-row input { flex: 1; font: inherit; font-size: 16px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); min-width: 0; }
 .rank-status { text-align: center; }
 .rank-val { white-space: nowrap; }
+@media (min-width: 761px) { .lockers { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

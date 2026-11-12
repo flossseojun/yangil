@@ -1085,12 +1085,10 @@ function renderMenu() {
     ${typeof newsBoardHtml === 'function' ? newsBoardHtml() : ''}
     <nav class="lockers" aria-label="메뉴">
       ${[['continue', '이어하기', sv ? `${esc(sv.name)}, ${sv.year}학년 ${sv.sem}학기` : '저장된 게임 없음', !sv],
+        ['hall', '랭킹', '순위 · 명예의 전당'],
         ['gallery', '기록 갤러리', `졸업생 ${recs.length}명`],
         ['dex', '도감', `엔딩 ${found}개 발견 (전체 ${ENDINGS.length})`],
-        ['daily', '오늘의 주인공', '오늘은 모두 같은 주인공으로'],
-        ['challenge', '그날 속으로', '명장면 챌린지'],
         ['clubhouse', '동창회', '졸업생 대항전'],
-        ['hall', '랭킹 · 명예의 전당', '친구들과 순위 겨루기'],
         ['school', '학교 안내', `개교 ${new Date().getFullYear() - 1970}주년, 경기도 양평`]].map(([k, name, sub, off], i) => `
       <button class="locker" data-act="${k}" ${off ? 'disabled' : ''}><span class="locker-no">2-${String(i + 1).padStart(2, '0')}</span><span class="vents" aria-hidden="true"></span><span class="nametag"><b>${name}</b><small>${sub}</small></span></button>`).join('')}
     </nav>

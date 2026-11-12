@@ -82,9 +82,9 @@ async function rankFetch(tab) {
     if (!(await rankInit())) return null;
     let rows;
     if (tab === 'score') {
+      // 판마다 모두 보여 준다 (한 사람이 여러 줄에 나올 수 있다)
       const snap = await RANK.db.collection('scores').orderBy('score', 'desc').limit(100).get();
-      const seen = new Set(); rows = [];
-      snap.forEach(d => { const x = d.data(); if (!seen.has(x.uid)) { seen.add(x.uid); rows.push(x); } });  // 한 사람은 최고 기록 하나만
+      rows = []; snap.forEach(d => rows.push(d.data()));
     } else if (tab === 'ending') {
       const snap = await RANK.db.collection('players').orderBy('count', 'desc').limit(50).get();
       rows = []; snap.forEach(d => rows.push(Object.assign({ uid: d.id }, d.data())));
