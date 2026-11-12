@@ -1090,7 +1090,7 @@ function renderMenu() {
         ['daily', '오늘의 주인공', '오늘은 모두 같은 주인공으로'],
         ['challenge', '그날 속으로', '명장면 챌린지'],
         ['clubhouse', '동창회', '졸업생 대항전'],
-        ['hall', '명예의 전당', '사연 있는 졸업생'],
+        ['hall', '랭킹 · 명예의 전당', '친구들과 순위 겨루기'],
         ['school', '학교 안내', `개교 ${new Date().getFullYear() - 1970}주년, 경기도 양평`]].map(([k, name, sub, off], i) => `
       <button class="locker" data-act="${k}" ${off ? 'disabled' : ''}><span class="locker-no">2-${String(i + 1).padStart(2, '0')}</span><span class="vents" aria-hidden="true"></span><span class="nametag"><b>${name}</b><small>${sub}</small></span></button>`).join('')}
     </nav>

@@ -1,0 +1,46 @@
+rules_version = '2';
+// 양일고 게임 랭킹 보안 규칙: Firebase 콘솔 → Firestore Database → 규칙 탭에 통째로 붙여 넣고 「게시」
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function okNick(n) { return n is string && n.size() >= 2 && n.size() <= 10; }
+    function endingIds() { return ['legend','president','council_hero','secret_couple','couple','byeongmat','mystery','topstudent','scientist','auto_robotics','auto_squid','auto_seed','auto_water','citizen','sports','idol','insider','sleeper','squad','happy','survivor']; }
+
+    // 졸업 기록: 누구나 읽고, 로그인(익명)한 본인만 새로 쓸 수 있다. 고치거나 지울 수 없다.
+    match /scores/{id} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid', 'nick', 'score', 'rank', 'ending', 'gpa', 'mode', 'hall', 'ts', 'v'])
+        && request.resource.data.uid == request.auth.uid
+        && okNick(request.resource.data.nick)
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 160
+        && request.resource.data.rank in ['S', 'A', 'B', 'C']
+        // 등급과 점수가 맞아야 한다 (S 103+, A 94+, B 72+, C 그 아래)
+        && ((request.resource.data.rank == 'S') == (request.resource.data.score >= 103))
+        && ((request.resource.data.rank == 'A') == (request.resource.data.score >= 94 && request.resource.data.score < 103))
+        && ((request.resource.data.rank == 'C') == (request.resource.data.score < 72))
+        && request.resource.data.ending in endingIds()
+        && request.resource.data.gpa is number && request.resource.data.gpa >= 1 && request.resource.data.gpa <= 9
+        && request.resource.data.mode in ['real', 'classic']
+        && request.resource.data.hall is bool
+        && (!request.resource.data.hall || (request.resource.data.rank == 'S' && request.resource.data.gpa < 2))
+        && request.resource.data.ts == request.time
+        // 같은 순간에 내 엔딩 수집 문서도 함께 써야 한다 → 아래 20초 제한이 기록 올리기에도 걸린다
+        && getAfter(/databases/$(database)/documents/players/$(request.auth.uid)).data.ts == request.time;
+      allow update, delete: if false;
+    }
+
+    // 엔딩 수집: 한 사람당 문서 하나. 본인만 쓰고, 20초에 한 번까지.
+    match /players/{uid} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['nick', 'endings', 'count', 'ts'])
+        && okNick(request.resource.data.nick)
+        && request.resource.data.endings is list && request.resource.data.endings.size() <= 30
+        && request.resource.data.count == request.resource.data.endings.size()
+        && request.resource.data.ts == request.time
+        && (resource == null || request.time > resource.data.ts + duration.value(20, 's'));
+      allow delete: if false;
+    }
+  }
+}

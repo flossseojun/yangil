@@ -85,6 +85,7 @@ function renderEnding() {
       </div>
     </div>
     ${typeof hallCheckHtml === 'function' ? hallCheckHtml(r) : ''}
+    ${typeof rankEndingHtml === 'function' ? rankEndingHtml(r) : ''}
     ${renderNewspaper(r)}
     ${renderBest(r)}
     ${r.photo && typeof groupPhotoHtml === 'function' ? groupPhotoHtml(photoOfRecord(r)) : ''}
