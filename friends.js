@@ -348,7 +348,7 @@ const MORE_CAMEO_EVENTS = {
 
 // 학교 친구들 3기
 Object.assign(MORE_CAMEOS, {
-  sia:      { name: '류시아', role: '초아 · 별관측 대장', color: '#4a5fc1', desc: '별관측 동아리 초아의 대장. 밤하늘만 보면 별 이름이 줄줄 나온다.', title: '별지기' },
+  sia:      { name: '류시아', role: '초아 · 별관측 대장 · 버터구이 부장', color: '#4a5fc1', club: 'squid', desc: '별관측 동아리 초아의 대장이자 갑오징어 동아리 버터구이의 부장. 밤하늘만 보면 별 이름이 줄줄 나오고, 수조 앞에서는 갑오징어 이름을 줄줄 부른다.', title: '별지기' },
   yejunsim: { name: '심예준', role: '전교회장 · 멋짐 담당', color: '#1f6f8b', desc: '말 한마디로 회의를 정리하는 멋있는 리더. 2학년 때 전교회장이 된다.', title: '회장의 오른팔' },
   jejun:    { name: '박제준', role: '전교부회장 · 착함 담당', color: '#5aa36f', desc: '학교에서 제일 착한 사람을 꼽으면 다들 제준이를 말한다. 2학년 때 전교부회장이 된다.', title: '착한 부회장의 친구' },
   sihun:    { name: '이시훈', role: '시드핸즈 부장', color: '#7a9a2e', club: 'seed', desc: '씨앗·종자 동아리 시드핸즈의 부장. 토종 씨앗 이야기만 나오면 눈이 반짝인다.', title: '씨앗 동지' },

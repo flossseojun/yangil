@@ -150,7 +150,7 @@ function renderMini() {
     body = `<p class="mini-q"><small>${st.showing ? '순서를 기억해!' : `${st.input.length} / ${st.seq.length}`}</small>${st.showing ? '불이 켜지는 순서를 잘 봐.' : '같은 순서대로 눌러!'}</p>
       <div class="mini-pads">${[0, 1, 2, 3].map(i => `<button class="pad p${i}" id="pad${i}" data-act="mini-pad" data-arg="${i}" ${st.showing ? 'disabled' : ''} aria-label="${['빨강', '노랑', '초록', '파랑'][i]}"></button>`).join('')}</div>`;
   } else if (st.kind === 'order') {
-    body = `<p class="mini-q"><small>${st.task.name}</small>실험 순서대로 눌러!</p>
+    body = `<p class="mini-q"><small>${st.task.name}${st.task.hint ? ' · ' + st.task.hint : ''}</small>실험 순서대로 눌러!</p>
       <ol class="order-done">${st.task.steps.map((x, k) => `<li class="${k < st.got.length ? 'ok' : ''}">${k < st.got.length ? esc(st.got[k]) : '?'}</li>`).join('')}</ol>
       <div class="mini-opts">${st.steps.map((x, k) => `<button class="choice" data-act="mini-order" data-arg="${k}" ${st.got.includes(x) ? 'disabled' : ''}>${esc(x)}</button>`).join('')}</div>`;
   } else if (st.kind === 'sort') {
@@ -235,13 +235,15 @@ function pressPad(i) {
 // 자율동아리: 실험·활동 순서를 차례대로 누른다
 const ORDER_TASKS = {
   robotics: [{ name: '라인트레이서 만들기', steps: ['회로도 그리기', '부품 납땜', '코드 업로드', '주행 테스트'] }, { name: '센서 보정', steps: ['센서 연결', '센서 값 읽기', '기준값 정하기', '라인 따라 주행'] }],
-  squid: [{ name: '수조 관리', steps: ['물 받아 두기', '수온 맞추기', '물 일부 갈기', '갑오징어 상태 관찰'] }, { name: '사육 기록', steps: ['수온 확인', '염도 측정', '먹이 주기', '관찰 일지 쓰기'] }],
+  // 실제 버터구이 활동 순서 (free: 서로 순서를 바꿔도 되는 단계 번호 묶음)
+  squid: [{ name: '수조 관리', steps: ['갑오징어 상태 관찰', '물 받기', '수온 맞추기', '환수'] }, { name: '사육 기록', steps: ['먹이 주기', '염도 측정', '수온 측정', '일지 쓰기'], free: [[1, 2]], hint: '염도·수온은 순서 상관없음' }],
   seed: [{ name: '토종 씨앗 심기', steps: ['흙 고르기', '씨앗 심기', '물 주기', '싹 관찰하기'] }, { name: '씨앗 나눔 준비', steps: ['씨앗 고르기', '이름표 붙이기', '봉투에 담기', '장터에 진열'] }],
   water: [{ name: '남한강 수질 측정', steps: ['측정 지점 정하기', '강물 떠 오기', '측정기 보정', '결과 기록'] }, { name: 'pH 측정', steps: ['시료 채취', '전극 세척', 'pH 측정', '지도에 표시'] }],
 };
 function pressOrder(k) {
-  const st = MINI.st, x = st.steps[k];
-  if (x === st.task.steps[st.got.length]) {
+  const st = MINI.st, x = st.steps[k], pos = st.got.length;
+  const grp = (st.task.free || []).find(g => g.includes(pos));
+  if (x === st.task.steps[pos] || (grp && grp.some(i => st.task.steps[i] === x) && !st.got.includes(x))) {
     st.got.push(x); SFX.play('pop');
     if (st.got.length === st.task.steps.length) return finishWith('실험 성공!', '순서를 한 번도 틀리지 않았다. 결과가 깔끔하게 나왔다.', 1.6);
     return renderMini();
