@@ -167,6 +167,22 @@ const FRIEND_LOOKS = {
   hyeonseo:  { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'wink', acc: 'none' } },
   yunho:     { av: { hair: 'short', hairColor: '#7a4b2a', skin: '#f6dcc6', face: 'smile', acc: 'none', nose: true } },
 };
+Object.assign(FRIEND_LOOKS, {
+  hyunsu:      { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'proud', acc: 'none', eyes: 'sharp' }, jacket: '#1f1f1f' },
+  leeyunho:    { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'round' }, prop: 'book' },
+  suae:        { av: { hair: 'long', hairColor: '#4a2f22', skin: '#fcebdf', face: 'smile', acc: 'none', eyes: 'round', lash: true }, prop: 'phone' },
+  beomsik:     { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'smile', acc: 'none', eyes: 'droop' } },
+  jiho:        { av: { hair: 'side', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'round' } },
+  kimhyeonseo: { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'small', build: 'slim' }, tall: true },
+  jeonggyu:    { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'proud', acc: 'none', eyes: 'sharp' }, prop: 'soccer' },
+  taegeon:     { av: { hair: 'short', hairColor: '#7a4b2a', skin: '#f6dcc6', face: 'wink', acc: 'none', eyes: 'round' } },
+  junyoung:    { av: { hair: 'twoblock', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'plain', acc: 'glasses', eyes: 'small' }, tall: true },
+  seoeun:      { av: { hair: 'bob', hairColor: '#1e1b1a', skin: '#fcebdf', face: 'smile', acc: 'none', eyes: 'round', lash: true }, prop: 'keyring' },
+  jaehee:      { av: { hair: 'center', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'sleepy', acc: 'none', eyes: 'droop' } },
+  yul:         { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'plain', acc: 'none', eyes: 'sharp' }, prop: 'basketball' },
+  sunbi:       { av: { hair: 'long', hairColor: '#1e1b1a', skin: '#fcebdf', face: 'smile', acc: 'none', eyes: 'sharp', lash: true, lips: '#d4606f' } },
+  yuna:        { av: { hair: 'long', hairColor: '#7a4b2a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'round', lash: true } },
+});
 const lookOf = id => FRIEND_LOOKS[id] || { av: randomAvatar('m', typeof seededRng === 'function' ? seededRng('look-' + id) : Math.random) };
 
 /* ───────── 소품 ───────── */
