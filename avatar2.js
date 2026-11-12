@@ -174,3 +174,15 @@ function avatarSVG2(av, label = '내 아바타', opts = {}) {
 const avatarSVGOld = avatarSVG;
 avatarSVG = (av, label, opts) => avatarSVG2(av, label, opts);
 AVATAR_PARTS.hair.push(...HAIR_NEW);
+// 캐릭터 만들기·외모 보내기에서 고를 수 있는 부품: 눈 모양, 체형
+AVATAR_PARTS.eyes = EYE_TYPES;
+AVATAR_PARTS.build = [{ id: 'normal', name: '보통' }, { id: 'slim', name: '마름' }, { id: 'chubby', name: '통통' }, { id: 'muscle', name: '근육' }];
+AVATAR_LABEL.eyes = '눈 모양'; AVATAR_LABEL.build = '체형';
+AVATAR_KEYS.splice(3, 0, 'eyes', 'build');
+const _randomAvatarBase = randomAvatar;
+randomAvatar = (gender, rng = Math.random) => {
+  const a = _randomAvatarBase(gender, rng);
+  a.eyes = EYE_TYPES[Math.floor(rng() * EYE_TYPES.length)].id;
+  a.build = rng() < 0.7 ? 'normal' : ['slim', 'chubby', 'muscle'][Math.floor(rng() * 3)];
+  return a;
+};

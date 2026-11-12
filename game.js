@@ -1094,7 +1094,7 @@ function renderMenu() {
         ['school', '학교 안내', `개교 ${new Date().getFullYear() - 1970}주년, 경기도 양평`]].map(([k, name, sub, off], i) => `
       <button class="locker" data-act="${k}" ${off ? 'disabled' : ''}><span class="locker-no">2-${String(i + 1).padStart(2, '0')}</span><span class="vents" aria-hidden="true"></span><span class="nametag"><b>${name}</b><small>${sub}</small></span></button>`).join('')}
     </nav>
-    <div class="menu-foot"><button class="sfx-btn light" data-act="sfx" aria-pressed="${SFX.on}">효과음 ${SFX.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="bgm" aria-pressed="${BGM.on}">음악 ${BGM.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="settings">설정</button>${joinButton('sfx-btn light')}${feedbackButton('sfx-btn light')}</div>
+    <div class="menu-foot"><button class="sfx-btn light" data-act="sfx" aria-pressed="${SFX.on}">효과음 ${SFX.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="bgm" aria-pressed="${BGM.on}">음악 ${BGM.on ? '켜짐' : '꺼짐'}</button><button class="sfx-btn light" data-act="settings">설정</button><button class="sfx-btn light" data-act="looks">내 외모 보내기</button>${joinButton('sfx-btn light')}${feedbackButton('sfx-btn light')}</div>
     <p class="fine center">양일고 학생이 만든 팬 게임입니다. 학교 정보는 공개 자료를 참고했어요. 실제 친구들은 본인 허락을 받고 출연했고, 가상 친구와 사건은 지어낸 이야기예요.</p>
   </section>`;
 }

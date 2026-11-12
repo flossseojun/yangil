@@ -931,3 +931,22 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
   .lockers .locker:first-child { grid-column: auto; min-height: 0; grid-template-rows: none; }
   .lockers .locker:first-child .vents { display: block; }
 }
+
+/* 내 외모 보내기 */
+.looks-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 761px) { .looks-grid { grid-template-columns: 300px minmax(0, 1fr); align-items: start; } }
+.looks-big { width: 100%; max-width: 260px; aspect-ratio: 1; margin: 0 auto 12px; border-radius: 16px; overflow: hidden; background: linear-gradient(#d8eef9, #f2f9fd); }
+.looks-big svg, .looks-exprs svg { width: 100%; height: 100%; display: block; }
+.looks-exprs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.looks-exprs figure { margin: 0; text-align: center; }
+.looks-exprs figure div { aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #eef3f7; }
+.looks-exprs figcaption { font-size: 12px; color: var(--muted); }
+.looks-field { display: grid; gap: 4px; margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+.looks-field input { font: inherit; font-size: 16px; color: var(--ink); padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.looks-form .av-ctrls { margin-bottom: 12px; }
+.looks-form .btn.small { padding: 4px 12px; font-size: 13px; }
+.looks-code textarea { width: 100%; font: 13px/1.5 ui-monospace, monospace; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper, #f7f4ee); color: var(--ink); resize: none; margin-top: 12px; }
+.looks-tall { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; }
+.looks-tall .av-lab { min-width: 48px; }
+.looks a.btn { text-decoration: none; color: var(--ink); }
+.looks-code .create-actions { margin-top: 8px; }
