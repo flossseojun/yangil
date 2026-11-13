@@ -2,8 +2,8 @@
 // 같은 판·같은 학년에서는 한 번만. 설정의 「화면 연출」을 끄면 나오지 않는다.
 
 const topFriends = (s, n = 2) => FRIEND_IDS.filter(id => s.met[id] && !(CHARACTERS[id] && CHARACTERS[id].isTeacher)).sort((a, b) => s.aff[b] - s.aff[a]).slice(0, n);
-const ME = (s, expr, pose) => ({ me: true, av: s.avatar || randomAvatar(s.gender), expr, pose });
-const FR = (id, expr, pose) => id ? { id, expr, pose } : null;
+const ME = (s, expr, pose, full) => ({ me: true, av: s.avatar || randomAvatar(s.gender), expr, pose, full });
+const FR = (id, expr, pose, full) => id ? { id, expr, pose, full } : null;
 const SFX_TXT = (t, x = 236, y = 52, rot = -8, size = 26, color = '#ff5a3c') => `<g transform="translate(${x} ${y}) rotate(${rot})"><text text-anchor="middle" font-size="${size}" font-family="Jua, sans-serif" fill="#fff" stroke="#1f2a24" stroke-width="5" paint-order="stroke">${t}</text><text text-anchor="middle" font-size="${size}" font-family="Jua, sans-serif" fill="${color}">${t}</text></g>`;
 const DAWN = '<rect width="320" height="180" fill="#1b2a5a" opacity=".45"/><rect width="320" height="180" fill="#ff9a5c" opacity=".12"/>';
 const NIGHT = '<rect width="320" height="180" fill="#0b1030" opacity=".5"/>';
@@ -12,20 +12,20 @@ const CUTSCENES = {
   entrance: s => [
     { bg: 'auditorium', cast: [ME(s, 'surprised')], cap: '3월 3일, 양일고등학교 입학식.', sfx: SFX_TXT('두근두근', 236, 48, -6, 24, '#ff7aa2') },
     { bg: 'classroom', cast: [ME(s, 'smile', 'wave')], cap: '처음 보는 교실, 처음 보는 얼굴들.', sfx: '' },
-    { bg: 'ginkgo', cast: [ME(s, 'laugh', 'v')], cap: '오늘부터 3년, 나의 이야기가 시작된다.', sfx: SFX_TXT('시작!', 250, 46, 8, 28) },
+    { bg: 'ginkgo', cast: [ME(s, 'laugh', 'jump', true)], cap: '오늘부터 3년, 나의 이야기가 시작된다.', sfx: SFX_TXT('시작!', 250, 46, 8, 28) },
   ],
   sports_day: s => { const [a, b] = topFriends(s); return [
     { bg: 'field', cast: [FR(a, 'laugh', 'cheer'), ME(s, 'laugh', 'cheer'), FR(b, 'laugh', 'v')].filter(Boolean), cap: `${s.year}학년 체육한마당. 운동장이 함성으로 가득하다.`, sfx: SFX_TXT('청군 이겨라!', 160, 40, -4, 24, '#2f6fbf') },
     { match: 'relay', cap: '마지막 종목, 반 대항 계주.', sfx: '' },
-    { bg: 'field', cast: [ME(s, 'proud')], cap: '바통을 받을 차례다.', sfx: SFX_TXT('타닥타닥', 240, 60, 10, 22) },
+    { bg: 'field', cast: [ME(s, 'proud', 'run', true)], cap: '바통을 받을 차례다.', sfx: SFX_TXT('타닥타닥', 240, 60, 10, 22) },
   ]; },
   festival: s => { const [a, b] = topFriends(s); return [
     { bg: 'auditorium', cast: [ME(s, 'surprised')], cap: `${s.year}학년 녹향제. 무대 조명이 켜졌다.`, sfx: SFX_TXT('와아아!', 240, 46, -8, 28) },
     { bg: 'classroom', cast: [FR(a, 'laugh', 'wave'), ME(s, 'laugh'), FR(b, 'smile', 'v')].filter(Boolean), cap: '교실마다 부스, 복도마다 웃음소리.', sfx: '' },
-    { bg: 'rooftop', cast: [ME(s, 'smile'), FR(a, 'smile')].filter(Boolean), cap: '축제가 끝나 가는 밤.', sfx: SFX_TXT('반짝', 250, 40, 6, 22, '#ffd23f') },
+    { bg: 'rooftop', cast: [ME(s, 'smile', 'sit', true), FR(a, 'smile', 'sit', true)].filter(Boolean), cap: '축제가 끝나 가는 밤.', sfx: SFX_TXT('반짝', 250, 40, 6, 22, '#ffd23f') },
   ]; },
   school_trip: s => { const [a, b] = topFriends(s); return [
-    { bg: 'river', cast: [ME(s, 'laugh', 'cheer'), FR(a, 'laugh', 'cheer')].filter(Boolean), cap: '2학년 수학여행. 비행기를 타고 제주도에 도착했다!', sfx: SFX_TXT('제주다!', 240, 44, -8, 28, '#2f8f6b') },
+    { bg: 'river', cast: [ME(s, 'laugh', 'jump', true), FR(a, 'laugh', 'jump', true)].filter(Boolean), cap: '2학년 수학여행. 비행기를 타고 제주도에 도착했다!', sfx: SFX_TXT('제주다!', 240, 44, -8, 28, '#2f8f6b') },
     { bg: 'field', cast: [FR(b, 'smile', 'v'), ME(s, 'wink', 'v'), FR(a, 'laugh')].filter(Boolean), cap: '돌하르방 앞에서 단체 사진.', sfx: SFX_TXT('찰칵', 250, 40, 8, 24, '#1f2a24') },
     { bg: 'rooftop', cast: [ME(s, 'laugh'), FR(a, 'laugh')].filter(Boolean), cap: '숙소의 밤은 아무도 잠들지 않았다.', sfx: SFX_TXT('쉿!', 240, 46, -6, 26, '#5b2a86') },
   ]; },

@@ -32,12 +32,15 @@ function homeScene() {
   // 행동 결과에 맞춘 내 표정·몸짓
   const ACT_MOOD = { exercise: { expr: 'laugh', pose: 'cheer' }, rest: { expr: 'sleepy' }, study: { expr: 'proud' }, talk: { expr: 'laugh' }, hangout: { expr: 'laugh', pose: 'v' }, explore: { expr: 'surprised' }, club: { expr: 'smile', pose: 'v' } };
   const myMood = S.fatigue >= 75 ? { expr: 'sleepy' } : S.result && S._act && ACT_MOOD[S._act] ? ACT_MOOD[S._act] : {};
-  let bg = S.slot >= 1 ? 'ginkgo' : 'classroom', cast = [{ me: true, av: S.avatar || randomAvatar(S.gender), ...myMood }];
+  // 몸을 쓰는 행동은 전신 포즈로
+  const ACT_POSE = { exercise: 'run', rest: 'sit', explore: 'walk', hangout: 'walk' };
+  const pose = S.result && S._act && ACT_POSE[S._act];
+  let bg = S.slot >= 1 ? 'ginkgo' : 'classroom', cast = [Object.assign({ me: true, av: S.avatar || randomAvatar(S.gender) }, myMood, pose ? { full: true, pose } : {})];
   const r = S.result, act = r && S._act;
   if (act) {
     bg = act === 'explore' && typeof LOC_BG !== 'undefined' ? LOC_BG[S._actArg] || 'hallway' : ACT_BG[act] || bg;
     const fid = act === 'talk' || act === 'hangout' ? String(S._actArg || '').split('|')[0] : null;
-    if (fid && CHARACTERS[fid] && fid !== 'teacher') cast.push({ id: fid, expr: 'laugh', pose: act === 'talk' ? 'wave' : null });
+    if (fid && CHARACTERS[fid] && fid !== 'teacher') cast.push(act === 'hangout' ? { id: fid, expr: 'laugh', full: true, pose: 'walk' } : { id: fid, expr: 'laugh', pose: act === 'talk' ? 'wave' : null });
   }
   if (!act && specialsFor(S.year, S.sem, S.day).includes('exam')) bg = 'classroom';
   let svg = sceneSVG({ bg, cast, label: `${SEASON_NAME[season]} · ${SCENE_BG_NAME[bg] || ''} 장면` });

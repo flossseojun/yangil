@@ -224,7 +224,15 @@ function sceneSVG({ bg = 'classroom', cast = [], extras = [], label = '장면' }
   const people = cast.map((c, i) => {
     const look = c.me ? { av: c.av, me: true } : lookOf(c.id);
     const size = (look.tall ? 128 : look.small ? 96 : 108) * (n >= 3 ? .92 : 1), x = slots[i] - size / 2, y = H - size + 4;
-    let svg = avatarSVG(look.av, '', { expr: c.expr, pose: c.pose }).replace('<svg class="avatar-svg"', `<svg x="${x}" y="${y}" width="${size}" height="${size}"`);
+    let svg;
+    if (c.full && typeof avatarFullSVG === 'function') {
+      // 전신: 키 150 정도로 바닥에 세운다
+      const h = 150 * (look.tall ? 1.08 : 1) * (n >= 3 ? 0.9 : 1), w = h * 100 / 210;
+      svg = avatarFullSVG(look.av, '', { pose: c.pose, expr: c.expr, jacket: look.jacket }).replace('<svg class="avatar-full"', `<svg x="${slots[i] - w / 2}" y="${H - h - 2}" width="${w}" height="${h}"`);
+      const bench = c.pose === 'sit' ? `<g><rect x="${slots[i] - w * 0.75}" y="${H - h * 0.37}" width="${w * 1.5}" height="7" rx="2" fill="#8c6a48"/><rect x="${slots[i] - w * 0.75}" y="${H - h * 0.37 + 7}" width="${w * 1.5}" height="3" fill="#5a4030"/><rect x="${slots[i] - w * 0.68}" y="${H - h * 0.37 + 10}" width="5" height="${h * 0.37 - 12}" fill="#5a4030"/><rect x="${slots[i] + w * 0.68 - 5}" y="${H - h * 0.37 + 10}" width="5" height="${h * 0.37 - 12}" fill="#5a4030"/></g>` : '';
+      return `<ellipse cx="${slots[i]}" cy="${H - 4}" rx="${w * 0.42}" ry="4" fill="#000" opacity=".18"/>` + bench + svg;
+    }
+    svg = avatarSVG(look.av, '', { expr: c.expr, pose: c.pose }).replace('<svg class="avatar-svg"', `<svg x="${x}" y="${y}" width="${size}" height="${size}"`);
     if (look.jacket) svg = svg.replace('fill="#2e3f63"', `fill="${look.jacket}"`);
     const shadow = `<ellipse cx="${slots[i]}" cy="${H - 2}" rx="${size * .34}" ry="5" fill="#000" opacity=".18"/>`;
     const prop = look.prop && PROPS[look.prop] ? PROPS[look.prop](slots[i] + size * 0.36, y + size * 0.72) : '';
