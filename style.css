@@ -1090,3 +1090,17 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .ev2-skip { margin: 0 18px 10px; text-align: center; }
 .ev2.typed .ev2-skip { display: none; }
 @media (max-width: 760px) { .ev-dialog, .ev2-after { padding-left: 14px; padding-right: 14px; } .ev2 > h2 { margin: 12px 14px 2px; } .bub-row { grid-template-columns: 42px minmax(0, 1fr); } .bub-face { width: 42px; height: 42px; } }
+
+/* 명장면 컷 연출 */
+.cut-overlay { z-index: 23; background: rgba(12, 16, 14, .82); }
+.cut-page { width: min(760px, 100%); display: grid; gap: 12px; cursor: pointer; }
+.cut-panels { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 761px) { .cut-panels { grid-template-columns: 1fr 1fr; } .cut-panel.p0 { grid-column: 1 / -1; } }
+.cut-panel { position: relative; margin: 0; background: #fff; border: 4px solid #1f2a24; border-radius: 6px; overflow: hidden; transform: rotate(var(--r)); box-shadow: 6px 6px 0 rgba(0, 0, 0, .35); }
+.cut-panel .scene-svg, .cut-panel svg { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+.cut-panel figcaption { position: absolute; left: 8px; top: 8px; z-index: 1; max-width: 80%; padding: 4px 10px; background: #fffbe0; border: 2px solid #1f2a24; font-size: 14px; line-height: 1.4; color: #1f2a24; box-shadow: 2px 2px 0 rgba(0, 0, 0, .25); }
+@media (prefers-reduced-motion: no-preference) { .cut-panel:last-child { animation: cutin .45s cubic-bezier(.22, 1, .36, 1); } }
+@keyframes cutin { from { opacity: 0; transform: translateY(14px) rotate(var(--r)) scale(.96); } to { opacity: 1; transform: rotate(var(--r)); } }
+.cut-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #fff; }
+.cut-bar .link { color: #cfd8d2; }
+.cut-dots { display: flex; gap: 6px; } .cut-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .3); } .cut-dots i.on { background: #ffd23f; }
