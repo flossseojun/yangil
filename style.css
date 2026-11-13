@@ -966,3 +966,4 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .rank-status { text-align: center; }
 .rank-val { white-space: nowrap; }
 @media (min-width: 761px) { .lockers { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.boss-dday { background: #5b2a86; color: #fff; }

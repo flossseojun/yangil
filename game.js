@@ -802,7 +802,9 @@ function takeExam(mode) {
   G.fat(10);
   if (mode === 'skill') G.grow('study', 1);
   if (first) {
-    return `${type} 결과 (지필 · 가채점)\n` + subs.map(x => `${x.sub.name} ${x.score}점 · 지금이라면 ${x.letter ? `${x.letter} (절대평가)` : `${x.grade}등급`}`).join('\n') + `\n수행평가와 2차 시험까지 합쳐서 학기 등급이 나온다.${comment}`;
+    const prep = typeof makePrep === 'function' ? makePrep(s, s.exams[s.exams.length - 1]) : null;
+    if (prep) { s.bossPrep = s.bossPrep || {}; s.bossPrep[key] = prep; }
+    return (prep ? prepText(prep).trim() + '\n\n' : '') + `${type} 결과 (지필 · 가채점)\n` + subs.map(x => `${x.sub.name} ${x.score}점 · 지금이라면 ${x.letter ? `${x.letter} (절대평가)` : `${x.grade}등급`}`).join('\n') + `\n수행평가와 2차 시험까지 합쳐서 학기 등급이 나온다.${comment}`;
   }
   const fin = finalizeSemester();
   if (fin.grade <= 1.5) SFX.play('fanfare');
@@ -1160,7 +1162,7 @@ function renderGame() {
     <div class="date-box">
       <span class="grade-tag">${S.year}학년 ${S.sem}학기</span>
       <b>${dateLabel()}</b>
-      <span class="dday">${ns ? `${esc(ns.label)} D-${ns.dday}` : (S.day === semDays() ? '학기 마지막 날' : '')}</span>
+      <span class="dday">${ns ? `${esc(ns.label)} D-${ns.dday}` : (S.day === semDays() ? '학기 마지막 날' : '')}</span>${typeof bossBanner === 'function' ? bossBanner() : ''}
     </div>
     <div class="ap" aria-label="행동력 ${S.ap} / ${AP_MAX}">${Array.from({ length: AP_MAX }, (_, i) => `<i class="${i < S.ap ? 'on' : ''}"></i>`).join('')}<span>${S.ap} / ${AP_MAX}</span></div>
     <div class="top-tools">

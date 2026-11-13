@@ -204,3 +204,27 @@ function autoBattle(s, bossId, prep, opts = {}) {
   }
   return { bonus: battleBonus(B), done: B.done, B };
 }
+
+/* ───────── 1차 정기시험 = 전투 준비 ─────────
+   1차 결과로 학기말 보스 정보를 공개하고, 잘 본 과목은 +1, 못 본 과목은 −1 장비가 된다 */
+function makePrep(s, examEntry) {
+  const bossId = bossIdFor(s.year, s.sem); if (!bossId) return null;
+  const equip = {};
+  ((examEntry && examEntry.subjects) || []).forEach(x => { if (x.grade == null) return; if (x.grade <= 2) equip[x.name] = 1; else if (x.grade >= 4) equip[x.name] = -1; });
+  return { bossId, equip };
+}
+function prepText(prep) {
+  if (!prep) return '';
+  const b = BOSSES[prep.bossId], up = Object.keys(prep.equip).filter(k => prep.equip[k] > 0), down = Object.keys(prep.equip).filter(k => prep.equip[k] < 0);
+  const weak = b.weak === 'rotate' ? '매 턴 바뀜' : b.weak;
+  return `\n\n[정찰 보고서] 학기말 보스 「${b.name}」 · 약점 ${weak}${b.resist ? ` · 내성 ${b.resist}` : ''}.` +
+    (up.length ? `\n장비 강화: ${up.join(', ')} 스킬 +1` : '') + (down.length ? `\n보스가 노리는 약점: ${down.join(', ')} 스킬 −1` : '') +
+    `\n2차 정기시험까지 ${weak === '매 턴 바뀜' ? '여러 과목을 골고루' : weak + ' 과목을'} 공부해 두자.`;
+}
+const bossDay = sem => sem === 1 ? 6 : 5;
+function bossBanner() {
+  if (!S || !S.bossPrep) return '';
+  const prep = S.bossPrep[semKey(S)]; if (!prep) return '';
+  const left = bossDay(S.sem) - S.day; if (left < 0) return '';
+  return `<span class="dday boss-dday">학기말 보스: ${esc(BOSSES[prep.bossId].name)} ${left ? 'D-' + left : '오늘!'}</span>`;
+}
