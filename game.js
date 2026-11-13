@@ -299,12 +299,14 @@ function specialsFor(year, sem, day) {
   if (sem === 2 && day === 4) { l.push(year === 3 ? 'suneung' : 'cheer'); if (year < 3) l.push(year === 1 ? 'field_trip' : 'field_trip2'); }
   if (sem === 2 && day === 5) { if (year === 2 && S.club) l.push('club_contest'); if (year === 3) l.push('album'); }
   // 수행평가는 학기마다 두 번. 하루를 통째로 쓰는 행사와 겹치면 건너뛴다
-  if ((sem === 1 ? [4, 5] : [2, 4]).includes(day) && l.reduce((a, id) => a + storyCost(id), 0) < 2) l.push('perf');
-  if ((sem === 1 ? [3, 6] : [3, 5]).includes(day)) l.push('exam');
+  if (!(year === 3 && sem === 2) && (sem === 1 ? [4, 5] : [2, 4]).includes(day) && l.reduce((a, id) => a + storyCost(id), 0) < 2) l.push('perf');
+  if (examDay(year, sem, day)) l.push('exam');
   if (sem === 1 && day === 6) l.push('festival');
   if (year === 3 && sem === 2 && day === 5) l.push('college_result');
   return l;
 }
+// 정기시험이 있는 날: 학기마다 1차·2차. 양일고는 3학년 2학기 정기시험을 보지 않는다
+function examDay(year, sem, day) { return !(year === 3 && sem === 2) && (sem === 1 ? [3, 6] : [3, 5]).includes(day); }
 // 하루 행동이 2번뿐이라 학교 행사는 체육대회·축제만 행동력 1을 쓴다
 function storyCost(id) { return id === 'sports_day' || id === 'festival' ? 1 : 0; }
 // 친구들과 충분히 친하면 2학년 2학기에 전교회장 출마 권유를 받는다
@@ -1162,6 +1164,7 @@ function renderGame() {
     </div>
     <div class="ap" aria-label="행동력 ${S.ap} / ${AP_MAX}">${Array.from({ length: AP_MAX }, (_, i) => `<i class="${i < S.ap ? 'on' : ''}"></i>`).join('')}<span>${S.ap} / ${AP_MAX}</span></div>
     <div class="top-tools">
+    <button class="sfx-btn" data-act="menu" aria-label="메인 화면으로 (저장됨)">메인으로</button>
     <button class="sfx-btn" data-act="restart-ask" aria-label="처음부터 다시 시작">다시 시작</button>
     <button class="sfx-btn icon" data-act="tut-open" aria-label="게임 설명 다시 보기" title="도움말">${UI_ICON.help}</button>
     <button class="sfx-btn icon" data-act="sfx" aria-pressed="${SFX.on}" aria-label="효과음 ${SFX.on ? '켜짐' : '꺼짐'}" title="효과음 ${SFX.on ? '켜짐' : '꺼짐'}">${SFX.on ? UI_ICON.sound : UI_ICON.mute}</button>
@@ -1392,7 +1395,7 @@ function renderReport() {
         <h3 class="sec-title">학기 성적 · 지필 60% + 수행 40%</h3>
         <table class="tbl"><thead><tr><th>과목</th><th>1차</th><th>2차</th><th>수행</th><th>등급</th></tr></thead><tbody>
         ${fin ? fin.subjects.map(x => `<tr><td>${esc(x.name)}</td><td>${x.w[0] ?? '—'}</td><td>${x.w[1] ?? '—'}</td><td>${x.perf}</td><td>${x.letter ? `<span class="gr">${x.letter}</span> <small>절대평가</small>` : `<span class="gr g${x.grade}">${x.grade}</span> <small>${x.rank}/${x.n}</small>`}</td></tr>`).join('') : '<tr><td colspan="5">기록 없음</td></tr>'}
-        ${fin ? `<tr class="avg"><td>학점 가중 평균</td><td></td><td></td><td></td><td><b>${fin.grade}</b></td></tr>` : ''}
+        ${fin ? `<tr class="avg"><td>학점 가중 평균</td><td></td><td></td><td></td><td><b>${fin.grade}</b></td></tr>` : `<tr><td colspan="5" class="fine">${S.year === 3 && S.sem === 2 ? '3학년 2학기는 정기시험이 없어요. 내신은 3학년 1학기까지로 계산돼요.' : '이번 학기 성적이 없어요.'}</td></tr>`}
         </tbody></table>
         <p class="fine">내신 5등급제 · 1등급 상위 10%, 2등급 34%, 3등급 66%, 4등급 90%</p>
       </div>
