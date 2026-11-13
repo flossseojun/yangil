@@ -161,7 +161,7 @@ function wearItem(id) {
     if (S.closet.length === Object.keys(CLOSET).length && !S.flags.fashion) { S.flags.fashion = 1; G.nick('양일 패셔니스타'); msg += ' 옷장을 다 채웠다. 별명 "양일 패셔니스타"가 생겼다!'; }
     S.result = { title: `옷장 · ${it.name}`, text: msg + ` (남은 용돈 ${won(S.money)})`, diffs: r.diffs, notes: G.notes.slice() };
     S.avatar = Object.assign({}, S.avatar, { [it.slot]: id });
-    if (typeof SFX !== 'undefined') SFX.play('pop');
+    if (typeof SFX !== 'undefined') SFX.play('coin');
   } else {
     S.avatar = Object.assign({}, S.avatar, { [it.slot]: S.avatar[it.slot] === id ? null : id });
   }

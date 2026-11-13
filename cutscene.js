@@ -69,7 +69,7 @@ function endCut() { if (!UI.cut) return; S.cuts = S.cuts || {}; S.cuts[CUT_KEY(S
 const _cutMeta = metaAction;
 metaAction = function (act, arg) {
   if (act === 'cut-skip') { endCut(); return true; }
-  if (act === 'cut-next' && UI.cut) { if (UI.cut.shown < UI.cut.panels.length) { UI.cut.shown++; SFX.play('pop'); renderModal(); } else endCut(); return true; }
+  if (act === 'cut-next' && UI.cut) { if (UI.cut.shown < UI.cut.panels.length) { UI.cut.shown++; SFX.play('page'); renderModal(); } else endCut(); return true; }
   return _cutMeta(act, arg);
 };
 document.addEventListener('keydown', e => { if (UI.cut && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); metaAction('cut-next'); } });

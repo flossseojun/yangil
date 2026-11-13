@@ -1312,7 +1312,7 @@ function buyItem(id, target) {
     if (id === 'bread') { G.aff(target, 7); if (S.partner === target || S.crush === target) { S.love[target] = clamp(S.love[target] + 4); loveTouch(target, 8); } const n = CHARACTERS[target].name; return `${n}에게 소보로빵을 건넸다. "오, 웬일이야?" ${n}${josa(n, '이', '가')} 반을 갈라 다시 내밀었다.`; }
   });
   S.result = { title: `매점 · ${it.name}`, text: r.text + ` (남은 용돈 ${won(S.money)})`, diffs: r.diffs, notes: r.notes };
-  UI.pick = null; SFX.play('pop'); postChecks(); save(); render();
+  UI.pick = null; SFX.play('coin'); postChecks(); save(); render();
 }
 
 function titlePicker() {

@@ -145,7 +145,9 @@ function resolveAct(action, timing, pos) {
   U.pop = { dmg: hp0 - B.hp, timing, taken: ev.taken, blocked: ev.blocked, phase: ev.phaseChange, pos };
   U.msg = bossMsg(B, ev, action);
   U.stage = 'anim'; U.pending = null;
-  SFX.play(timing === 'perfect' ? 'fanfare' : ev.dmg ? 'pop' : 'boing');
+  SFX.play(ev.phaseChange ? 'phase' : timing === 'perfect' ? 'crit' : ev.blocked && !ev.dmg ? 'block' : ev.dmg ? 'hit' : 'miss');
+  if (ev.blocked && ev.dmg) setTimeout(() => SFX.play('block'), 220);
+  if (ev.taken) setTimeout(() => SFX.play('hurt'), 420);
   renderModal();
   clearTimeout(U.timer);
   U.timer = setTimeout(() => { if (UI.boss !== U) return; U.stage = B.done ? 'result' : 'pick'; U.pop = null; if (B.done) SFX.play(B.done === 'win' ? 'fanfare' : 'boing'); renderModal(); }, ev.phaseChange ? 1700 : 1100);
