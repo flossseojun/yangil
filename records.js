@@ -39,6 +39,7 @@ function renderEnding() {
   const best = r.friends.find(f => f.id !== 'teacher');
   return `
   <section class="ending">
+    <p class="ending-top"><button class="link" data-act="menu">← 메인으로</button></p>
     <div class="diploma">
       ${r.avatar ? `<div class="diploma-photo">${avatarSVG(r.avatar, `${esc(r.name)} 증명사진`)}</div>` : ''}
       <p class="diploma-no">제 ${r.gradNo || 57}회 졸업 · 졸업생 ${SCHOOL.grades[3].total}명 중 한 명</p>
@@ -77,6 +78,7 @@ function renderEnding() {
           ${UI.shareText ? `<textarea class="share-text" readonly aria-label="공유 문구">${esc(UI.shareText)}</textarea>` : ''}
           <button class="btn" data-act="png" data-arg="${r.no}">PNG로 저장</button>
           <button class="btn" data-act="new">새로운 인생 시작</button>
+          <button class="btn" data-act="menu">메인으로</button>
           <button class="btn" data-act="gallery">기록 갤러리</button>
           ${joinButton('btn')}
           ${feedbackButton('btn')}

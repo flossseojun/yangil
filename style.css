@@ -1054,3 +1054,5 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .fdex-detail-head p { margin: 4px 0 0; font-size: 13.5px; }
 .fdex-roll { font-size: 15px; margin: 10px 0 4px; }
 .fdex-future { font-size: 14px; }
+.boss-skill.weak { color: #1f2a24; } .boss-skill.weak small { color: #6b5a2a; } .boss-skill:hover:not([disabled]) { color: #1f2a24; }
+.ending-top { margin: 0 0 8px; text-align: right; }
