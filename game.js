@@ -572,6 +572,7 @@ function performAction(type, arg, mult = 1, note = '', info = {}) {
         if (S.met[a.friend] && Math.random() < 0.4) { G.aff(a.friend, 4); return `${pick(a.acts)} ${CHARACTERS[a.friend].name}${josa(CHARACTERS[a.friend].name, '이', '가')} 옆에서 같이 했다.`; }
         return pick(a.acts);
       }
+      default: return typeof extraAction === 'function' ? extraAction(type, arg) : '';
     }
   });
 
@@ -1224,8 +1225,8 @@ function renderGame() {
       : UI.pick === 'hangout' ? hangPicker()
       : UI.pick === 'explore' ? `
         <div class="picker"><div class="picker-head"><b>어디로 가 볼까?</b><button class="link" data-act="unpick">취소</button></div>
-          <div class="pick-grid">${Object.entries(LOCATIONS).filter(([k, l]) => !l.locked || S.flags.roofOpen).map(([k, l]) => `<button class="pick loc" data-act="explore" data-arg="${k}"><span><b>${l.name}</b><small>${l.desc} · 방문 ${S.visits[k] || 0}</small></span></button>`).join('')}</div></div>`
-      : `<div class="actions">${Object.entries(ACTIONS).filter(([k]) => (k !== 'club' || S.club) && (k !== 'auto' || S.autoClub) && (k !== 'council' || S.council) && (k !== 'hangout' || FRIEND_IDS.some(id => S.met[id]))).map(([k, a]) => `
+          <div class="pick-grid">${Object.entries(LOCATIONS).filter(([k, l]) => !l.locked || (l.unlock ? l.unlock(S) : S.flags.roofOpen)).map(([k, l]) => `<button class="pick loc" data-act="explore" data-arg="${k}"><span><b>${l.name}</b><small>${l.desc} · 방문 ${S.visits[k] || 0}</small></span></button>`).join('')}</div></div>`
+      : `<div class="actions">${Object.entries(ACTIONS).filter(([k, a]) => (!a.when || a.when(S)) && (k !== 'club' || S.club) && (k !== 'auto' || S.autoClub) && (k !== 'council' || S.council) && (k !== 'hangout' || FRIEND_IDS.some(id => S.met[id]))).map(([k, a]) => `
           <button class="action" data-act="${k}" ${S.ap > 0 ? '' : 'disabled'}><span class="stamp">${a.mark}</span><span><b>${a.label}</b><small>${a.hint}</small></span></button>`).join('')}</div>`}
       <div class="day-end">
         <button class="btn" data-act="shop">매점 · ${won(S.money)}</button>

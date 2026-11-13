@@ -1113,3 +1113,11 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .report-ctx-box small { color: var(--muted); font-size: 12px; } .report-ctx-box p { margin: 2px 0 0; font-size: 13px; word-break: break-all; }
 .report-card a.btn { text-decoration: none; }
 .report-close { display: block; margin: 10px auto 0; }
+
+/* ⑥ 콤보 칸 · 이야기 에필로그 */
+.combo-bar { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.combo-chip { font-size: 12.5px; padding: 3px 9px; border-radius: 999px; background: #fff3e0; color: #a14a00; border: 1px solid #ffcf99; }
+.combo-chip.on { background: #ffe1b8; font-weight: 700; }
+.epi-arc { margin: 6px 0 10px; padding: 8px 12px; border-left: 4px solid #ffb347; background: #fff8ec; border-radius: 6px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .combo-chip { background: #3a2a14; color: #ffcf99; border-color: #6b4a1f; } :root:not([data-theme="light"]) .combo-chip.on { background: #4d3415; } :root:not([data-theme="light"]) .epi-arc { background: #2e2616; } }
+:root[data-theme="dark"] .combo-chip { background: #3a2a14; color: #ffcf99; border-color: #6b4a1f; } :root[data-theme="dark"] .combo-chip.on { background: #4d3415; } :root[data-theme="dark"] .epi-arc { background: #2e2616; }
