@@ -27,14 +27,31 @@ const SCENE_BG = {
     <rect x="148" y="6" width="24" height="10" rx="2" fill="#fff"/><circle cx="160" cy="11" r="3.5" fill="none" stroke="#555"/>
     ${[40, 120, 200, 280].map(x => `<g><rect x="${x - 26}" y="140" width="52" height="7" rx="2" fill="#b98955"/><rect x="${x - 22}" y="147" width="4" height="30" fill="#6e6e6e"/><rect x="${x + 18}" y="147" width="4" height="30" fill="#6e6e6e"/></g>`).join('')}
     <rect width="320" height="180" fill="url(#sc-vign)"/>`,
+  // 복도: 한쪽은 큰 창문, 맞은편은 교실 앞문·뒷문과 게시판 (양일고 복도엔 사물함이 없다)
   hallway: () => `${WIN_DEF}${SHADE}
     <rect width="320" height="180" fill="#e9eef0"/>
-    <path d="M0 0 H320 V34 H0Z" fill="#f7f9fa"/>${WINDOW(30, 6, 70, 22)}${WINDOW(220, 6, 70, 22)}
+    <rect width="320" height="8" fill="#f7f9fa"/>
     ${FLOOR(132, '#c3ccd0', '#aeb8bd', 9)}
-    <rect x="0" y="128" width="320" height="5" fill="#9fabb1"/>
-    ${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<g><rect x="${6 + i * 39}" y="40" width="35" height="90" rx="2" fill="${i % 3 === 1 ? '#86a8bd' : '#7f9fb3'}" stroke="#5f7f93" stroke-width="1.5"/>${[0, 1, 2].map(k => `<rect x="${12 + i * 39}" y="${48 + k * 5}" width="23" height="2.2" rx="1" fill="#5f7f93"/>`).join('')}<rect x="${33 + i * 39}" y="82" width="3" height="10" rx="1.5" fill="#dfe8ec"/><rect x="${14 + i * 39}" y="104" width="12" height="7" rx="1" fill="#f6f2e4" opacity=".85"/></g>`).join('')}
+    <rect x="0" y="126" width="320" height="7" fill="#9fabb1"/>
+    ${[[14, 'door'], [96, 'board'], [178, 'door'], [258, 'board2']].map(([x, k]) => k === 'door'
+      ? `<g><rect x="${x}" y="40" width="64" height="88" rx="2" fill="#b98955" stroke="#8a6238" stroke-width="2"/><path d="M${x + 32} 40 V128" stroke="#8a6238" stroke-width="2"/><rect x="${x + 6}" y="48" width="20" height="26" fill="url(#sc-win)" stroke="#8a6238"/><rect x="${x + 38}" y="48" width="20" height="26" fill="url(#sc-win)" stroke="#8a6238"/><rect x="${x + 26}" y="88" width="3" height="12" rx="1.5" fill="#e6d3b3"/><rect x="${x + 35}" y="88" width="3" height="12" rx="1.5" fill="#e6d3b3"/><rect x="${x + 14}" y="26" width="36" height="11" rx="2" fill="#2e3f63"/><text x="${x + 32}" y="34.5" text-anchor="middle" font-size="7.5" fill="#fff" font-family="sans-serif">${x < 100 ? '2-1' : '2-2'}</text></g>`
+      : `<g><rect x="${x}" y="46" width="${k === 'board' ? 72 : 56}" height="52" rx="2" fill="#c9a27a" stroke="#9c7a55" stroke-width="2"/>${[[6, 6, '#fff'], [30, 8, '#ffe28a'], [10, 28, '#cfe8ff'], [38, 30, '#ffd1dc']].filter(([dx]) => dx < (k === 'board' ? 60 : 44)).map(([dx, dy, c]) => `<rect x="${x + dx}" y="${46 + dy}" width="20" height="16" fill="${c}" transform="rotate(${dx % 3 - 1} ${x + dx + 10} ${46 + dy + 8})"/><circle cx="${x + dx + 10}" cy="${46 + dy + 2}" r="1.6" fill="#d9534f"/>`).join('')}</g>`).join('')}
+    <g transform="translate(300 96)"><rect x="-8" y="0" width="16" height="30" rx="3" fill="#e9f3f8" stroke="#9fb4bf"/><rect x="-5" y="4" width="10" height="8" fill="#7fc6e6"/><rect x="-3" y="16" width="6" height="3" fill="#5a7f93"/></g>
+    <rect x="0" y="8" width="320" height="10" fill="#dfe6ea"/>
     <path d="M0 132 L320 132" stroke="#fff" stroke-width="1" opacity=".6"/>
     <ellipse cx="160" cy="150" rx="120" ry="10" fill="#fff" opacity=".18"/>
+    <rect width="320" height="180" fill="url(#sc-vign)"/>`,
+  // 교실 뒤: 사물함 두 줄, 위엔 게시판과 시계
+  classback: () => `${SHADE}
+    <rect width="320" height="180" fill="#f1e9d6"/><rect width="320" height="8" fill="#e4d8bd"/>
+    <rect x="40" y="16" width="240" height="44" rx="2" fill="#7d5a36"/><rect x="44" y="20" width="232" height="36" fill="#c9a27a"/>
+    ${[[52, '#fff'], [92, '#ffe28a'], [132, '#cfe8ff'], [172, '#fff'], [212, '#ffd1dc'], [248, '#e2f5d5']].map(([x, c], i) => `<rect x="${x}" y="${24 + (i % 2) * 4}" width="26" height="24" fill="${c}" transform="rotate(${i % 3 - 1} ${x + 13} 36)"/><circle cx="${x + 13}" cy="${26 + (i % 2) * 4}" r="1.6" fill="#d9534f"/>`).join('')}
+    <text x="160" y="14" text-anchor="middle" font-size="6.5" fill="#8a6d4a" font-family="sans-serif">2학년 2반 · 우리 반 게시판</text>
+    <circle cx="300" cy="30" r="10" fill="#fff" stroke="#555" stroke-width="2"/><path d="M300 30 V23 M300 30 L305 32" stroke="#333" stroke-width="1.5"/>
+    <rect x="0" y="66" width="320" height="70" fill="#8a9aa6"/>
+    ${[0, 1].map(r => Array.from({ length: 10 }, (_, i) => `<g><rect x="${2 + i * 32}" y="${68 + r * 34}" width="30" height="32" rx="1.5" fill="${(i + r) % 3 === 1 ? '#9fb0bc' : '#a8b8c3'}" stroke="#6f818e" stroke-width="1.2"/><rect x="${6 + i * 32}" y="${72 + r * 34}" width="14" height="5" rx="1" fill="#f6f2e4" opacity=".9"/><rect x="${24 + i * 32}" y="${84 + r * 34}" width="3" height="7" rx="1.5" fill="#dfe8ec"/></g>`).join('')).join('')}
+    ${FLOOR(136, '#c79f6e', '#b08757')}
+    <rect x="0" y="134" width="320" height="4" fill="#6f818e"/>
     <rect width="320" height="180" fill="url(#sc-vign)"/>`,
   field: () => `${SKY('sc-sky-f', '#6ec3f2', '#bfe6fb', '#e8f7ff')}${SHADE}
     <rect width="320" height="180" fill="url(#sc-sky-f)"/>
@@ -124,7 +141,7 @@ const SCENE_BG = {
     <g transform="translate(56 120)"><path d="M0 0 L22 -18" stroke="#ccc" stroke-width="4"/><path d="M8 -4 L2 14 M8 -4 L16 14" stroke="#999" stroke-width="2"/></g>
     <rect width="320" height="180" fill="url(#sc-vign)"/>`,
 };
-const SCENE_BG_NAME = { classroom: '교실', hallway: '복도', field: '운동장', store: '매점', ginkgo: '은행나무길', library: '도서관', river: '남한강 둑길', auditorium: '강당', gym: '체육관', rooftop: '옥상 밤하늘' };
+const SCENE_BG_NAME = { classroom: '교실', classback: '교실 뒤', hallway: '복도', field: '운동장', store: '매점', ginkgo: '은행나무길', library: '도서관', river: '남한강 둑길', auditorium: '강당', gym: '체육관', rooftop: '옥상 밤하늘' };
 
 /* ───────── 친구 외모 ─────────
    av: 아바타 부품(+ lips), tall: 키 큼, prop: 들고 있는 소품 */
@@ -222,7 +239,7 @@ const SCENE_WORDS = [
   [/체육관|농구|배드민턴|스쿼트|헬스|유도|매트/, 'gym'], [/남한강|둑길|강가|하천|노을|할리/, 'river'],
   [/도서관|책장|서가|스터디룸/, 'library'], [/매점|소보로|빵|분식|떡볶이|편의점|쏜다|한턱/, 'store'],
   [/은행나무|벤치|하굣길|산책/, 'ginkgo'], [/운동장|축구|달리기|체육한마당|스탠드|크로스|골대|레이드|포켓스톱/, 'field'],
-  [/복도|사물함|게시판|교문/, 'hallway'],
+  [/사물함/, 'classback'], [/복도|게시판|교문/, 'hallway'],
 ];
 const LOC_BG = { library: 'library', store: 'store', field: 'field', ginkgo: 'ginkgo', empty: 'classroom', roof: 'rooftop' };
 function sceneBgFor(e, text) {

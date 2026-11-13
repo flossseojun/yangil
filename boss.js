@@ -29,8 +29,8 @@ const BOSSES = {
         { id: 'pixel', name: '픽셀 폭격', dmg: 21, counter: '수학', desc: '네모난 빛이 쏟아져요' },
         { id: 'blue2', name: '블루스크린 2.0', dmg: 11, counter: '국어', effect: 'stun', desc: '막지 못하면 1턴 기절' },
       ] } },
-  locker: { name: '사물함 미믹', year: 2, sem: 1, bg: 'hallway', hp: 288, weak: '수학', resist: '국어',
-    intro: '복도 끝 사물함 문이 덜컹 열리더니 이빨이 보였다. 안에서 시험지가 쏟아진다!',
+  locker: { name: '교실 뒤 사물함 미믹', year: 2, sem: 1, bg: 'classback', hp: 288, weak: '수학', resist: '국어',
+    intro: '시험 날 아침, 교실 뒤 내 사물함 문이 덜컹 열리더니 이빨이 보였다. 안에서 시험지가 쏟아진다!',
     win: '사물함 문이 쾅 닫히고 조용해졌다. 안에서 잃어버린 체육복이 나왔다.', lose: '프린트 더미에 깔려 버렸다.',
     moves: [
       { id: 'storm', name: '프린트 폭풍', dmg: 7, hits: 3, counter: '국어', desc: '3연타! 막지 않으면 아파요' },
