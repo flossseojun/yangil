@@ -462,7 +462,7 @@ ev({ id: 'album', type: 'story', once: true, title: '졸업 앨범 촬영',
 ev({ id: 'exam', type: 'story', title: '정기시험',
   text: s => `${s.year}학년 ${s.sem}학기 ${examName()} 날. 같은 학년 ${SCHOOL.grades[s.year].total}명이 동시에 시험지를 넘긴다. 내신 5등급, 1등급은 상위 10%뿐이다.`,
   choices: [
-    { label: '실력대로 푼다', hint: '공부 기반', run: s => takeExam('skill') },
+    { label: '실력대로 푼다', hint: '공부 기반 · 학기말엔 보스전', run: s => takeExam('skill', typeof bossExamBonus === 'function' ? bossExamBonus(s) : 0) },
     { label: '찍기 신공을 믿는다', hint: '운 기반', run: s => takeExam('luck') },
     { label: '시험지 뒷면에 시를 쓴다', hint: '???', run: s => takeExam('poem') },
   ] });

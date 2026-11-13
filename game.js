@@ -760,7 +760,7 @@ function examRank(score, n) {
 }
 // 수능은 9등급제 그대로 (4·11·23·40·60·77·89·96%)
 function suneungGrade(pct) { return [4, 11, 23, 40, 60, 77, 89, 96, 100].findIndex(c => pct <= c) + 1; }
-function takeExam(mode) {
+function takeExam(mode, bonusExtra = 0) {
   const s = S;
   const type = examName();
   const fatPen = Math.max(0, s.fatigue - 55) * 0.5;
@@ -777,6 +777,7 @@ function takeExam(mode) {
   if (s.flags.examTip) { bonus += 4 * s.flags.examTip; s.flags.examTip = 0; comment += ' 미리 입수한 정보가 도움이 됐다.'; }
   if (s.flags.fortune) { bonus += 5 * s.flags.fortune; comment += s.flags.fortune > 0 ? ' 점괘가 맞았다!' : ' 불길한 점괘가 머리를 맴돌았다.'; s.flags.fortune = 0; }
   if (G.has('glass')) bonus += s.fatigue < 40 ? 6 : s.fatigue > 65 ? -10 : 0;
+  bonus += bonusExtra;
   if (s.flags.pen) { bonus += 3; s.flags.pen = 0; comment += ' 행운의 볼펜이 술술 써졌다.'; }
   if (s.partner && s.love[s.partner] >= 60) { bonus += 3; comment += ` ${CHARACTERS[s.partner].name}의 응원 메시지 덕분에 힘이 났다.`; }
   { const pb = payback('exam'); bonus += pb.bonus; comment += pb.text; }
@@ -807,9 +808,10 @@ function takeExam(mode) {
     return (prep ? prepText(prep).trim() + '\n\n' : '') + `${type} 결과 (지필 · 가채점)\n` + subs.map(x => `${x.sub.name} ${x.score}점 · 지금이라면 ${x.letter ? `${x.letter} (절대평가)` : `${x.grade}등급`}`).join('\n') + `\n수행평가와 2차 시험까지 합쳐서 학기 등급이 나온다.${comment}`;
   }
   const fin = finalizeSemester();
+  const bossNote = s._bossNote ? s._bossNote + '\n' : ''; s._bossNote = null;
   if (fin.grade <= 1.5) SFX.play('fanfare');
   const react = fin.grade <= 1.5 ? '교실 뒤에서 탄성이 들렸다.' : fin.grade <= 2.5 ? '꽤 잘했다. 1등급 과목을 늘려 보자.' : fin.grade <= 3.5 ? '딱 중간. 약한 과목부터 챙기자.' : '성적표를 접어서 가방 깊숙이 넣었다.';
-  return `${type} 결과 → 학기 최종 평균 ${fin.grade}등급\n` + fin.subjects.map(x => `${x.name} 지필 ${x.w.join('·')} + 수행 ${x.perf} → ${x.letter ? `${x.letter} (절대평가)` : `${x.grade}등급 (${x.rank}/${x.n})`}`).join('\n') + `\n${react}${comment}`;
+  return bossNote + `${type} 결과 → 학기 최종 평균 ${fin.grade}등급\n` + fin.subjects.map(x => `${x.name} 지필 ${x.w.join('·')} + 수행 ${x.perf} → ${x.letter ? `${x.letter} (절대평가)` : `${x.grade}등급 (${x.rank}/${x.n})`}`).join('\n') + `\n${react}${comment}`;
 }
 
 // 학기 최종 성적: 지필(1차 30% + 2차 30%) + 수행평가 40%, 과목 수강 인원 안에서 석차·등급
