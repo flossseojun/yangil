@@ -646,8 +646,13 @@ function postChecks() {
 function rareMult() {
   return (G.has('lucky') ? 2 : 1) * (clubTag(S) === 'science' ? 1.3 : 1) * (S.talentRevealed && S.talent === 'detective' ? 1.3 : 1) * (1 + S.stats.luck / 100);
 }
+// 한 판에서 본 사건은 다시 안 나온다. 친구가 바뀌는 사건(부탁·합동·반복 대화 이벤트)과 연애·학교 행사는 예외
+const REPEATABLE = new Set(['favor_ask', 'duo', 'pair_scene', 'ryun_double', 'pigeon_chase', 'late_bloom', 'love_date', 'love_pepero', 'love_xmas']);
+let RELAX_REPEAT = false;
+function noRepeat(e) { return !REPEATABLE.has(e.id) && !e.id.startsWith('sig_') && e.type !== 'story' && !e.repeat; }
 function available(e) {
   if (e.once && S.seen[e.id]) return false;
+  if (!RELAX_REPEAT && noRepeat(e) && S.seen[e.id]) return false;
   if (S.recent.includes(e.id)) return false;
   return !e.cond || e.cond(S);
 }
@@ -658,7 +663,10 @@ function weighted(list) {
   for (const x of list) { r -= x.w; if (r <= 0) return x.id; }
   return list[list.length - 1].id;
 }
-function pickRandomEvent() {
+// 고를 사건이 다 떨어지면 그때만 본 사건도 다시 허용한다
+function pickRelaxed(fn) { const r = fn(); if (r) return r; RELAX_REPEAT = true; try { return fn(); } finally { RELAX_REPEAT = false; } }
+function pickRandomEvent() { return pickRelaxed(pickRandomEvent0); }
+function pickRandomEvent0() {
   const list = Object.values(EVENTS).filter(e => !e.loc && !e.rel && ['daily', 'absurd', 'rare'].includes(e.type) && available(e)).map(e => {
     // 친구가 나오는 사건을 먼저 고른다
     let w = e.type === 'love' ? 6 : e.type === 'meet' ? 4 : e.rel ? 5 : e.type === 'daily' ? 2 : e.type === 'absurd' ? 1.2 * (G.has('chaos') ? 2 : 1) : 0.35 * rareMult();
@@ -668,7 +676,8 @@ function pickRandomEvent() {
 }
 // 연애 사건은 일상 사건과 따로 하루 한 번까지
 // 인간관계 사건: 친구가 나오는 사건과, 아직 못 만난 친구와의 첫 만남
-function pickRelEvent() {
+function pickRelEvent() { return pickRelaxed(pickRelEvent0); }
+function pickRelEvent0() {
   return weighted(Object.values(EVENTS).filter(e => (e.rel && e.type !== 'love' || e.type === 'meet' || e.type === 'cameo') && available(e))
     .map(e => ({ id: e.id, w: (e.relWeight || (e.type === 'meet' ? 4 : e.type === 'cameo' ? 3.5 : 3)) / (1 + (e.relWeight ? 0.4 : 1.5) * (S.seen[e.id] || 0)) })));
 }
@@ -678,12 +687,13 @@ function pickCameoEvent() {
 function pickLoveEvent() {
   return weighted(['love_flutter', 'love_date', 'love_jealous', 'love_jealous_me', 'love_tease', 'love_almost'].filter(id => available(EVENTS[id])).map(id => ({ id, w: id === 'love_date' || id === 'love_flutter' ? 3 : 1.2 })));
 }
-function pickLocationEvent(loc) {
+function pickLocationEvent(loc) { return pickRelaxed(() => pickLocationEvent0(loc)); }
+function pickLocationEvent0(loc) {
   const list = Object.values(EVENTS).filter(e => e.loc === loc && available(e)).map(e => {
     let w = e.type === 'meet' ? 7 : e.type === 'rare' ? 1.2 * rareMult() * (e.id === 'hidden_room' ? 3 : 1) : 3;
     return { id: e.id, w: w / (1 + 1.2 * (S.seen[e.id] || 0)) };
   });
-  return weighted(list) || pickRandomEvent();
+  return weighted(list) || pickRandomEvent0();
 }
 
 function nextEvent() {

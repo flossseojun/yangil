@@ -68,7 +68,12 @@ const TEACHER_TIER_LABEL = ['경계', '관심', '신뢰', '각별'];
 
 function charLine(id, aff) {
   const pool = CHARACTERS[id].lines[affTier(aff)];
-  return pool[Math.floor(Math.random() * pool.length)];
+  // 방금 들은 대사(최근 3개)는 연속으로 안 나오게
+  const recent = (typeof S !== 'undefined' && S) ? ((S.lastLines = S.lastLines || {})[id] = S.lastLines[id] || []) : [];
+  const fresh = pool.filter(l => !recent.includes(l));
+  const line = (fresh.length ? fresh : pool)[Math.floor(Math.random() * (fresh.length || pool.length))];
+  if (recent) { recent.unshift(line); recent.length = Math.min(recent.length, 3); }
+  return line;
 }
 
 // 연애는 연애 모드에서, 주인공과 성별이 다른 친구와만 (성별이 없으면 제한 없음)

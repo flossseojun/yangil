@@ -89,13 +89,24 @@ function makeQuestionBasic(area, year) {
 
 // 대화 반응: 친구마다 좋아하는 반응이 다르다
 // 친구 대사의 종류(제안 · 질문 · 그냥 말)에 맞춰 반응 문장을 바꾼다. 성향(진지·장난·호기심)은 그대로다.
+// 같은 반응 문구가 반복되지 않게 표현을 여러 개 두고 대사마다 다르게 고른다
+const REACT_VARIANTS = {
+  invite: { sincere: ['"좋아, 같이 하자." 하고 웃는다', '"응, 나도 그러고 싶었어."', '"좋지. 몇 시에?" 하고 진지하게 묻는다', '"당연하지, 같이 가자."'],
+    playful: ['"좋아! 대신 지는 사람이 매점 쏘기!"', '"콜! 늦으면 벌칙이다!"', '"나 없으면 심심하지? 갈게!"', '"오케이, 대신 네가 앞장서!"'],
+    curious: ['"좋지! 근데 왜 갑자기?" 하고 웃으며 묻는다', '"어디로? 뭐 하는 건데?"', '"오, 재밌겠다. 누구누구 와?"', '"좋아! 근데 그거 처음 해 봐. 알려 줄 거지?"'] },
+  question: { sincere: ['진지하게 대답해 준다', '잠깐 생각하고 솔직하게 말한다', '고개를 끄덕이며 차분히 대답한다', '정성껏 설명해 준다'],
+    playful: ['장난스럽게 대답한다', '"비밀이야~" 하고 웃는다', '일부러 엉뚱한 대답을 한다', '"맞혀 봐!" 하고 되묻는다'],
+    curious: ['대답하고 이것저것 더 물어본다', '"너는? 너는 어때?" 하고 되묻는다', '"그거 왜 궁금해?" 하고 눈을 반짝인다', '대답하다가 새로운 이야기로 넘어간다'] },
+  say: { sincere: ['진지하게 고개를 끄덕인다', '"그렇구나, 고마워." 하고 웃는다', '끝까지 들어 주고 맞장구친다', '"나도 그렇게 생각해."'],
+    playful: ['장난스럽게 받아친다', '과장된 리액션으로 놀란 척한다', '"에이, 진짜?" 하고 웃는다', '하이파이브를 청한다'],
+    curious: ['"그래서? 더 얘기해 줘!" 하고 묻는다', '"어떻게 그렇게 됐어?" 하고 묻는다', '눈을 반짝이며 귀를 기울인다', '"오, 그거 더 알고 싶어."'] },
+};
+function reactPick(kind, line) { let h = 0; for (const ch of line) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const v = REACT_VARIANTS[kind]; return { sincere: v.sincere[h % v.sincere.length], playful: v.playful[(h >>> 3) % v.playful.length], curious: v.curious[(h >>> 6) % v.curious.length] }; }
 function reactionsFor(line) {
   const t = line.trim();
-  if (/(하자|가자|보자|자!|자\.|할래\?|갈래\?|볼래\?|먹을래\?|해 줄까\?|줄게)/.test(t)) return {
-    sincere: '"좋아, 같이 하자." 하고 웃는다', playful: '"좋아! 대신 지는 사람이 매점 쏘기!"', curious: '"좋지! 근데 왜 갑자기?" 하고 웃으며 묻는다' };
-  if (/\?$/.test(t)) return {
-    sincere: '진지하게 대답해 준다', playful: '장난스럽게 대답한다', curious: '대답하고 이것저것 더 물어본다' };
-  return REACTIONS;
+  if (/(하자|가자|보자|자!|자\.|할래\?|갈래\?|볼래\?|먹을래\?|해 줄까\?|줄게)/.test(t)) return reactPick('invite', t);
+  if (/\?$/.test(t)) return reactPick('question', t);
+  return reactPick('say', t);
 }
 const REACTIONS = {
   sincere: '진지하게 고개를 끄덕인다',
