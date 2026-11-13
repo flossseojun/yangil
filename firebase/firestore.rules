@@ -30,19 +30,6 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // 게임 안 제보: 누구나(익명 로그인) 쓰기만 가능. 읽기·수정·삭제는 콘솔에서만.
-    match /reports/{id} {
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['uid', 'nick', 'kind', 'text', 'ctx', 'ts', 'v'])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.kind in ['bug', 'typo', 'idea', 'etc']
-        && request.resource.data.text is string && request.resource.data.text.size() >= 2 && request.resource.data.text.size() <= 500
-        && request.resource.data.nick is string && request.resource.data.nick.size() <= 10
-        && request.resource.data.ctx is map
-        && request.resource.data.ts == request.time;
-      allow read, update, delete: if false;
-    }
-
     // 엔딩 수집: 한 사람당 문서 하나. 본인만 쓰고, 20초에 한 번까지.
     match /players/{uid} {
       allow read: if true;

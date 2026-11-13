@@ -1109,3 +1109,7 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .report-card textarea { width: 100%; font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); resize: vertical; }
 .report-ctx { margin: 6px 0 0; }
 .report-msg { min-height: 1.2em; color: #c0392b; }
+.report-ctx-box { margin: 10px 0 4px; padding: 8px 12px; border-radius: 10px; background: rgba(0, 0, 0, .05); }
+.report-ctx-box small { color: var(--muted); font-size: 12px; } .report-ctx-box p { margin: 2px 0 0; font-size: 13px; word-break: break-all; }
+.report-card a.btn { text-decoration: none; }
+.report-close { display: block; margin: 10px auto 0; }

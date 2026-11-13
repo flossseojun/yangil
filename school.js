@@ -244,5 +244,5 @@ const SHOP = {
 const ALLOWANCE = 700;  // 하루 용돈
 // 출연 신청 구글 폼 주소. 비워 두면 메뉴의 신청 버튼이 "준비 중"으로 보인다.
 const JOIN_FORM_URL = 'https://naver.me/Ge7KfixW';
-// 버그·아이디어 제보. 따로 폼이 없어서 지금은 출연 신청 폼과 같은 주소를 쓴다.
-const FEEDBACK_URL = JOIN_FORM_URL;
+// 버그·아이디어 제보 네이버 폼
+const FEEDBACK_URL = 'https://naver.me/xHEUGN1r';
