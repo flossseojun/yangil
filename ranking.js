@@ -183,3 +183,39 @@ graduate = function () {
 };
 // 접속할 때 못 올린 기록이 있으면 자동으로 올린다
 if (FIREBASE_CONFIG && nickOf()) rankDrain(4000);
+
+/* ───────── 공지사항 팝업 ─────────
+   게임을 열면 한 번 뜬다. 「확인」을 누르면 이 기기에서는 다시 안 뜬다. (자동 테스트 브라우저에서는 띄우지 않는다) */
+const NOTICE = {
+  id: 'ranking-2026-11',
+  title: '🏆 랭킹 시스템이 열렸어요!',
+  date: '2026.11.13',
+  body: [
+    ['친구들과 순위 겨루기', '메인 메뉴 「랭킹」에서 졸업 점수 · 엔딩 수집 · 명예의 전당 순위를 볼 수 있어요.'],
+    ['닉네임 한 번만', '게임을 시작할 때 닉네임(2~10자)을 정하면 끝. 실명 대신 별명을 써도 돼요.'],
+    ['졸업하면 자동 등록', '졸업할 때마다 기록이 판마다 자동으로 랭킹에 올라가요. 따로 누를 건 없어요.'],
+    ['명예의 전당', '전설 엔딩 + S등급 + 내신 1점대를 한 판에 채우면 명예의 전당에 이름이 올라가요.'],
+  ],
+};
+const NOTICE_KEY = 'yangil.notice';
+function showNotice(force) {
+  if (!force) { try { if (navigator.webdriver || localStorage.getItem(NOTICE_KEY) === NOTICE.id) return; } catch (e) { return; } }
+  if (document.getElementById('notice')) return;
+  const el = document.createElement('div');
+  el.id = 'notice'; el.className = 'overlay notice-overlay';
+  el.innerHTML = `<div class="card notice-card" role="dialog" aria-modal="true" aria-labelledby="notice-title">
+    <p class="eyebrow">양일고 공지사항 · ${NOTICE.date}</p>
+    <h2 id="notice-title">${esc(NOTICE.title)}</h2>
+    <ul class="notice-list">${NOTICE.body.map(([h, t]) => `<li><b>${esc(h)}</b><span>${esc(t)}</span></li>`).join('')}</ul>
+    <div class="create-actions"><button class="btn" data-notice="rank">랭킹 보러 가기</button><button class="btn primary" data-notice="ok">확인</button></div>
+  </div>`;
+  el.addEventListener('click', e => {
+    const b = e.target.closest('[data-notice]'); if (!b && e.target !== el) return;
+    try { localStorage.setItem(NOTICE_KEY, NOTICE.id); } catch (x) {}
+    el.remove();
+    if (b && b.dataset.notice === 'rank' && !S) { UI.screen = 'hall'; UI.rankTab = 'score'; render(); }
+  });
+  document.body.appendChild(el);
+  const ok = el.querySelector('[data-notice=ok]'); if (ok) ok.focus();
+}
+setTimeout(() => showNotice(false), 400);
