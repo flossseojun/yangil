@@ -1180,6 +1180,7 @@ function renderGame() {
     <div class="top-tools">
     <button class="sfx-btn" data-act="menu" aria-label="메인 화면으로 (저장됨)">메인으로</button>
     <button class="sfx-btn" data-act="restart-ask" aria-label="처음부터 다시 시작">다시 시작</button>
+    <button class="sfx-btn" data-act="report-open" aria-label="버그·의견 제보">제보</button>
     <button class="sfx-btn icon" data-act="tut-open" aria-label="게임 설명 다시 보기" title="도움말">${UI_ICON.help}</button>
     <button class="sfx-btn icon" data-act="sfx" aria-pressed="${SFX.on}" aria-label="효과음 ${SFX.on ? '켜짐' : '꺼짐'}" title="효과음 ${SFX.on ? '켜짐' : '꺼짐'}">${SFX.on ? UI_ICON.sound : UI_ICON.mute}</button>
     <button class="sfx-btn icon" data-act="bgm" aria-pressed="${BGM.on}" aria-label="음악 ${BGM.on ? '켜짐' : '꺼짐'}" title="음악 ${BGM.on ? '켜짐' : '꺼짐'}">${UI_ICON.music}</button>

@@ -1104,3 +1104,8 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .cut-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #fff; }
 .cut-bar .link { color: #cfd8d2; }
 .cut-dots { display: flex; gap: 6px; } .cut-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .3); } .cut-dots i.on { background: #ffd23f; }
+.report-kinds { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 10px; font-size: 14px; }
+.report-kinds input { accent-color: #2b4a3c; }
+.report-card textarea { width: 100%; font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); resize: vertical; }
+.report-ctx { margin: 6px 0 0; }
+.report-msg { min-height: 1.2em; color: #c0392b; }
