@@ -243,3 +243,14 @@ document.addEventListener('keydown', e => {
     const i = order[+e.key - 1]; if (i != null && !(B.effects.seal && B.sealed === i)) startTiming({ type: 'skill', i });
   }
 });
+
+/* ───────── 기록: 졸업 화면 · 보스 도감 ───────── */
+function bossRecordHtml(r) {
+  return `<div class="paper boss-record"><h3 class="sec-title">학기말 보스전</h3><ul class="boss-rec-list">${r.bosses.map(x => { const b = BOSSES[x.bossId]; if (!b) return '';
+    return `<li class="${x.done}"><b>${b.year}학년 ${b.sem}학기 · ${esc(b.name)}</b><span>${x.done === 'win' ? '처치' : x.done === 'lose' ? '패배' : '시간 종료'} · 지필 ${x.bonus >= 0 ? '+' : ''}${x.bonus}점</span></li>`; }).join('')}</ul></div>`;
+}
+function bossDexHtml(d) {
+  const won = d.bosses || {};
+  return BOSS_ORDER.map(id => { const b = BOSSES[id], n = won[id] || 0;
+    return `<li class="dex-item boss-dex-item ${n ? 'found' : ''}"><span class="boss-thumb ${n ? '' : 'locked'}">${bossSVG(id, 1)}</span><b>${n ? esc(b.name) : '???'}</b><span>${b.year}학년 ${b.sem}학기 학기말 보스${n ? ` · 2단계 「${esc(b.phase2.name)}」` : ''}</span><small>${n ? `처치 ${n}회` : '아직 처치하지 못함'}</small></li>`; }).join('');
+}

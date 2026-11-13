@@ -18,7 +18,7 @@ function saveRecord(s, j) {
     friends, ach: s.ach.slice(), rare: s.rare.slice(), nicks: s.nicks.slice(), club: s.club, absurd: s.absurd,
     bestExam: s.exams.reduce((a, e) => Math.max(a, e.score), 0), date: new Date().toISOString(),
     track: s.track, electives: s.electives, autoClub: s.autoClub, setuk: (s.setuk || []).length, setukTop: (s.setuk || []).slice(-2).map(x => x.text),
-    sv: 2, photo: s.photo || null, history: (s.history || []).slice(), bloom: !!s.flags.bloomed, legend: legendOf(s),
+    sv: 2, bosses: (s.bossLog || []).slice(), photo: s.photo || null, history: (s.history || []).slice(), bloom: !!s.flags.bloomed, legend: legendOf(s),
     days: (s.days || []).map(d => ({ y: d.y, s: d.s, date: d.date, k: d.k, rare: d.rare, n: d.n, a: d.a, h: d.h })), best: (s.best || []).slice(0, 3),
     college: s.college, daily: s.daily, memories: albumPicks(s.memories || [], 8), rolling: rollingList(s).filter(r => r.id !== 'teacher').slice(0, 4).map(r => ({ name: r.name, msg: r.msg })), title: TITLES[s.title || 'newbie'].name, titleCount: (s.titles || []).length, cameo: Object.assign({}, s.cameo || {}), president: s.flags.president ? 'president' : s.flags.vicePresident ? 'vice' : null, council: s.council ? COUNCIL_DEPTS[s.council].name : null, partner: s.partner ? { id: s.partner, love: s.love[s.partner], secret: !!s.loveSecret } : null, scale: 5, suneung: s.suneung ? s.suneung.grade : null, gradNo: SCHOOL.lastGradNo + (2026 + 2 - SCHOOL.lastGradYear),
   };
@@ -86,6 +86,7 @@ function renderEnding() {
     </div>
     ${typeof hallCheckHtml === 'function' ? hallCheckHtml(r) : ''}
     ${typeof rankEndingHtml === 'function' ? rankEndingHtml(r) : ''}
+    ${typeof bossRecordHtml === 'function' && (r.bosses || []).length ? bossRecordHtml(r) : ''}
     ${renderNewspaper(r)}
     ${renderBest(r)}
     ${r.photo && typeof groupPhotoHtml === 'function' ? groupPhotoHtml(photoOfRecord(r)) : ''}
@@ -212,7 +213,9 @@ UI.dexTab = 'endings';
 function renderDex() {
   const d = loadDex();
   const tabs = [['endings', `엔딩 ${ENDINGS.filter(e => d.endings[e.id]).length}/${ENDINGS.length}`], ['ach', `업적 ${Object.keys(ACHIEVEMENTS).filter(k => d.ach[k]).length}/${Object.keys(ACHIEVEMENTS).length}`], ['titles', `칭호 ${Object.keys(TITLES).filter(k => d.titles[k]).length}/${Object.keys(TITLES).length}`], ['friends', `친구 ${CAMEO_IDS.filter(id => d.friends[id]).length}/${CAMEO_IDS.length}`], ['nicks', `별명 ${friendNicks().filter(x => d.nicks[x.nick]).length}/${friendNicks().length}`], ['legends', `레전드 ${Object.keys(d.legends || {}).length}`], ['rare', `희귀 이벤트 ${Object.values(EVENTS).filter(e => e.type === 'rare' && d.rare[e.id]).length}/${Object.values(EVENTS).filter(e => e.type === 'rare').length}`]];
+  if (typeof BOSS_ORDER !== 'undefined') tabs.push(['bosses', `보스 ${BOSS_ORDER.filter(id => (d.bosses || {})[id]).length}/${BOSS_ORDER.length}`]);
   let body = '';
+  if (UI.dexTab === 'bosses' && typeof bossDexHtml === 'function') body = bossDexHtml(d);
   if (UI.dexTab === 'endings') body = ENDINGS.map(e => d.endings[e.id]
     ? `<li class="dex-item found"><b>${esc(e.name)}</b><span>${esc(e.desc)}</span><small>달성 ${d.endings[e.id]}회</small></li>`
     : `<li class="dex-item"><b>??????</b><span>힌트: ${esc(e.hint)}</span></li>`).join('');
