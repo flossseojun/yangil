@@ -93,11 +93,12 @@ function avatarSVG2(av, label = '내 아바타', opts = {}) {
   if (expr === 'embarrassed') p.push('<path d="M33 57 l2 -1.5 M36 58 l2 -1.5 M62 57 l2 -1.5 M65 58 l2 -1.5" stroke="#e05a6d" stroke-width=".9" opacity=".7"/>');
 
   // 눈썹
-  const bw = a.build === 'muscle' ? 2.4 : 1.9;
+  // 굵고 치켜올라간 눈썹(brows: 'bold'): 표정과 상관없이 늘 화난 새처럼 진한 눈썹
+  const bw = a.brows === 'bold' ? 3.6 : a.build === 'muscle' ? 2.4 : 1.9;
   const browPath = {
     smile: ['M36 43.5 Q41 41.5 45.5 43', 'M54.5 43 Q59 41.5 64 43.5'], sad: ['M36 44 Q41 43 45 41.5', 'M55 41.5 Q59 43 64 44'],
     angry: ['M36 41.5 Q41 42.5 45.5 45', 'M54.5 45 Q59 42.5 64 41.5'], surprised: ['M36 41 Q41 38.5 45.5 40.5', 'M54.5 40.5 Q59 38.5 64 41'],
-  }[expr === 'embarrassed' ? 'sad' : expr === 'proud' ? 'angry' : expr] || ['M36 43.5 Q41 41.5 45.5 43', 'M54.5 43 Q59 41.5 64 43.5'];
+  }[a.brows === 'bold' && expr !== 'surprised' ? 'angry' : expr === 'embarrassed' ? 'sad' : expr === 'proud' ? 'angry' : expr] || ['M36 43.5 Q41 41.5 45.5 43', 'M54.5 43 Q59 41.5 64 43.5'];
   p.push(browPath.map(d => `<path d="${d}" stroke="${brow}" stroke-width="${bw}" fill="none" stroke-linecap="round"/>`).join(''));
 
   // 눈
