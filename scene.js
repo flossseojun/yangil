@@ -199,9 +199,9 @@ Object.assign(FRIEND_LOOKS, {
   yul:         { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'plain', acc: 'none', eyes: 'sharp' }, prop: 'basketball' },
   sunbi:       { av: { hair: 'long', hairColor: '#1e1b1a', skin: '#fcebdf', face: 'smile', acc: 'none', eyes: 'sharp', lash: true, lips: '#d4606f' } },
   baekho:      { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'round' }, prop: 'phone' },
-  yeonju:      { av: { hair: 'long', hairColor: '#2b1d17', skin: '#fcebdf', face: 'proud', acc: 'none', eyes: 'sharp', lash: true } },
+  yeonju:      { av: { hair: 'bob', hairColor: '#7a4b2a', skin: '#fcebdf', face: 'proud', acc: 'none', eyes: 'sharp', lash: true } },
   bojun:       { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'smile', acc: 'none', eyes: 'sharp', build: 'muscle' } },
-  namjiho:     { av: { hair: 'bob', hairColor: '#4a2f22', skin: '#fcebdf', face: 'wink', acc: 'none', eyes: 'round', lash: true } },
+  namjiho:     { av: { hair: 'long', hairColor: '#8a5a34', skin: '#fcebdf', face: 'wink', acc: 'none', eyes: 'round', lash: true } },
   seungmin:    { av: { hair: 'side', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'droop' } },
   yuna:        { av: { hair: 'long', hairColor: '#7a4b2a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'round', lash: true } },
 });
