@@ -42,5 +42,20 @@ service cloud.firestore {
         && (resource == null || request.time > resource.data.ts + duration.value(20, 's'));
       allow delete: if false;
     }
+
+    // 플레이 통계: 날짜별 숫자만. 누구나 읽고, 로그인(익명)하면 한 번에 한 칸씩 1만 더할 수 있다. 지울 수 없다.
+    function statKeys() { return ['visits', 'users', 'starts', 'r11', 'r12', 'r21', 'r22', 'r31', 'r32', 'grads']; }
+    function oneUp() {
+      let ks = request.resource.data.diff(resource.data).affectedKeys().toList();
+      return ks.size() == 1 && request.resource.data[ks[0]] == resource.data.get(ks[0], 0) + 1;
+    }
+    match /stats/{day} {
+      allow read: if true;
+      allow create: if request.auth != null && day.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.keys().hasOnly(statKeys()) && request.resource.data.keys().size() == 1
+        && request.resource.data[request.resource.data.keys()[0]] == 1;
+      allow update: if request.auth != null && request.resource.data.keys().hasOnly(statKeys()) && oneUp();
+      allow delete: if false;
+    }
   }
 }

@@ -1134,3 +1134,21 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .score-tiers { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .score-tiers .t { padding: 3px 10px; border-radius: 999px; font-weight: 700; font-size: 13px; background: #eef1ec; color: #2b3a33; }
 .score-tiers .s { background: #ffe08a; color: #6b4b00; } .score-tiers .a { background: #cfe8ff; color: #1d4f80; } .score-tiers .b { background: #dff1df; color: #2f6b3a; }
+
+/* 플레이 통계 화면 */
+.stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+.stat-card { background: var(--paper, #fff); border-radius: 12px; padding: 10px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.stat-card small { display: block; color: #6b746f; font-size: 12px; } .stat-card b { display: block; font-size: 26px; font-family: Jua, sans-serif; } .stat-card span { font-size: 11px; color: #6b746f; }
+.stat-chart { display: flex; gap: 3px; align-items: flex-end; height: 140px; padding-top: 6px; }
+.stat-day { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; min-width: 0; }
+.stat-bars { flex: 1; width: 100%; display: flex; gap: 1px; align-items: flex-end; }
+.stat-bars i { flex: 1; border-radius: 3px 3px 0 0; min-height: 1px; }
+.stat-day small { font-size: 10px; color: #6b746f; margin-top: 3px; }
+.b-users { background: #3f7fb8; } .b-starts { background: #f2bf19; } .b-grads { background: #2f8f6b; }
+.stat-legend { display: flex; gap: 12px; font-size: 12px; margin: 8px 0 0; } .stat-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.stat-funnel { list-style: none; padding: 0; margin: 6px 0; }
+.stat-funnel li { display: grid; grid-template-columns: 82px 1fr 36px; grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 5px 0; }
+.stat-funnel .f-lab { font-size: 13px; } .stat-funnel b { text-align: right; }
+.stat-funnel .f-bar { height: 12px; background: #eef1ec; border-radius: 6px; overflow: hidden; } .stat-funnel .f-bar i { display: block; height: 100%; background: #2f8f6b; border-radius: 6px; }
+.stat-funnel small { grid-column: 2 / 4; font-size: 11px; color: #6b746f; }
+@media (max-width: 480px) { .stat-cards { grid-template-columns: repeat(2, 1fr); } }
