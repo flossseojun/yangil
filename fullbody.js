@@ -39,3 +39,27 @@ function avatarFullSVG(av, label = '', opts = {}) {
   parts.push(limb(82 + wide, 84, P.ra[0], P.ra[1], 22, 20, 11, jacketCol, hand));
   return `<svg class="avatar-full" viewBox="0 -10 100 210" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0 ${lift}) rotate(${P.lean} 50 140)">${parts.join('')}</g></svg>`;
 }
+
+// SD 그림체 전신: 큰 머리(상반신 그림을 크게) + 짧은 몸통 + 짧은 팔다리. 발끝은 예전과 같은 높이(200)에 맞춘다.
+const _fullOld = avatarFullSVG;
+function sdFullSVG(av, label = '', opts = {}) {
+  const a = Object.assign({ build: 'normal', skin: '#f6dcc6' }, av || {});
+  const P = BODY_POSES[opts.pose] || BODY_POSES.stand;
+  const jacketCol = opts.jacket || (a.top && typeof OUTFIT_TOP !== 'undefined' && OUTFIT_TOP[a.top] ? ({ hoodie: '#9aa3ad', cardigan: '#d9c3a0', pe: '#2f7d5b', classtee: '#ffd23f', padding: '#26292d' })[a.top] : '#2e3f63');
+  const pants = a.top === 'pe' ? '#2a6b4e' : '#2b3346', sk = a.skin;
+  const wide = a.build === 'chubby' ? 4 : a.build === 'muscle' ? 3 : a.build === 'slim' ? -3 : 0;
+  const hipY = P.sit ? 172 : 174, lift = P.lift || 0;
+  const hand = l => `<circle cx="0" cy="${l + 2.5}" r="4.4" fill="${sk}" stroke="${shade(sk, -0.25)}" stroke-width="1"/>`;
+  const shoe = l => `<ellipse cx="2.5" cy="${l + 1.5}" rx="7" ry="4" fill="#1f1f1f"/><ellipse cx="4.5" cy="${l + .6}" rx="2.6" ry="1.2" fill="#fff" opacity=".35"/>`;
+  const th = P.sit ? 5 : 11, parts = [];
+  parts.push(limb(42 - wide / 3, hipY, P.ll[0], P.ll[1], th, 11, 11 + wide / 3, pants, shoe));
+  parts.push(limb(58 + wide / 3, hipY, P.rl[0], P.rl[1], th, 11, 11 + wide / 3, pants, shoe));
+  parts.push(`<path d="M${21 - wide} 156 L${79 + wide} 156 L${76 + wide / 2} ${hipY + 3} L${24 - wide / 2} ${hipY + 3}Z" fill="${jacketCol}"/>`);
+  if (!a.top || a.top === 'uniform') parts.push(`<path d="M50 156 V${hipY + 3}" stroke="#1f2b45" stroke-width="1.1"/><circle cx="45.5" cy="163" r="1.4" fill="#c9b37a"/>`);
+  parts.push(`<rect x="${24 - wide / 2}" y="${hipY}" width="${52 + wide}" height="5" rx="2" fill="${shade(jacketCol, -0.25)}"/>`);
+  parts.push(avatarSVG(a, label, { expr: opts.expr }).replace('<svg class="avatar-svg"', '<svg x="-12" y="36" width="124" height="124"'));
+  parts.push(limb(22 - wide, 146, P.la[0], P.la[1], 13, 12, 9, jacketCol, hand));
+  parts.push(limb(78 + wide, 146, P.ra[0], P.ra[1], 13, 12, 9, jacketCol, hand));
+  return `<svg class="avatar-full" viewBox="0 -10 100 210" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0 ${lift}) rotate(${P.lean} 50 170)">${parts.join('')}</g></svg>`;
+}
+avatarFullSVG = (av, label, opts) => (typeof SETTINGS !== 'undefined' && SETTINGS.artOld ? _fullOld : sdFullSVG)(av, label, opts);

@@ -1491,6 +1491,7 @@ function renderSettings() {
       ${row('miniAuto', '미니게임 자동 넘기기', '퀴즈·타이밍·기억력 미니게임을 건너뛰고 바로 진행한다 (효율 ×0.8, 오답노트 복습은 그대로)', SETTINGS.miniAuto)}
       ${row('fast', '빠른 진행', '이벤트 결과 확인 창을 생략하고 상황판에 바로 보여 준다. 모의고사는 자동으로 응시한다.', SETTINGS.fast)}
       ${row('typeInstant', '글자 바로 보기', '사건 글이 타자 치듯 나오지 않고 한 번에 다 보인다.', !!SETTINGS.typeInstant)}
+      ${row('artOld', '예전 그림체', 'SD(꼬마) 그림체 대신 예전 그림체로 캐릭터를 그린다.', !!SETTINGS.artOld)}
       ${row('evClassic', '예전 사건 창', '말풍선 없이 글 한 덩어리로 보여 주는 예전 사건 창을 쓴다.', !!SETTINGS.evClassic)}
       ${row('fx', '화면 연출', '행동 컷인·숫자 효과·날짜 넘김·계절 효과. 기기의 동작 줄이기가 켜져 있으면 자동으로 꺼진다.', SETTINGS.fx !== false)}
       ${row('sfx', '효과음', '종소리·팡파르 같은 효과음', SFX.on)}
