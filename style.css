@@ -1121,3 +1121,16 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .epi-arc { margin: 6px 0 10px; padding: 8px 12px; border-left: 4px solid #ffb347; background: #fff8ec; border-radius: 6px; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .combo-chip { background: #3a2a14; color: #ffcf99; border-color: #6b4a1f; } :root:not([data-theme="light"]) .combo-chip.on { background: #4d3415; } :root:not([data-theme="light"]) .epi-arc { background: #2e2616; } }
 :root[data-theme="dark"] .combo-chip { background: #3a2a14; color: #ffcf99; border-color: #6b4a1f; } :root[data-theme="dark"] .combo-chip.on { background: #4d3415; } :root[data-theme="dark"] .epi-arc { background: #2e2616; }
+
+/* 랭킹 · 졸업 점수 계산법 */
+.score-guide { margin-bottom: 12px; }
+.score-guide summary { cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; list-style: none; }
+.score-guide summary::-webkit-details-marker { display: none; }
+.score-guide summary small { color: var(--muted, #6b746f); font-size: 12px; }
+.score-guide[open] summary small { visibility: hidden; }
+.score-guide ul { list-style: none; padding: 0; margin: 10px 0 6px; }
+.score-guide li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed rgba(0,0,0,.12); font-size: 14px; }
+.score-guide li b { white-space: nowrap; }
+.score-tiers { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.score-tiers .t { padding: 3px 10px; border-radius: 999px; font-weight: 700; font-size: 13px; background: #eef1ec; color: #2b3a33; }
+.score-tiers .s { background: #ffe08a; color: #6b4b00; } .score-tiers .a { background: #cfe8ff; color: #1d4f80; } .score-tiers .b { background: #dff1df; color: #2f6b3a; }

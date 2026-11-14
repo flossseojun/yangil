@@ -121,16 +121,32 @@ function renderNickGate() {
   </section>`;
 }
 
+// 졸업 점수 계산법 (endings.js judgeEnding과 같은 식)
+const SCORE_GUIDE = () => `<details class="paper score-guide"${UI.scoreGuide ? ' open' : ''} ontoggle="UI.scoreGuide = this.open"><summary><b>졸업 점수는 이렇게 매겨요</b><small>눌러서 보기</small></summary>
+  <ul>
+    <li><span>능력치 5개 평균 × 0.5</span><b>최대 50</b></li>
+    <li><span>내신 (5 − 평균 등급) × 6</span><b>최대 24</b></li>
+    <li><span>수능 (9 − 평균 등급) × 1.5</span><b>최대 12</b></li>
+    <li><span>대학 합격 (최상위권 7.5 ~ 지역 대학 1.5)</span><b>최대 7.5</b></li>
+    <li><span>친한 친구 (친밀도 50+) 1명당 2점</span><b>최대 12</b></li>
+    <li><span>업적 1개당 1.2점 · 희귀 사건 1개당 2점</span><b>제한 없음</b></li>
+    <li><span>기본</span><b>−8</b></li>
+  </ul>
+  <p class="score-tiers"><span class="t s">S 103+</span><span class="t a">A 94+</span><span class="t b">B 72+</span><span class="t c">C 그 아래</span></p>
+  <p class="fine">보스전에서 이기면 시험 점수가 올라 내신·수능 점수도 같이 올라가요. 업적과 희귀 사건은 끝이 없으니, 많이 해 보고 많이 탐험할수록 유리해요.</p>
+</details>`;
 function renderRankHall() {
   const tab = UI.rankTab || 'score';
   const tabs = [['score', '졸업 점수'], ['ending', '엔딩 수집'], ['hall', '명예의 전당']];
   const head = `<header class="sheet-head row"><div><p class="eyebrow">친구들과 겨루기</p><h2>랭킹 · 명예의 전당</h2></div><button class="link" data-act="menu">← 메인으로</button></header>
     <nav class="rank-tabs" role="tablist">${tabs.map(([k, n]) => `<button role="tab" aria-selected="${tab === k}" data-act="rank-tab" data-arg="${k}">${n}</button>`).join('')}</nav>`;
-  let body = '';
+  let body = tab === 'score' ? SCORE_GUIDE() : '';
   if (!FIREBASE_CONFIG) body = `<div class="paper"><p><b>온라인 랭킹은 준비 중이에요.</b></p><p class="fine">곧 친구들과 졸업 점수와 엔딩 수집으로 순위를 겨룰 수 있어요.</p></div>`;
   else {
     const c = RANK.cache[tab];
-    if (!c) { rankFetch(tab).then(() => { if (UI.screen === 'hall') render(); }); }
+    // 서버에 못 닿으면 15초 동안은 다시 시도하지 않는다 (실패 → 다시 그리기 → 다시 시도가 끝없이 반복되지 않게)
+    RANK.failAt = RANK.failAt || {};
+    if (!c && !(Date.now() - (RANK.failAt[tab] || 0) < 15000)) { rankFetch(tab).then(rows => { if (!rows) RANK.failAt[tab] = Date.now(); if (UI.screen === 'hall') render(); }); }
     const rows = c ? c.rows : null, me = RANK.uid;
     if (!nickOf()) body += nickBoxHtml('rank');
     if (!rows) body += `<div class="paper"><p class="fine">${RANK.err ? esc(RANK.err) : '불러오는 중…'}</p></div>`;
