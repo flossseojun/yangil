@@ -163,6 +163,9 @@ PAIR_SCENES.push(
     ['심사위원을 맡는다', '결론은 "둘 다 명작". 둘이 서로의 추천작을 보기로 하고 악수했다.'],
     ['셋이 정주행 계획을 짠다', '주말마다 한 작품씩 보기로 했다. 연주가 "천원돌파 스케줄"이라고 이름 붙였다.']]],
 );
+PAIR_SCENES.push(['sihyeon', 'namjiho', '닌자와 장난 장인', '정시현이 소리 없이 남지호 뒤로 다가간다. 그런데 지호가 먼저 돌아보며 웃는다. "다 보였어~" 둘이 나를 보더니 눈빛을 교환한다.', [
+  ['둘의 합동 작전에 끼어든다', '시현이가 숨고 지호가 시선을 끄는 작전. 표적은 반장이었다. 반장이 셋 다 잡았지만 결국 같이 웃었다.'],
+  ['둘의 은신 대결 심판을 본다', '지호는 웃음을 못 참아서 탈락, 시현이는 너무 진지해서 오히려 눈에 띄어서 탈락. 무승부.']]]);
 ev({ id: 'pair_scene', rel: true, title: (s, c) => PAIR_SCENES[c.i][2], weight: 3,
   cond: s => s.mode !== 'classic' && PAIR_SCENES.some(([a, b]) => FRIEND_IDS.includes(a) && FRIEND_IDS.includes(b) && s.met[a] && s.met[b] && ((s.flags.pairScene || {})[pairKeyOf(a, b)] || 0) < 2),
   setup: (s, c) => { const ok = PAIR_SCENES.map((p, i) => [p, i]).filter(([[a, b]]) => FRIEND_IDS.includes(a) && FRIEND_IDS.includes(b) && s.met[a] && s.met[b] && ((s.flags.pairScene || {})[pairKeyOf(a, b)] || 0) < 2); c.i = pick(ok)[1]; },
@@ -253,6 +256,7 @@ Object.assign(FUTURE, {
   namjiho: ['어린이 프로그램 PD가 됐다. 아이들이 지호 프로그램을 보며 깔깔 웃는다.', '만날 때마다 아직도 장난을 친다. 이번엔 내 생일 케이크에 촛불이 100개였다.'],
   seungmin: ['가수가 됐다. 무대 위에서 제일 신나 보이는 사람이다.', '첫 단독 공연 맨 앞줄은 정말로 내 자리였다.'],
 });
+FUTURE.sihyeon = ['액션 영화 스턴트 배우가 됐다. 닌자 역할 오디션은 늘 1순위로 붙는다.', '내가 부를 때마다 정말로 어디선가 나타난다. 아직도 등장할 때 "…닌닌" 한다.'];
 const MY_FUTURE = {
   legend: '양일고 후배들 사이에서 아직도 전설로 불린다. 모교 특강 연사로 초대받았다.',
   president: '사람들 앞에 서는 일을 계속하고 있다. 회의를 정리하는 솜씨는 그때 배운 것이다.',
@@ -406,6 +410,7 @@ const NEWS_COMMENT = {
   chaerin: '반장으로서 마지막 출석 체크: 졸업생 출석 완료!', taepung: '졸업도 내가 먼저 할 뻔했는데 아깝다!', sori: '이 기사 내가 썼다. 특종이었다', jaemin: '졸업식 풍선 사건은 진짜 내가 아님',
   haram: '후배야, 잘 컸다. 자랑스럽다', daon: '선배 졸업 축하드려요!! 기사 프린트해서 붙여 놨어요',
 };
+NEWS_COMMENT.sihyeon = '졸업 축하해. …닌닌 (사실 졸업식 내내 네 뒤에 있었음)';
 Object.assign(NEWS_COMMENT, { baekho: '졸업 축하해! 오늘 컴백이랑 겹쳐서 두 배로 기쁘다', yeonju: '졸업도 천원돌파! 축하해', bojun: '졸업 축하! 캐치볼은 계속된다', namjiho: '축하해!! 오늘은 장난 안 칠게 (아마)', seungmin: '졸업 축하해! 축가는 내가 부를게' });
 Object.assign(NEWS_COMMENT, {
   hyunsu: '졸업 축하! 나는 신촌에서 기다린다. 다음 키노트는 같이 하자', leeyunho: '축하해. 이번 수는 완벽했다, 체크메이트', suae: '졸업 = 픽업 확정. 축하해!!',

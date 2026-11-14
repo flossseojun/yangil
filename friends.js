@@ -1007,6 +1007,31 @@ MORE_CAMEOS.bojun = { name: '김보준', role: '야구 좋아하고 잘하는 �
 MORE_CAMEOS.namjiho = { name: '남지호', role: '밝음 담당 · 장난 장인', color: '#f2a03d', desc: '교실에 들어오면 분위기가 한 톤 밝아진다. 장난치는 걸 좋아해서 늘 무언가를 꾸미고 있지만, 끝은 언제나 다 같이 웃는 쪽이다.', title: '장난 공범' };
 MORE_CAMEOS.seungmin = { name: '전승민', role: '노래하는 무대 체질', color: '#7b5bd6', desc: '노래 부르는 걸 좋아하고, 사람들 앞에 서면 오히려 신이 난다. 처음엔 친구 사귀는 게 조금 서툴러 보이지만, 한번 친해지면 장난도 노래도 아낌없이 나눠 주는 친구.', title: '듀엣 파트너' };
 ['baekho', 'yeonju', 'bojun', 'namjiho', 'seungmin'].forEach(id => { CAMEOS[id] = MORE_CAMEOS[id]; CAMEO_IDS.push(id); });
+MORE_CAMEOS.sihyeon = { name: '정시현', role: '닌자 지망생', color: '#5b4a8a', desc: '꿈은 진지하게 닌자. 갈색 중단발을 질끈 묶고 복도를 소리 없이 걷는 연습을 한다. 어느새 뒤에 서 있다가 "…닌닌" 하고 사라지는 게 특기. 은신술은 아직 수련 중이라 대부분 들킨다.', title: '닌자 수련 동료' };
+CAMEOS.sihyeon = MORE_CAMEOS.sihyeon; CAMEO_IDS.push('sihyeon');
+CAMEO_ROLLING.sihyeon = ['졸업 축하해! …닌닌.', '3년 동안 내 은신술 몰래 봐 준 거 알아. 고마워.', '어디에 있든, 네가 부르면 연기처럼 나타날게. 그게 닌자의 약속이야.'];
+MORE_CAMEO_EVENTS.sihyeon = [
+  { title: '소리 없는 발걸음', text: '복도를 걷는데 뒤에서 아주 작은 소리가 들린다. "…닌닌." 돌아보니 정시현이 벽에 딱 붙어 있다. "들켰다. 은신술 수련 중이었어."',
+    choices: [
+      { label: '못 본 척 다시 걸어 준다', run: s => { G.grow('social', 2); G.add('luck', 1); return '시현이가 다시 벽에 붙었다. 교실 앞까지 따라오더니 뿌듯하게 말했다. "오늘 기록, 복도 끝까지 무사 잠입."'; } },
+      { label: '"나도 수련하고 싶어" 한다', run: s => { G.grow('stamina', 2); G.absurd(); return '시현이 눈이 반짝였다. "첫 수련은 발뒤꿈치부터 딛지 않기." 쉬는 시간 내내 까치발로 걸었다.'; } },
+    ] },
+  { title: '종이 수리검', text: '쉬는 시간, 시현이 책상 위에 색종이 수리검이 수북하다. "닌자의 기본 장비야. 하나 줄까?"',
+    choices: [
+      { label: '접는 법을 배운다', run: s => { G.grow('study', 1); G.grow('social', 2); return '시현이가 손을 잡고 차근차근 알려 줬다. 내 수리검은 조금 찌그러졌지만 시현이가 "합격"이라고 했다.'; } },
+      { label: '휴지통 골인 대결을 한다', run: s => { G.add('luck', 2); G.absurd(); return '시현이 수리검이 휴지통에 쏙 들어갔다. "이게 수련의 차이야." 내 건 담임 선생님 책상에 떨어졌다.'; } },
+    ] },
+  { title: '닌자의 임무', text: '시현이가 진지한 얼굴로 쪽지를 건넨다. 「극비 임무: 매점에서 소보로 대신 크림빵 확보. 경쟁자 많음.」',
+    choices: [
+      { label: '임무에 동행한다', run: s => { G.grow('stamina', 2); G.fat(-5); return '시현이가 앞장서서 인파 사이를 스르륵 빠져나갔다. 크림빵 두 개 확보. "임무 완수. …닌닌."'; } },
+      { label: '작전 지도를 그려 준다', run: s => { G.grow('study', 2); return '매점 동선을 그려 주자 시현이가 감탄했다. "너는 군사(軍師)다. 우리 닌자단에 들어와."'; } },
+    ] },
+  { title: '닌자 수련 동료의 약속', text: '졸업 날, 시현이가 작은 두루마리를 건넨다. 펼쳐 보니 「닌자단 정식 단원 임명장」이다. "어디서든 위기면 불러. 연기처럼 나타날게."',
+    choices: [
+      { label: '임명장을 소중히 넣는다', run: s => { G.add('luck', 3); G.grow('social', 2); return '시현이가 손으로 인을 맺었다. "…닌닌." 이번엔 사라지지 않고 끝까지 옆에 있었다.'; } },
+      { label: '마지막으로 같이 인을 맺는다', run: s => { G.grow('social', 3); G.absurd(); return '둘이 운동장 한가운데서 인을 맺었다. 졸업 사진 찍던 친구들이 그 장면도 같이 찍어 줬다.'; } },
+    ] },
+];
 Object.assign(CAMEO_ROLLING, {
   baekho: ['졸업 축하해! 다음 컴백 같이 보자.', '내 덕질 이야기 끝까지 들어 준 사람, 너밖에 없어.', '하츠투하츠 콘서트 가는 날, 옆자리는 무조건 너야.'],
   yeonju: ['졸업 축하해! 다음 판도 같이 하자.', '같이 본 그렌라간 마지막 화, 평생 못 잊어.', '네가 믿는 너를 믿어. 난 언제나 너를 믿었어!'],
@@ -1638,6 +1663,8 @@ Object.assign(TALK_MORE, {
   namjiho: ['오늘 급식 돈가스래! …아마도.', '장난 하나 같이 꾸밀래?', '웃으면 진짜 웃겨져.', '네 표정 방금 진짜 웃겼어.', '깜짝 파티 작전 있어.', '너랑 있으면 하루가 짧아.', '장난 공범은 너밖에 없어.', '어른 돼도 같이 장난치자.'],
   seungmin: ['이 노래 알아?', '노래방 갈래?', '화음 넣어 볼래?', '무대 서는 거 좋아해.', '처음 말 걸어 줘서 고마웠어.', '듀엣 연습하자.', '너 앞에서는 안 떨려.', '내 무대 맨 앞자리는 너야.'],
 });
+TALK_SIG.sihyeon = ['…닌닌. 방금 내가 뒤에 있던 거 몰랐지?', 'likes:playful'];
+TALK_MORE.sihyeon = ['…닌닌.', '방금 나 못 봤지?', '수리검 하나 줄까?', '은신술 수련 중이야.', '너는 내 닌자단 1호 단원이야.', '임무 같이 갈래?', '네가 부르면 연기처럼 나타날게.', '닌자의 약속은 평생이야.'];
 CAMEO_IDS.filter(id => !CAMEOS[id].fixed).forEach(id => {
   const c = CAMEOS[id], sig = TALK_SIG[id] || ['오늘도 좋은 하루!', 'likes:sincere'];
   CHARACTERS[id] = { name: c.name, role: c.role, color: c.color, desc: c.desc, home: null, perk: null, real: true,
