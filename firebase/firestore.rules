@@ -45,9 +45,12 @@ service cloud.firestore {
 
     // 플레이 통계: 날짜별 숫자만. 누구나 읽고, 로그인(익명)하면 한 번에 한 칸씩 1만 더할 수 있다. 지울 수 없다.
     function statKeys() { return ['visits', 'users', 'starts', 'r11', 'r12', 'r21', 'r22', 'r31', 'r32', 'grads']; }
+    // 칸 하나가 그대로이거나 정확히 1만 늘었는지
+    function up(k) { return request.resource.data.get(k, 0) == resource.data.get(k, 0) || request.resource.data.get(k, 0) == resource.data.get(k, 0) + 1; }
     function oneUp() {
-      let ks = request.resource.data.diff(resource.data).affectedKeys().toList();
-      return ks.size() == 1 && request.resource.data[ks[0]] == resource.data.get(ks[0], 0) + 1;
+      return request.resource.data.diff(resource.data).affectedKeys().size() == 1
+        && up('visits') && up('users') && up('starts') && up('r11') && up('r12')
+        && up('r21') && up('r22') && up('r31') && up('r32') && up('grads');
     }
     match /stats/{day} {
       allow read: if true;
