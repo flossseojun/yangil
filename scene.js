@@ -186,11 +186,11 @@ const FRIEND_LOOKS = {
 };
 Object.assign(FRIEND_LOOKS, {
   hyunsu:      { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'proud', acc: 'none', eyes: 'sharp' }, jacket: '#1f1f1f' },
-  leeyunho:    { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'round' }, prop: 'book' },
+  leeyunho:    { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'glasses', eyes: 'round' }, prop: 'book' },
   suae:        { av: { hair: 'long', hairColor: '#4a2f22', skin: '#fcebdf', face: 'smile', acc: 'none', eyes: 'round', lash: true }, prop: 'phone' },
   beomsik:     { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'smile', acc: 'none', eyes: 'droop' } },
   jiho:        { av: { hair: 'side', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'round' } },
-  kimhyeonseo: { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'small', build: 'slim' }, tall: true },
+  kimhyeonseo: { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'glasses', eyes: 'small', build: 'slim' }, tall: true },
   jeonggyu:    { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'proud', acc: 'none', eyes: 'sharp' }, prop: 'soccer' },
   taegeon:     { av: { hair: 'short', hairColor: '#7a4b2a', skin: '#f6dcc6', face: 'wink', acc: 'none', eyes: 'round' } },
   junyoung:    { av: { hair: 'twoblock', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'plain', acc: 'glasses', eyes: 'small' }, tall: true },
@@ -200,7 +200,7 @@ Object.assign(FRIEND_LOOKS, {
   sunbi:       { av: { hair: 'long', hairColor: '#1e1b1a', skin: '#fcebdf', face: 'smile', acc: 'none', eyes: 'sharp', lash: true, lips: '#d4606f' } },
   baekho:      { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'proud', acc: 'none', eyes: 'sharp', brows: 'bold', build: 'chubby' }, prop: 'phone' },
   yeonju:      { av: { hair: 'bob', hairColor: '#7a4b2a', skin: '#fcebdf', face: 'proud', acc: 'none', eyes: 'sharp', lash: true } },
-  bojun:       { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'smile', acc: 'none', eyes: 'sharp', build: 'muscle' } },
+  bojun:       { av: { hair: 'short', hairColor: '#1e1b1a', skin: '#efc6a2', face: 'smile', acc: 'glasses', eyes: 'sharp', build: 'muscle' } },
   namjiho:     { av: { hair: 'long', hairColor: '#8a5a34', skin: '#fcebdf', face: 'wink', acc: 'none', eyes: 'round', lash: true } },
   seungmin:    { av: { hair: 'side', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'droop' } },
   sihyeon:     { av: { hair: 'bob', hairColor: '#7a4b2a', skin: '#fcebdf', face: 'proud', acc: 'none', eyes: 'sharp', lash: true } },
