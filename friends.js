@@ -3,12 +3,12 @@
 const MORE_CAMEOS = {
   jiyong:    { name: '신지용', role: '버터구이 · 알 인큐베이터 연구가', color: '#c98a2b', club: 'squid', desc: '버터구이 부원이자 공학부. 알 인큐베이터를 직접 만드는 게 꿈이자 취미다.', title: '부화 동지' },
   geonwoo:   { name: '박건우', role: '연 매출 1000억 고딩 사업가', color: '#3b5bab', desc: '고등학생인데 벌써 연 매출 1000억 원짜리 회사의 대표다. 쉬는 시간엔 화상 회의를 하고, 회사 로고는 알파카다. 알파카 인형 "파카"를 늘 들고 다니고, 본인도 알파카를 닮았다.', title: '1000억 사장님' },
-  yunsu:     { name: '송윤수', role: '포켓몬 챔피언스 결투의 대장', color: '#2a8fbf', desc: '포켓몬 챔피언스 배틀이라면 학교에서 아무도 못 이긴다. 역전할 때마다 외치는 명대사는 "지옥에서 누가 돌아왔게?"', title: '결투의 동반자' },
+  yunsu:     { name: '송윤수', role: '프롤로그 화학부 부장 · 포켓몬 결투의 대장', color: '#2a8fbf', desc: '포켓몬 챔피언스 배틀이라면 학교에서 아무도 못 이긴다. 역전할 때마다 외치는 명대사는 "지옥에서 누가 돌아왔게?" 동아리는 프롤로그 화학부의 부장이다.', title: '결투의 동반자' },
   eunseong:  { name: '천은성', role: '운동장의 에너자이저', color: '#e86a5c', desc: '활발하고 착하고 운동까지 잘한다. 은성이가 있으면 체육 시간이 축제가 된다.', title: '운동장 메이트' },
-  yunbo:     { name: '심윤보', role: '수학 모의고사 전교 1등', color: '#5b6fa8', desc: '2학년 수학 모의고사 전교 1등. 어려운 문제도 보조선 하나로 끝낸다.', title: '수학 제자' },
+  yunbo:     { name: '심윤보', role: '소나 · 수학 모의고사 전교 1등', color: '#5b6fa8', desc: '2학년 수학 모의고사 전교 1등. 어려운 문제도 보조선 하나로 끝낸다. 동아리는 염서준과 같은 소나.', title: '수학 제자' },
   isan:      { name: '이산', role: '귀여운 헬스 코치', color: '#e0904a', desc: '헬스를 친절하게 알려 주는 귀여운 친구. 스쿼트 자세 교정은 산이한테 맡기면 된다.', title: '헬스 제자' },
   soyul:     { name: '김소율', role: '농구부 센터 · 키 엄청 큼', color: '#7d5bbf', desc: '농구 센터. 손만 뻗으면 골대에 닿는다. 골밑은 소율이의 영역이다.', title: '골밑 콤비' },
-  siwoo:     { name: '박시우', role: '성격 좋은 건축가', color: '#4f9a6b', desc: '누구와도 잘 지내는 성격 좋은 친구. 꿈은 건축가라 종이만 있으면 건물을 접는다.', title: '공동 설계자' },
+  siwoo:     { name: '박시우', role: 'ZEC · 성격 좋은 건축가', color: '#4f9a6b', desc: '누구와도 잘 지내는 성격 좋은 친구. 꿈은 건축가라 종이만 있으면 건물을 접는다. 도시를 만드는 동아리 ZEC 부원이다.', title: '공동 설계자' },
   hyunwoo:   { name: '손현우', role: '축구 덕후 · 실력은 별개', color: '#d4a01e', desc: '선수 기록, 전술, 이적 소식까지 모르는 게 없는 축구 백과사전. 그런데 직접 차면 공이 옆으로 간다. 본인은 "나는 감독 스타일"이라고 한다.', title: '베스트 11 주장' },
   jio:       { name: '권지오', role: '전학 온 왼발잡이 윙어', color: '#2f9b8f', desc: '전학 온 축구 고수. 왼발 크로스 한 방이면 운동장이 조용해진다.', title: '어시스트 콤비' },
   younggeun: { name: '이영근', role: '문과 재간둥이 · 영어 내신 1등', color: '#b0567a', desc: '말만 하면 웃긴 문과 친구. 그런데 영어 내신은 1등이다.', title: '영어 파트너' },
@@ -349,10 +349,10 @@ const MORE_CAMEO_EVENTS = {
 // 학교 친구들 3기
 Object.assign(MORE_CAMEOS, {
   sia:      { name: '류시아', role: '초아 · 별관측 대장 · 버터구이 부장', color: '#4a5fc1', club: 'squid', desc: '별관측 동아리 초아의 대장이자 갑오징어 동아리 버터구이의 부장. 밤하늘만 보면 별 이름이 줄줄 나오고, 수조 앞에서는 갑오징어 이름을 줄줄 부른다.', title: '별지기' },
-  yejunsim: { name: '심예준', role: '전교회장 · 멋짐 담당', color: '#1f6f8b', desc: '말 한마디로 회의를 정리하는 멋있는 리더. 2학년 때 전교회장이 된다.', title: '회장의 오른팔' },
+  yejunsim: { name: '심예준', role: '전교회장 · ZEC · 멋짐 담당', color: '#1f6f8b', desc: '말 한마디로 회의를 정리하는 멋있는 리더. 2학년 때 전교회장이 된다. 도시를 만드는 동아리 ZEC 부원이기도 하다.', title: '회장의 오른팔' },
   jejun:    { name: '박제준', role: '전교부회장 · 착함 담당', color: '#5aa36f', desc: '학교에서 제일 착한 사람을 꼽으면 다들 제준이를 말한다. 2학년 때 전교부회장이 된다.', title: '착한 부회장의 친구' },
   sihun:    { name: '이시훈', role: '시드핸즈 부장', color: '#7a9a2e', club: 'seed', desc: '씨앗·종자 동아리 시드핸즈의 부장. 토종 씨앗 이야기만 나오면 눈이 반짝인다.', title: '씨앗 동지' },
-  hyeongseop: { name: '심형섭', role: '차가운 전략가 · INTJ', color: '#5c6b7a', desc: '말이 많지 않고 표정 변화도 적다. 그런데 계획은 누구보다 꼼꼼하게 짜고, 한다고 하면 꼭 한다.', title: '전략적 동맹' },
+  hyeongseop: { name: '심형섭', role: '프롤로그 공학부 · 차가운 전략가', color: '#5c6b7a', desc: '말이 많지 않고 표정 변화도 적다. 그런데 계획은 누구보다 꼼꼼하게 짜고, 한다고 하면 꼭 한다. 동아리는 프롤로그 공학부.', title: '전략적 동맹' },
   sion:     { name: '이시온', role: '로보틱스 부장 · 댄스 머신', color: '#6c4fd1', club: 'robotics', desc: '로보틱스 부장. 납땜도 잘하고 춤은 더 잘 춘다.', title: '로봇 댄스 파트너' },
 });
 ['sia', 'yejunsim', 'jejun', 'sihun', 'hyeongseop', 'sion'].forEach(id => { CAMEOS[id] = MORE_CAMEOS[id]; CAMEO_IDS.push(id); });
@@ -597,10 +597,10 @@ MORE_CAMEO_EVENTS.yuchan = [
 
 // 학교 친구들 6기
 Object.assign(MORE_CAMEOS, {
-  yejin:   { name: '소예진', role: 'F1 마니아', color: '#d23b3b', desc: 'F1을 진심으로 사랑한다. 팀, 드라이버, 서킷 이름까지 줄줄 꿴다.', title: '피트 크루' },
+  yejin:   { name: '소예진', role: '프롤로그 공학부 · F1 마니아', color: '#d23b3b', desc: 'F1을 진심으로 사랑한다. 팀, 드라이버, 서킷 이름까지 줄줄 꿴다. 동아리는 프롤로그 공학부. 머신 설계 이야기만 나오면 눈이 반짝인다.', title: '피트 크루' },
   seoan:   { name: '장서안', role: '삭발한 치이카와 덕후', color: '#8a6fd1', desc: '시원한 삭발 머리가 트레이드마크. 그리고 누구보다 치이카와를 좋아한다.', title: '치이카와 원정대' },
   jaejun:  { name: '김재준', role: '아이언맨을 꿈꾸는 씩씩한 친구', color: '#3f8f6a', desc: '한쪽 다리가 의족이다. 본인은 "남들보다 다리 관리가 편하다"며 웃는다. 꿈은 아이언맨. 어떤 일이든 끝까지 해내는 친구.', title: '끝까지 동지' },
-  taeyeol: { name: '황태열', role: '워터스캔 · 약대 지망 공부 짱', color: '#2a7fbf', club: 'water', desc: '워터스캔 부원. 시험만 보면 상위권인 공부 짱이고, 목표는 약대 진학. 물 이야기만 나오면 눈이 반짝인다.', title: '수질 파트너' },
+  taeyeol: { name: '황태열', role: '프롤로그 화학부 부부장 · 워터스캔 · 약대 지망', color: '#2a7fbf', club: 'water', desc: '워터스캔 부원. 시험만 보면 상위권인 공부 짱이고, 목표는 약대 진학. 물 이야기만 나오면 눈이 반짝인다. 프롤로그 화학부의 부부장이기도 하다.', title: '수질 파트너' },
 });
 ['yejin', 'seoan', 'jaejun', 'taeyeol'].forEach(id => { CAMEOS[id] = MORE_CAMEOS[id]; CAMEO_IDS.push(id); });
 Object.assign(CAMEO_ROLLING, {
@@ -817,7 +817,7 @@ MORE_CAMEO_EVENTS.yunho = [
 ];
 
 // 학교 친구들 10기
-MORE_CAMEOS.hayeon = { name: '이하연', role: '책과 건축을 사랑하는 전교권', color: '#5b7f6a', desc: '가방엔 늘 책이 두세 권. 건물만 보면 구조와 설계를 이야기하는 건축학도 지망생이다. 공부도 엄청 잘해서 시험 기간이면 모두가 하연이를 찾는다.', title: '설계도 파트너' };
+MORE_CAMEOS.hayeon = { name: '이하연', role: 'ZEC · 책과 건축을 사랑하는 전교권', color: '#5b7f6a', desc: '가방엔 늘 책이 두세 권. 건물만 보면 구조와 설계를 이야기하는 건축학도 지망생이다. 공부도 엄청 잘해서 시험 기간이면 모두가 하연이를 찾는다. 도시를 만드는 동아리 ZEC 부원이다.', title: '설계도 파트너' };
 CAMEOS.hayeon = MORE_CAMEOS.hayeon; CAMEO_IDS.push('hayeon');
 CAMEO_ROLLING.hayeon = ['졸업 축하해! 다음에 읽을 책 추천해 줄게.', '같이 걸었던 학교 건물들, 다 기억할 거야. 너랑 보면 더 멋져 보였어.', '언젠가 내가 설계한 도서관이 생기면, 첫 번째 회원 카드는 네 거야.'];
 MORE_CAMEO_EVENTS.hayeon = [
@@ -945,7 +945,7 @@ MORE_CAMEO_EVENTS.taejeong = [
 ];
 
 // 학교 친구들 14기
-MORE_CAMEOS.sangwoong = { name: '문상웅', role: '잘생기고 큰 가디안 덕후', color: '#4caf8f', desc: '키 크고 잘생겨서 복도를 걸으면 다들 한 번씩 돌아본다. 그런데 정작 본인 관심사는 오직 포켓몬 가디안. 필통, 키링, 휴대폰 배경까지 전부 가디안이다.', title: '가디안 수호대' };
+MORE_CAMEOS.sangwoong = { name: '문상웅', role: '방송부 · 잘생기고 큰 가디안 덕후', color: '#4caf8f', desc: '키 크고 잘생겨서 복도를 걸으면 다들 한 번씩 돌아본다. 그런데 정작 본인 관심사는 오직 포켓몬 가디안. 필통, 키링, 휴대폰 배경까지 전부 가디안이다. 동아리는 방송부.', title: '가디안 수호대' };
 CAMEOS.sangwoong = MORE_CAMEOS.sangwoong; CAMEO_IDS.push('sangwoong');
 CAMEO_ROLLING.sangwoong = ['졸업 축하해. 가디안처럼 우아하게 살아.', '가디안 얘기 끝까지 들어 준 사람, 너밖에 없었어.', '가디안은 트레이너를 지키려고 목숨도 건대. 나도 너한테 그런 친구가 될게.'];
 MORE_CAMEO_EVENTS.sangwoong = [
@@ -991,11 +991,11 @@ MORE_CAMEOS.beomsik = { name: '정범식', role: '착하고 배려심 많은 큰
 MORE_CAMEOS.jiho = { name: '송지호', role: '초아 출신 프롤로그 공학러', color: '#3f7fb8', club: 'water', desc: '1학년 땐 이시온·류시아와 함께 별관측 동아리 초아, 2학년엔 공학 동아리 프롤로그로 전향했다. 선배들한테 배울 걸 혼자 다 배우고 튀어서 선배들에게 "배신자"로 불린다. 항공우주와 기계공학에 관심이 많고 워터스캔도 한다. 반장 경험이 있고 후배들한테 잘해 준다. 원신에 진심.', title: '로켓 동료' };
 MORE_CAMEOS.kimhyeonseo = { name: '김현서', role: '키 짱 큰 친구', color: '#5a6fa8', desc: '복도 끝에서도 머리 하나가 보이는 친구. 단체 사진을 찍으면 늘 맨 뒷줄 가운데 자리다. 높은 곳에 걸린 건 현서에게 부탁하면 된다.', title: '높은 곳 담당' };
 MORE_CAMEOS.jeonggyu = { name: '이정규', role: '축구와 공부의 신', color: '#2e7d5b', desc: '점심시간엔 운동장을 휘젓는 에이스, 시험 기간엔 전교권 성적. 축구와 공부를 둘 다 잘하는 게 반칙이라는 말을 자주 듣는다.', title: '문무겸비 콤비' };
-MORE_CAMEOS.taegeon = { name: '황태건', role: '웃음 담당 · 사랑스러운 바보', color: '#b9773a', desc: '말 한마디로 반 전체를 웃기는 친구. 엉뚱한 실수도 태건이가 하면 개그가 된다. 본인도 "나 바보 맞아" 하고 같이 웃는다.', title: '웃음 공동 대표' };
-MORE_CAMEOS.junyoung = { name: '박준영', role: '프롤로그 부장 · 공학부', color: '#46607a', desc: '공학 동아리 프롤로그의 부장. 안경 너머로 회로도를 읽고, 키가 커서 부품 선반 맨 위 칸도 손이 닿는다. 부원 송지호가 배울 걸 다 배우고 떠났을 때 제일 먼저 "배신자"라고 외친 사람.', title: '프롤로그 부원' };
+MORE_CAMEOS.taegeon = { name: '황태건', role: '시드핸즈 · 웃음 담당 · 사랑스러운 바보', color: '#b9773a', desc: '말 한마디로 반 전체를 웃기는 친구. 엉뚱한 실수도 태건이가 하면 개그가 된다. 본인도 "나 바보 맞아" 하고 같이 웃는다. 동아리는 시드핸즈.', title: '웃음 공동 대표' };
+MORE_CAMEOS.junyoung = { name: '박준영', role: '프롤로그 공학부 부장', color: '#46607a', desc: '프롤로그 공학부의 부장. (프롤로그는 화학부와 공학부로 나뉜다) 안경 너머로 회로도를 읽고, 키가 커서 부품 선반 맨 위 칸도 손이 닿는다. 부원 송지호가 배울 걸 다 배우고 떠났을 때 제일 먼저 "배신자"라고 외친 사람.', title: '프롤로그 부원' };
 MORE_CAMEOS.seoeun = { name: '정서은', role: '치이카와 사랑 · 낭만파 · 체대 입시생', color: '#e38aa7', desc: '가방에 치이카와 키링이 주렁주렁. 노을, 필름 카메라, 손편지를 사랑하는 낭만파인데, 방과후엔 체대 입시 실기 학원으로 달려가는 노력파다. 제자리멀리뛰기 기록이 오를 때마다 노을 사진을 하나씩 찍는다.', title: '낭만 동지' };
 MORE_CAMEOS.jaehee = { name: '김재희', role: '수학 시험 뒤에서 1등 · 공부는 내일부터', color: '#8a7a5a', desc: '수학 시험지를 받으면 일단 웃는다. "공부는 내일부터"가 3년째 계속되는 중. 그래도 재희 옆에 있으면 시험 기간에도 마음이 편해진다.', title: '내일부터 동지' };
-MORE_CAMEOS.yul = { name: '허율', role: '중저음 농구 소년', color: '#3c4f73', desc: '말 한마디 하면 다들 돌아보는 중저음 목소리. 공만 생기면 농구 코트로 달려간다. 3점 슛 성공하고 낮은 목소리로 "나이스"라고 할 때가 제일 멋있다.', title: '농구 파트너' };
+MORE_CAMEOS.yul = { name: '허율', role: 'ZEC · 중저음 농구 소년', color: '#3c4f73', desc: '말 한마디 하면 다들 돌아보는 중저음 목소리. 공만 생기면 농구 코트로 달려간다. 3점 슛 성공하고 낮은 목소리로 "나이스"라고 할 때가 제일 멋있다. 도시를 만드는 동아리 ZEC 부원이다.', title: '농구 파트너' };
 MORE_CAMEOS.sunbi = { name: '권순비', role: '화장 고수', color: '#c4566e', desc: '검정 긴 머리에 언제나 완벽한 메이크업. 축제나 사진 찍는 날이면 친구들이 줄을 서서 순비에게 화장을 부탁한다.', title: '메이크업 손님' };
 MORE_CAMEOS.yuna = { name: '김유나', role: '마라탕 사랑', color: '#c23b2e', desc: '갈색 긴 머리, 그리고 마라탕에 대한 끝없는 사랑. 맵기 단계는 늘 최고 단계, 꿔바로우는 필수. 학교 근처 마라탕집 사장님이 유나 얼굴을 안다.', title: '마라 동지' };
 ['hyunsu', 'leeyunho', 'suae', 'beomsik', 'jiho', 'kimhyeonseo', 'jeonggyu', 'taegeon', 'junyoung', 'seoeun', 'jaehee', 'yul', 'sunbi', 'yuna'].forEach(id => { CAMEOS[id] = MORE_CAMEOS[id]; CAMEO_IDS.push(id); });
@@ -1007,7 +1007,7 @@ MORE_CAMEOS.bojun = { name: '김보준', role: '야구 좋아하고 잘하는 �
 MORE_CAMEOS.namjiho = { name: '남지호', role: '밝음 담당 · 장난 장인', color: '#f2a03d', desc: '교실에 들어오면 분위기가 한 톤 밝아진다. 장난치는 걸 좋아해서 늘 무언가를 꾸미고 있지만, 끝은 언제나 다 같이 웃는 쪽이다.', title: '장난 공범' };
 MORE_CAMEOS.seungmin = { name: '전승민', role: '노래하는 무대 체질', color: '#7b5bd6', desc: '노래 부르는 걸 좋아하고, 사람들 앞에 서면 오히려 신이 난다. 처음엔 친구 사귀는 게 조금 서툴러 보이지만, 한번 친해지면 장난도 노래도 아낌없이 나눠 주는 친구.', title: '듀엣 파트너' };
 ['baekho', 'yeonju', 'bojun', 'namjiho', 'seungmin'].forEach(id => { CAMEOS[id] = MORE_CAMEOS[id]; CAMEO_IDS.push(id); });
-MORE_CAMEOS.sihyeon = { name: '정시현', role: '닌자 지망생', color: '#5b4a8a', desc: '꿈은 진지하게 닌자. 갈색 중단발을 질끈 묶고 복도를 소리 없이 걷는 연습을 한다. 어느새 뒤에 서 있다가 "…닌닌" 하고 사라지는 게 특기. 은신술은 아직 수련 중이라 대부분 들킨다.', title: '닌자 수련 동료' };
+MORE_CAMEOS.sihyeon = { name: '정시현', role: '방송부 · 닌자 지망생', color: '#5b4a8a', desc: '꿈은 진지하게 닌자. 갈색 중단발을 질끈 묶고 복도를 소리 없이 걷는 연습을 한다. 어느새 뒤에 서 있다가 "…닌닌" 하고 사라지는 게 특기. 은신술은 아직 수련 중이라 대부분 들킨다. 동아리는 방송부. 방송실에서도 소리 없이 움직인다.', title: '닌자 수련 동료' };
 CAMEOS.sihyeon = MORE_CAMEOS.sihyeon; CAMEO_IDS.push('sihyeon');
 CAMEO_ROLLING.sihyeon = ['졸업 축하해! …닌닌.', '3년 동안 내 은신술 몰래 봐 준 거 알아. 고마워.', '어디에 있든, 네가 부르면 연기처럼 나타날게. 그게 닌자의 약속이야.'];
 MORE_CAMEO_EVENTS.sihyeon = [
