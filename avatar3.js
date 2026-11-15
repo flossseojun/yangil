@@ -124,7 +124,7 @@ function avatarSVG3(av, label = '내 아바타', opts = {}) {
 
   const bodyT = `translate(50 100) scale(${SD.body}) translate(-50 -100)`;
   const headT = `translate(0 ${SD.headShift}) translate(50 ${SD.headPivotY}) scale(${SD.head}) translate(-50 -${SD.headPivotY})`;
-  return `<svg class="avatar-svg" viewBox="0 0 100 100" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><g transform="${bodyT}">${body.join('')}</g><g transform="${headT}">${head.join('')}</g>${arms.join('')}</svg>`;
+  return `<svg class="avatar-svg" viewBox="0 0 100 100" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><g transform="${bodyT}">${body.join('')}</g>${opts.noHead ? '' : `<g transform="${headT}">${head.join('')}</g>`}${arms.join('')}</svg>`;
 }
 
 // 게임 전체에 SD 그림체 적용 (설정에서 예전 그림체로 되돌릴 수 있다)

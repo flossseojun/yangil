@@ -1152,3 +1152,17 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .stat-funnel .f-bar { height: 12px; background: #eef1ec; border-radius: 6px; overflow: hidden; } .stat-funnel .f-bar i { display: block; height: 100%; background: #2f8f6b; border-radius: 6px; }
 .stat-funnel small { grid-column: 2 / 4; font-size: 11px; color: #6b746f; }
 @media (max-width: 480px) { .stat-cards { grid-template-columns: repeat(2, 1fr); } }
+
+/* 마지막 보스 2단계: 게임 제작자 실제 사진 */
+.boss-stage { position: relative; }
+.boss-stage.hit .boss-photo-face { animation: faceHit .45s ease; }
+@keyframes faceHit { 0%, 100% { transform: none; filter: none; } 25% { transform: translateX(-4px) rotate(-3deg); filter: sepia(1) saturate(4) hue-rotate(-30deg); } 60% { transform: translateX(3px) rotate(2deg); filter: sepia(.6) saturate(3) hue-rotate(-30deg); } }
+.boss-photo-face { transform-box: fill-box; transform-origin: center; }
+.boss-reveal { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,45,111,.55) 60%, rgba(20,10,40,.85)); animation: revealFlash 2.8s ease forwards; z-index: 5; }
+.boss-reveal-card { background: #fff; padding: 6px 6px 8px; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.45); transform: rotate(-4deg); text-align: center; animation: revealPop 2.8s cubic-bezier(.2,1.6,.4,1) forwards; width: 40%; max-width: 260px; }
+.boss-reveal-card img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center 35%; border-radius: 3px; }
+.boss-reveal-card b { display: block; font-family: Jua, sans-serif; font-size: clamp(14px, 3.6vw, 20px); color: #d61f5c; margin-top: 6px; }
+.boss-reveal-card small { display: block; font-size: 11px; color: #555; }
+@keyframes revealFlash { 0% { opacity: 0; } 8% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes revealPop { 0% { transform: scale(.2) rotate(-20deg); } 18% { transform: scale(1) rotate(-4deg); } 85% { transform: scale(1) rotate(-4deg); } 100% { transform: scale(1.15) rotate(-4deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .boss-reveal, .boss-reveal-card, .boss-stage.hit .boss-photo-face { animation: none; } }

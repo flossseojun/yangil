@@ -83,7 +83,8 @@ const BOSS_ART = {
     <g class="boss-fig">
       <g opacity=".35"><rect x="44" y="40" width="232" height="132" fill="#efe6d4"/><rect x="138" y="128" width="44" height="44" fill="#3a2a1a"/></g>
       ${Array.from({ length: 7 }, (_, i) => `<rect x="0" y="${12 + i * 24}" width="320" height="${3 + (i % 3)}" fill="${['#ff2d6f', '#2dd4ff', '#b6ff2d'][i % 3]}" opacity=".35"/>`).join('')}
-      <g transform="translate(96 46) scale(1.25)">${typeof avatarSVG === 'function' ? avatarSVG(Object.assign({}, typeof lookOf === 'function' ? lookOf('seojun').av : {}), '게임 제작자 염서준', { expr: 'proud' }).replace('<svg class="avatar-svg"', '<svg x="0" y="0" width="100" height="100"') : ''}</g>
+      <g transform="translate(96 46) scale(1.25)">${typeof avatarSVG === 'function' ? avatarSVG(Object.assign({}, typeof lookOf === 'function' ? lookOf('seojun').av : {}, { hair: 'buzz', acc: 'none', skin: '#efc3a8' }), '게임 제작자 염서준', { expr: 'proud', pose: 'cheer', noHead: true }).replace('<svg class="avatar-svg"', '<svg x="0" y="0" width="100" height="100"') : ''}</g>
+      <image class="boss-photo-face" href="seojun-face.png" x="123.5" y="40" width="70" height="106" preserveAspectRatio="xMidYMid meet"/>
       <g transform="translate(188 118)"><rect x="0" y="0" width="58" height="36" rx="3" fill="#2a2f36"/><rect x="4" y="4" width="50" height="28" fill="#0f1720"/><text x="8" y="16" font-size="6" fill="#5dff8a" font-family="monospace">balance.js</text><text x="8" y="25" font-size="6" fill="#ff8a5d" font-family="monospace">score -= 6</text><path d="M-6 36 H64 L58 42 H0Z" fill="#3a4049"/></g>
     </g>`,
 };
@@ -150,7 +151,7 @@ function resolveAct(action, timing, pos) {
   if (ev.taken) setTimeout(() => SFX.play('hurt'), 420);
   renderModal();
   clearTimeout(U.timer);
-  U.timer = setTimeout(() => { if (UI.boss !== U) return; U.stage = B.done ? 'result' : 'pick'; U.pop = null; if (B.done) SFX.play(B.done === 'win' ? 'fanfare' : 'boing'); renderModal(); }, ev.phaseChange ? 1700 : 1100);
+  U.timer = setTimeout(() => { if (UI.boss !== U) return; U.stage = B.done ? 'result' : 'pick'; U.pop = null; if (B.done) SFX.play(B.done === 'win' ? 'fanfare' : 'boing'); renderModal(); }, ev.phaseChange ? (B.id === 'main' ? 2800 : 1700) : 1100);
 }
 function bossMsg(B, ev, action) {
   const parts = [];
@@ -180,6 +181,7 @@ function bossBattleHtml() {
     ${U.pop && U.pop.dmg ? `<span class="dmg-pop ${U.pop.timing}">${U.pop.timing === 'perfect' ? '완벽! ' : ''}−${U.pop.dmg}</span>` : ''}
     ${U.pop && U.pop.blocked ? '<span class="dmg-pop block">막았다!</span>' : ''}
     ${U.pop && U.pop.phase ? `<span class="phase-banner">2단계 · ${esc(ph.name)}</span>` : ''}
+    ${U.pop && U.pop.phase && B.id === 'main' ? `<div class="boss-reveal" aria-hidden="true"><div class="boss-reveal-card"><img src="seojun-photo.jpg" alt=""><b>게임 제작자 염서준 등장!</b><small>이 게임을 만든 사람이다!</small></div></div>` : ''}
   </div>`;
   if (U.stage === 'intro') return `<div class="boss-battle"><p class="eyebrow">${title} · 보스전</p>${stage}
     <p class="boss-line">${esc(boss.intro)}</p>
