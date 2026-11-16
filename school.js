@@ -204,7 +204,7 @@ const BOOKS = ['코스모스', '이기적 유전자', '침묵의 봄', '사피�
 const VACATION = [
   { id: 'academy', name: '학원 방학 특강', desc: '국어·수학·영어 숙련도 ↑ · 피로 ↑' },
   { id: 'reading', name: '독서 마라톤', desc: '공부 ↑ · 세특에 독서 기록' },
-  { id: 'job', name: '편의점 알바', desc: '운 ↑ · 평판 ↑ · 용돈 +40,000원' },
+  { id: 'job', name: '편의점 알바', desc: '운 ↑ · 평판 ↑ · 알바비 +5,000원' },
   { id: 'trip', name: { 1: '남한강 물놀이', 2: '용문산 눈썰매' }, desc: '피로 크게 회복 · 사교성 ↑' },
   { id: 'friends', name: '친구들이랑 놀기', desc: '만난 친구 모두 친밀도 ↑' },
   { id: 'volunteer', name: '지역 봉사활동', desc: '평판 ↑ · 세특에 봉사 기록' },
