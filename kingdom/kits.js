@@ -143,3 +143,121 @@ const ROLE_ICON = {
   note: '<path d="M9 18 A3 3 0 1 1 9 17.9 V5 L19 3 V15 A3 3 0 1 1 19 14.9 V7 L11 8.6 V18Z"/>',
 };
 const roleIcon = (role, size = 14) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${ROLES[role].color}" aria-hidden="true">${ROLE_ICON[ROLES[role].icon]}</svg>`;
+
+/* ───────── 친구별 스킬 (전투 연출과 효과) ───────── */
+// 친구별 스킬: v 연출 · icon 아이콘 · n 타수 · dmg 한 대 피해 · 그 밖의 효과
+const S = (v, icon, color, o) => Object.assign({ v, icon, color, n: 1 }, o);
+const SKILL_SPEC = {
+  // 방어
+  junyoung: S('aura', 'robot', '#7fb3ff', { shield: 900, taunt: 6, say: '방패 로봇 출동!' }),
+  jaewon: S('aura', 'shield', '#9fb8d8', { shield: 700, taunt: 6, veil: 1.5, say: '비둘기도 못 뚫어!' }),
+  isan: S('aura', 'dumbbell', '#7fb3ff', { shield: 800, taunt: 6, buff: 4, say: '버텨! 한 개 더!' }),
+  siwoo: S('aura', 'blueprint', '#5aa0ff', { shield: 1000, taunt: 6, say: '바리케이드 설치' }),
+  hyeongseop: S('aura', 'shield', '#7fb3ff', { shield: 800, taunt: 6, weak: 4, say: '계산대로야' }),
+  yuchan: S('aura', 'shield', '#ffd779', { shield: 900, taunt: 6, heal: .1, say: '의리!' }),
+  hyunsu: S('aura', 'shield', '#3a3a3a', { shield: 800, taunt: 6, confuse: 1, say: '…덤벼.' }),
+  beomsik: S('aura', 'heart', '#7fb3ff', { shield: 900, taunt: 6, heal: .12, say: '내 뒤에 있어' }),
+  kimhyeonseo: S('aura', 'shield', '#7fb3ff', { shield: 1100, taunt: 6, say: '높이로 막는다' }),
+  // 돌격
+  jeonggyu: S('shoot', 'soccer', '#ffffff', { n: 1, dmg: 1300, stun: 2.5, low: true, size: .7, say: '골!' }),
+  eunseong: S('dash', 'bolt', '#ffe14d', { n: 4, dmg: 360, stun: 1.5, say: '에너지 풀충전!' }),
+  soyul: S('dash', 'basketball', '#ff8a3c', { n: 1, dmg: 1500, stun: 2, jump: 2.6, say: '덩크!' }),
+  hyunwoo: S('shoot', 'soccer', '#cfe0ff', { n: 1, dmg: 1100, stun: 2.5, low: true, weak: 3, say: '이론상 완벽한 슛' }),
+  jio: S('lob', 'soccer', '#ffffff', { n: 1, dmg: 1350, stun: 2.5, arc: 3.4, say: '왼발 크로스!' }),
+  sion: S('dash', 'robot', '#b48bff', { n: 3, dmg: 430, stun: 2, say: '로봇 댄스 타임' }),
+  munyunsu: S('shoot', 'soccer', '#ff8a5c', { n: 3, dmg: 450, stun: 2, low: true, gap: .15, say: '텐션 100%!' }),
+  hyeonseo: S('shoot', 'soccer', '#7dff9e', { n: 5, dmg: 270, stun: 2, low: true, gap: .1, say: '메시처럼!' }),
+  minah: S('dash', 'bolt', '#ff5a3c', { n: 2, dmg: 650, stun: 2.5, say: '부릉부릉!' }),
+  wooseok: S('dash', 'punch', '#ff5a3c', { n: 1, dmg: 1400, stun: 3, jump: 1.4, say: '업어치기 한판!' }),
+  seoeun: S('dash', 'star', '#ff9ad5', { n: 1, dmg: 1250, stun: 2.5, jump: 3, say: '기록 갱신!' }),
+  yul: S('lob', 'basketball', '#ff8a3c', { n: 3, dmg: 450, stun: 1.5, arc: 4, gap: .3, say: '…나이스.' }),
+  bojun: S('shoot', 'baseball', '#ff6a3a', { n: 1, dmg: 1500, stun: 2.5, dur: .14, crit: true, say: '강속구!' }),
+  sihyeon: S('smoke', 'shuriken', '#cfd8e0', { n: 5, dmg: 240, stun: 1.5, veil: 3, say: '…닌닌.' }),
+  // 폭발
+  yunsu: S('lob', 'flask', '#ff8a3c', { n: 1, dmg: 1500, burn: 5, boom: 6, say: '실험 시작!' }),
+  yejin: S('aura', 'flag', '#ff5a3c', { haste: 6, say: 'F1 터보 부스트!' }),
+  jaejun: S('beam', 'bolt', '#7fd0ff', { n: 3, dmg: 480, burn: 3, say: '리펄서 빔!' }),
+  taeyeol: S('lob', 'drop', '#5ab8ff', { n: 3, dmg: 420, weak: 6, gap: .18, say: '수질 분석 완료' }),
+  jiho: S('rocket', 'rocket', '#ffb84d', { n: 1, dmg: 1650, burn: 3, say: '3, 2, 1, 발사!' }),
+  yuna: S('rain', 'pepper', '#ff3a1a', { n: 10, dmg: 130, burn: 7, say: '마라 최고 단계!' }),
+  yeonju: S('shoot', 'drill', '#4a7fd6', { n: 6, dmg: 250, burn: 2, gap: .07, dur: .25, spin: 0, say: '천원돌파!' }),
+  // 마법
+  seojun: S('beam', 'code', '#7dffb0', { n: 4, dmg: 650, say: '코딩 폭격!' }),
+  yunbo: S('slash', 'line', '#9fd3ff', { n: 1, dmg: 2600, say: '보조선 하나면 끝' }),
+  younggeun: S('wave', 'book', '#b48bff', { n: 1, dmg: 0, weak: 6, after: { v: 'lob', icon: 'book', n: 4, dmg: 480, arc: 1.4, spin: 3 }, say: 'Ladies and gentlemen!' }),
+  sia: S('rain', 'star', '#cfe0ff', { n: 8, dmg: 310, say: '별이 쏟아진다' }),
+  hayeon: S('rain', 'blueprint', '#5aa0ff', { n: 6, dmg: 420, weak: 3, size: .8, say: '설계도 폭풍' }),
+  taejeong: S('rain', 'phone', '#ffd779', { n: 6, dmg: 420, say: '레이드 소환!' }),
+  leeyunho: S('lob', 'knight', '#f4f1e8', { n: 3, dmg: 380, arc: 3, spin: 0, size: .9, after: { v: 'rain', icon: 'chess', n: 1, dmg: 1500, size: 1.4 }, say: '체크메이트.' }),
+  suae: S('rain', 'star', '#ff9ad5', { n: 10, dmg: 250, crit: true, say: '천장 도달!' }),
+  // 회복
+  yejun: S('aura', 'cross', '#7dff9e', { heal: .35, say: '응급처치!' }),
+  jiyong: S('aura', 'egg', '#fff3c4', { heal: .25, shield: 400, say: '부화의 온기' }),
+  jejun: S('aura', 'heart', '#9fe0ff', { heal: .3, gauge: .1, say: '다들 잘하고 있어!' }),
+  sihun: S('aura', 'sprout', '#6bc36b', { heal: .15, hot: .3, say: '새싹아 자라라' }),
+  sunbi: S('aura', 'makeup', '#ff9ad5', { heal: .25, buff: 4, say: '메이크업 완성!' }),
+  seungmin: S('wave', 'note', '#ffd779', { hot: .45, heal: .05, say: '♪ 치유의 노래' }),
+  // 지원
+  ryun: S('aura', 'map', '#ffd779', { haste: 5, gauge: .15, say: '지름길 이쪽이야!' }),
+  mingyeol: S('wave', 'laugh', '#ffd779', { confuse: 2, gauge: .15, say: '개그 한 방!' }),
+  geonwoo: S('rain', 'coin', '#ffd23f', { n: 12, dmg: 0, gauge: .4, say: '1000억 투자!' }),
+  yejunsim: S('wave', 'mic', '#ffd779', { buff: 7, gauge: .2, say: '전교회장으로서 명한다!' }),
+  seongjun: S('rain', 'card', '#ffd23f', { n: 6, dmg: 0, heal: .12, gauge: .25, say: '오늘은 내가 쏜다!' }),
+  seoan: S('aura', 'heart', '#ffb3c8', { buff: 5, heal: .08, say: '치이카와 화이팅!' }),
+  yunho: S('wave', 'wave', '#ffd779', { buff: 6, gauge: .15, say: '다들 힘내!!!' }),
+  sangwoong: S('wave', 'mic', '#ffd779', { buff: 6, gauge: .25, say: '양일고 응원 방송!' }),
+  taegeon: S('wave', 'laugh', '#ffd779', { sleep: 1.5, gauge: .2, say: '웃음 폭탄!' }),
+  jaehee: S('aura', 'zzz', '#cfe0ff', { sleep: 3, say: '공부는… 내일부터…' }),
+  baekho: S('wave', 'lightstick', '#ff9ad5', { buff: 6, gauge: .2, say: '응원봉 파도!' }),
+  namjiho: S('wave', 'laugh', '#ffd779', { confuse: 2, buff: 4, say: '장난 작전 개시!' }),
+  minjeong: S('rain', 'book', '#b48bff', { n: 8, dmg: 0, gauge: .35, buff: 4, say: '결재 완료! 다들 출동!' }),
+  intak: S('shoot', 'baseball', '#ffd779', { n: 1, dmg: 1450, stun: 2.5, dur: .3, size: .8, say: '끝내기 홈런!' }),
+};
+const ROLE_SPEC = { tank: S('aura', 'shield', '#7fb3ff', { shield: 900, taunt: 6 }), striker: S('shoot', 'soccer', '#fff', { dmg: 1300, stun: 2.5, low: true }), blaster: S('lob', 'flask', '#ff8a3c', { dmg: 1500, burn: 5 }), mage: S('beam', 'star', '#b48bff', { n: 4, dmg: 650 }), healer: S('aura', 'cross', '#7dff9e', { heal: .35 }), support: S('wave', 'note', '#ffd779', { buff: 6, gauge: .2 }) };
+
+
+// 스킬 설명 한 줄 (프로필 · 팀 편성 카드)
+const VIS_NAME = { lob: '포물선으로 던지기', shoot: '일직선으로 날리기', rain: '하늘에서 쏟아지기', dash: '돌진', beam: '빛줄기', slash: '한 줄 베기', rocket: '쏘아 올리기', wave: '퍼지는 응원', aura: '팀 강화', smoke: '연막' };
+function skillOf(id) { return SKILL_SPEC[id] || ROLE_SPEC[kitOf(id).role]; }
+function skillDesc(id) {
+  const s = skillOf(id), out = [];
+  const all = [s].concat(s.after ? [s.after] : []);
+  const dmg = all.reduce((a, x) => a + (x.dmg || 0) * (x.n || 1), 0);
+  if (dmg) out.push(`피해 ${dmg.toLocaleString('ko-KR')}` + (s.n > 1 ? ` (${s.n}연타)` : ''));
+  if (s.stun) out.push(`${s.stun}초 기절`); if (s.sleep) out.push(`${s.sleep}초 재우기`);
+  if (s.burn) out.push(`화상 ${s.burn}초`); if (s.weak) out.push(`보스 약화 ${s.weak}초`); if (s.confuse) out.push(`공격 빗나가게 ${s.confuse}번`);
+  if (s.shield) out.push(`전원 보호막 ${s.shield}`); if (s.taunt) out.push('공격 대신 받기');
+  if (s.heal) out.push(`전원 회복 ${Math.round(s.heal * 100)}%`); if (s.hot) out.push(`5초 동안 회복 ${Math.round(s.hot * 100)}%`);
+  if (s.buff) out.push(`팀 공격력 UP ${s.buff}초`); if (s.haste) out.push(`공격 속도 UP ${s.haste}초`);
+  if (s.gauge) out.push(`팀 스킬 충전 +${Math.round(s.gauge * 100)}%`); if (s.veil) out.push(`${s.veil}초 회피`);
+  return out.join(' · ');
+}
+
+/* ───────── 키우기: 친구 레벨 · 친밀도 · 건물 보너스 · 스테이지 ───────── */
+const CAMPUS_KEY = 'yangil.kingdom.v1';
+const loadCampus = () => { try { const g = JSON.parse(localStorage.getItem(CAMPUS_KEY)); if (g && g.res) return g; } catch (e) {} return null; };
+const saveCampus = g => { try { localStorage.setItem(CAMPUS_KEY, JSON.stringify(g)); } catch (e) {} };
+const MAX_LV = 10;
+const lvOf = (g, id) => Math.max(1, ((g && g.lv) || {})[id] || 1);
+const bondOf = (g, id) => ((g && g.bond) || {})[id] || 0;
+const lvMult = lv => 1 + (lv - 1) * .08;               // 레벨마다 체력 · 공격 · 스킬 +8%
+const upCost = lv => ({ know: 10 * lv, snack: 6 * lv, power: 4 * lv });
+// 건물 보너스: 같은 건물은 3개까지 센다
+const BUILD_BONUS = {
+  lab: { name: '과학실', text: '폭발 · 마법 친구 공격 +10%', key: 'magic', v: .10 },
+  gym: { name: '체육관', text: '방어 · 돌격 친구 체력 +12%', key: 'front', v: .12 },
+  library: { name: '도서관', text: '스킬 충전 +6%', key: 'charge', v: .06 },
+  store: { name: '매점', text: '회복량 +10%', key: 'heal', v: .10 },
+};
+function campusBonus(g) {
+  const b = { magic: 1, front: 1, charge: 1, heal: 1, mood: 1, list: [] }, cnt = {};
+  ((g && g.b) || []).forEach(x => { cnt[x.t] = (cnt[x.t] || 0) + 1; });
+  Object.entries(BUILD_BONUS).forEach(([t, d]) => { const n = Math.min(3, cnt[t] || 0); if (n) { b[d.key] += d.v * n; b.list.push(`${d.name} ×${n} · ${d.text.replace(/\+(\d+)%/, (m, x) => '+' + x * n + '%')}`); } });
+  const deco = (cnt.ginkgo || 0) + (cnt.bench || 0) + (cnt.flower || 0), mood = Math.min(5, Math.floor(deco / 4));
+  if (mood) { b.mood += mood * .03; b.list.push(`꾸미기 ${deco}개 · 모든 친구 체력 +${mood * 3}%`); }
+  return b;
+}
+// 스테이지: 갈수록 은행왕이 강해진다
+const MAX_STAGE = 10;
+const stageMul = st => ({ hp: 1 + (st - 1) * .4, dmg: 1 + (st - 1) * .18, reward: 1 + (st - 1) * .35, rec: Math.round((4200 + (st - 1) * 900) / 10) * 10 });
+function powerOf(g, id) { const r = ROLES[kitOf(id).role], m = lvMult(lvOf(g, id)); return Math.round((r.hp / 4 + r.atk * 4) * m); }

@@ -10,7 +10,13 @@ const DEFAULT_TEAM = ['junyoung', 'jeonggyu', 'yunsu', 'seojun', 'yejun'];
 let PICK = [];
 try { PICK = (JSON.parse(localStorage.getItem(TEAM_KEY)) || []).slice(0, 5); } catch (e) {}
 if (!PICK.length) PICK = DEFAULT_TEAM.slice();
-const FX = teamFx(PICK);
+const CAMP = loadCampus() || { res: { know: 0, snack: 0, power: 0 }, b: [], friends: [] };
+const CB = campusBonus(CAMP);
+const FX = teamFx(PICK); FX.heal *= CB.heal; FX.charge *= CB.charge;
+let STAGE = 1; try { STAGE = Math.max(1, Math.min(MAX_STAGE, +localStorage.getItem('yangil.kingdom.stage') || 1, CAMP.stage || 1)); } catch (e) {}
+const SM = stageMul(STAGE);
+document.getElementById('stg').textContent = '1-' + STAGE; document.getElementById('st-sub').textContent = 'STAGE 1-' + STAGE;
+document.getElementById('st-desc').textContent = STAGE > 1 ? `보스 · 은행왕 (강화 ${STAGE - 1}단계) · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}` : '보스 · 은행왕';
 const nameOf = id => (ROSTER.find(f => f.id === id) || { name: id }).name;
 const introOf = id => (ROSTER.find(f => f.id === id) || { role: '' }).role.split(' · ')[0];
 
@@ -86,12 +92,13 @@ const ordered = PICK.slice().sort((a, b) => ROLE_ORDER.indexOf(kitOf(a).role) - 
 let fi = 0, bi = 0;
 const STATS = Object.fromEntries(ordered.map(id => {
   const k = kitOf(id), r = ROLES[k.role], front = !!r.melee && fi < FRONT.length, home = front ? FRONT[fi++] : BACK[bi++] || [-5, 0];
-  return [id, { role: k.role, hp: Math.round(r.hp * FX.hp), atk: r.atk * (r.melee ? FX.melee : FX.ranged), rate: r.rate, melee: front, home, cd: r.cd / FX.charge, skill: k.skill, who: `${nameOf(id)} · ${introOf(id)}`, c1: CUT_BG[k.role], bg: CUT_BG[k.role], bolt: BOLT[k.role] || '#ffffff', color: r.color }];
+  const lvm = lvMult(lvOf(CAMP, id)), magic = ['blaster', 'mage'].includes(k.role) ? CB.magic : 1, frontB = r.melee ? CB.front : 1;
+  return [id, { lvm, role: k.role, hp: Math.round(r.hp * FX.hp * lvm * frontB * CB.mood), atk: r.atk * (r.melee ? FX.melee : FX.ranged) * lvm * magic, rate: r.rate, melee: front, home, cd: r.cd / FX.charge, skill: k.skill, who: `${nameOf(id)} · ${introOf(id)}`, c1: CUT_BG[k.role], bg: CUT_BG[k.role], bolt: BOLT[k.role] || '#ffffff', color: r.color }];
 }));
 const SKILL_ORDER = ordered;
 document.getElementById('syn').innerHTML = teamSynergy(PICK).filter(x => x.on).map(x => `<b>${x.name}</b>${x.desc}`).join(' · ');
 const SYNERGY = FX.skill;
-const LAYERS = [13000, 13000, 13000];     // 보스 체력 3겹
+const LAYERS = [13000, 13000, 13000].map(x => Math.round(x * SM.hp));     // 보스 체력 3겹
 const TIME_LIMIT = 90;
 
 /* ───────── 작은 도구 ───────── */
@@ -278,78 +285,9 @@ const teamCenter = () => { const a = alive(); const c = new THREE.Vector3(); a.f
 function screenFlash(color, op) { const el = $('flash'); el.style.background = color; el.style.transition = 'none'; el.style.opacity = op; void el.offsetWidth; el.style.transition = 'opacity .45s ease-out'; el.style.opacity = 0; }
 function shockwave(at, color, size = 4) { const ring = new THREE.Mesh(new THREE.RingGeometry(.8, 1, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(at.x, .05, at.z); scene.add(ring); tween(.5, k => { ring.scale.setScalar(.3 + k * size); ring.material.opacity = 1 - k; }, () => scene.remove(ring)); }
 
-// 친구별 스킬: v 연출 · icon 아이콘 · n 타수 · dmg 한 대 피해 · 그 밖의 효과
-const S = (v, icon, color, o) => Object.assign({ v, icon, color, n: 1 }, o);
-const SKILL_SPEC = {
-  // 방어
-  junyoung: S('aura', 'robot', '#7fb3ff', { shield: 900, taunt: 6, say: '방패 로봇 출동!' }),
-  jaewon: S('aura', 'shield', '#9fb8d8', { shield: 700, taunt: 6, veil: 1.5, say: '비둘기도 못 뚫어!' }),
-  isan: S('aura', 'dumbbell', '#7fb3ff', { shield: 800, taunt: 6, buff: 4, say: '버텨! 한 개 더!' }),
-  siwoo: S('aura', 'blueprint', '#5aa0ff', { shield: 1000, taunt: 6, say: '바리케이드 설치' }),
-  hyeongseop: S('aura', 'shield', '#7fb3ff', { shield: 800, taunt: 6, weak: 4, say: '계산대로야' }),
-  yuchan: S('aura', 'shield', '#ffd779', { shield: 900, taunt: 6, heal: .1, say: '의리!' }),
-  hyunsu: S('aura', 'shield', '#3a3a3a', { shield: 800, taunt: 6, confuse: 1, say: '…덤벼.' }),
-  beomsik: S('aura', 'heart', '#7fb3ff', { shield: 900, taunt: 6, heal: .12, say: '내 뒤에 있어' }),
-  kimhyeonseo: S('aura', 'shield', '#7fb3ff', { shield: 1100, taunt: 6, say: '높이로 막는다' }),
-  // 돌격
-  jeonggyu: S('shoot', 'soccer', '#ffffff', { n: 1, dmg: 1300, stun: 2.5, low: true, size: .7, say: '골!' }),
-  eunseong: S('dash', 'bolt', '#ffe14d', { n: 4, dmg: 360, stun: 1.5, say: '에너지 풀충전!' }),
-  soyul: S('dash', 'basketball', '#ff8a3c', { n: 1, dmg: 1500, stun: 2, jump: 2.6, say: '덩크!' }),
-  hyunwoo: S('shoot', 'soccer', '#cfe0ff', { n: 1, dmg: 1100, stun: 2.5, low: true, weak: 3, say: '이론상 완벽한 슛' }),
-  jio: S('lob', 'soccer', '#ffffff', { n: 1, dmg: 1350, stun: 2.5, arc: 3.4, say: '왼발 크로스!' }),
-  sion: S('dash', 'robot', '#b48bff', { n: 3, dmg: 430, stun: 2, say: '로봇 댄스 타임' }),
-  munyunsu: S('shoot', 'soccer', '#ff8a5c', { n: 3, dmg: 450, stun: 2, low: true, gap: .15, say: '텐션 100%!' }),
-  hyeonseo: S('shoot', 'soccer', '#7dff9e', { n: 5, dmg: 270, stun: 2, low: true, gap: .1, say: '메시처럼!' }),
-  minah: S('dash', 'bolt', '#ff5a3c', { n: 2, dmg: 650, stun: 2.5, say: '부릉부릉!' }),
-  wooseok: S('dash', 'punch', '#ff5a3c', { n: 1, dmg: 1400, stun: 3, jump: 1.4, say: '업어치기 한판!' }),
-  seoeun: S('dash', 'star', '#ff9ad5', { n: 1, dmg: 1250, stun: 2.5, jump: 3, say: '기록 갱신!' }),
-  yul: S('lob', 'basketball', '#ff8a3c', { n: 3, dmg: 450, stun: 1.5, arc: 4, gap: .3, say: '…나이스.' }),
-  bojun: S('shoot', 'baseball', '#ff6a3a', { n: 1, dmg: 1500, stun: 2.5, dur: .14, crit: true, say: '강속구!' }),
-  sihyeon: S('smoke', 'shuriken', '#cfd8e0', { n: 5, dmg: 240, stun: 1.5, veil: 3, say: '…닌닌.' }),
-  // 폭발
-  yunsu: S('lob', 'flask', '#ff8a3c', { n: 1, dmg: 1500, burn: 5, boom: 6, say: '실험 시작!' }),
-  yejin: S('aura', 'flag', '#ff5a3c', { haste: 6, say: 'F1 터보 부스트!' }),
-  jaejun: S('beam', 'bolt', '#7fd0ff', { n: 3, dmg: 480, burn: 3, say: '리펄서 빔!' }),
-  taeyeol: S('lob', 'drop', '#5ab8ff', { n: 3, dmg: 420, weak: 6, gap: .18, say: '수질 분석 완료' }),
-  jiho: S('rocket', 'rocket', '#ffb84d', { n: 1, dmg: 1650, burn: 3, say: '3, 2, 1, 발사!' }),
-  yuna: S('rain', 'pepper', '#ff3a1a', { n: 10, dmg: 130, burn: 7, say: '마라 최고 단계!' }),
-  yeonju: S('shoot', 'drill', '#4a7fd6', { n: 6, dmg: 250, burn: 2, gap: .07, dur: .25, spin: 0, say: '천원돌파!' }),
-  // 마법
-  seojun: S('beam', 'code', '#7dffb0', { n: 4, dmg: 650, say: '코딩 폭격!' }),
-  yunbo: S('slash', 'line', '#9fd3ff', { n: 1, dmg: 2600, say: '보조선 하나면 끝' }),
-  younggeun: S('wave', 'book', '#b48bff', { n: 1, dmg: 0, weak: 6, after: { v: 'lob', icon: 'book', n: 4, dmg: 480, arc: 1.4, spin: 3 }, say: 'Ladies and gentlemen!' }),
-  sia: S('rain', 'star', '#cfe0ff', { n: 8, dmg: 310, say: '별이 쏟아진다' }),
-  hayeon: S('rain', 'blueprint', '#5aa0ff', { n: 6, dmg: 420, weak: 3, size: .8, say: '설계도 폭풍' }),
-  taejeong: S('rain', 'phone', '#ffd779', { n: 6, dmg: 420, say: '레이드 소환!' }),
-  leeyunho: S('lob', 'knight', '#f4f1e8', { n: 3, dmg: 380, arc: 3, spin: 0, size: .9, after: { v: 'rain', icon: 'chess', n: 1, dmg: 1500, size: 1.4 }, say: '체크메이트.' }),
-  suae: S('rain', 'star', '#ff9ad5', { n: 10, dmg: 250, crit: true, say: '천장 도달!' }),
-  // 회복
-  yejun: S('aura', 'cross', '#7dff9e', { heal: .35, say: '응급처치!' }),
-  jiyong: S('aura', 'egg', '#fff3c4', { heal: .25, shield: 400, say: '부화의 온기' }),
-  jejun: S('aura', 'heart', '#9fe0ff', { heal: .3, gauge: .1, say: '다들 잘하고 있어!' }),
-  sihun: S('aura', 'sprout', '#6bc36b', { heal: .15, hot: .3, say: '새싹아 자라라' }),
-  sunbi: S('aura', 'makeup', '#ff9ad5', { heal: .25, buff: 4, say: '메이크업 완성!' }),
-  seungmin: S('wave', 'note', '#ffd779', { hot: .45, heal: .05, say: '♪ 치유의 노래' }),
-  // 지원
-  ryun: S('aura', 'map', '#ffd779', { haste: 5, gauge: .15, say: '지름길 이쪽이야!' }),
-  mingyeol: S('wave', 'laugh', '#ffd779', { confuse: 2, gauge: .15, say: '개그 한 방!' }),
-  geonwoo: S('rain', 'coin', '#ffd23f', { n: 12, dmg: 0, gauge: .4, say: '1000억 투자!' }),
-  yejunsim: S('wave', 'mic', '#ffd779', { buff: 7, gauge: .2, say: '전교회장으로서 명한다!' }),
-  seongjun: S('rain', 'card', '#ffd23f', { n: 6, dmg: 0, heal: .12, gauge: .25, say: '오늘은 내가 쏜다!' }),
-  seoan: S('aura', 'heart', '#ffb3c8', { buff: 5, heal: .08, say: '치이카와 화이팅!' }),
-  yunho: S('wave', 'wave', '#ffd779', { buff: 6, gauge: .15, say: '다들 힘내!!!' }),
-  sangwoong: S('wave', 'mic', '#ffd779', { buff: 6, gauge: .25, say: '양일고 응원 방송!' }),
-  taegeon: S('wave', 'laugh', '#ffd779', { sleep: 1.5, gauge: .2, say: '웃음 폭탄!' }),
-  jaehee: S('aura', 'zzz', '#cfe0ff', { sleep: 3, say: '공부는… 내일부터…' }),
-  baekho: S('wave', 'lightstick', '#ff9ad5', { buff: 6, gauge: .2, say: '응원봉 파도!' }),
-  namjiho: S('wave', 'laugh', '#ffd779', { confuse: 2, buff: 4, say: '장난 작전 개시!' }),
-  minjeong: S('rain', 'book', '#b48bff', { n: 8, dmg: 0, gauge: .35, buff: 4, say: '결재 완료! 다들 출동!' }),
-  intak: S('shoot', 'baseball', '#ffd779', { n: 1, dmg: 1450, stun: 2.5, dur: .3, size: .8, say: '끝내기 홈런!' }),
-};
-const ROLE_SPEC = { tank: S('aura', 'shield', '#7fb3ff', { shield: 900, taunt: 6 }), striker: S('shoot', 'soccer', '#fff', { dmg: 1300, stun: 2.5, low: true }), blaster: S('lob', 'flask', '#ff8a3c', { dmg: 1500, burn: 5 }), mage: S('beam', 'star', '#b48bff', { n: 4, dmg: 650 }), healer: S('aura', 'cross', '#7dff9e', { heal: .35 }), support: S('wave', 'note', '#ffd779', { buff: 6, gauge: .2 }) };
-
 // 스킬 실행: 연출 → 맞을 때 피해 → 끝나면 보스 효과
 function castSkill(u, big) {
+  if (big) speak(u.id, (SKILL_SPEC[u.id] || {}).say || u.st.skill);
   const base = SKILL_SPEC[u.id] || ROLE_SPEC[u.st.role], s = Object.assign({}, base, { sc: big ? 2.4 : 1.6 });
   const teamSkill = !s.dmg && !s.after;
   if (big) startUlt(teamSkill);
@@ -370,7 +308,7 @@ function castSkill(u, big) {
     if (sp.weak) { weakT = Math.max(weakT, sp.weak); popText(bossCenter.clone().add(new THREE.Vector3(0, 1.8, 0)), 'info', '약해졌다!'); }
     if (sp.confuse) { B.miss += sp.confuse; popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '???'); }
   };
-  const run = (sp, done) => VIS[sp.v](u, Object.assign({ sc: s.sc }, sp), i => { if (sp.dmg) damageBoss(sp.dmg * SYNERGY * (buffT > 0 ? 1.2 : 1), { big: sp.n === 1 || i === sp.n - 1, crit: sp.crit && Math.random() < .5 ? true : undefined }); }, () => { bossFx(sp); done && done(); });
+  const run = (sp, done) => VIS[sp.v](u, Object.assign({ sc: s.sc }, sp), i => { if (sp.dmg) damageBoss(sp.dmg * SYNERGY * u.st.lvm * (['blaster', 'mage'].includes(u.st.role) ? CB.magic : 1) * (buffT > 0 ? 1.2 : 1), { big: sp.n === 1 || i === sp.n - 1, crit: sp.crit && Math.random() < .5 ? true : undefined }); }, () => { bossFx(sp); done && done(); });
   run(s, () => { if (s.after) run(Object.assign({ color: s.color }, s.after), () => { if (big) finisher(s, false); }); else if (big) finisher(s, teamSkill); });
   if (big && teamSkill) tween(.35, null, () => finisher(s, true));
 }
@@ -439,7 +377,7 @@ function stepBombs(dt) {
       scene.remove(b.ring, b.disc); bombs.splice(i, 1);
       flash('#ff8a3c', 5, b.at.clone().add(new THREE.Vector3(0, .8, 0)), .6); flash('#ffe28a', 2.6, b.at.clone().add(new THREE.Vector3(0, .6, 0)));
       shake(.25, .4);
-      units.forEach(u => { if (!u.dead && u.pos.distanceTo(b.at) < 1.35) hurt(u, 1100 + B.layer * 150); });
+      units.forEach(u => { if (!u.dead && u.pos.distanceTo(b.at) < 1.35) hurt(u, (1100 + B.layer * 150) * SM.dmg); });
       if (!bombs.length) arms.forEach(a => tween(.35, k2 => { a.rotation.z = a.userData.side * (-1.95 + k2 * .9); }));
     }
   }
@@ -459,24 +397,58 @@ function autoSkills() {
   if ((u = ready('tank')) && alive().some(x => x.hp / x.max < .4)) return useSkill(u.id, true);
 }
 
+/* ───────── 전투 대사 · 목소리 ───────── */
+const LOW_LINES = ['아직 안 끝났어!', '조금만 버텨!', '여기서 질 순 없지!', '도와줘!'];
+const WIN_LINES = ['해냈다!', '역시 우리 팀!', '양일고 최고!', '이겼다!!'];
+function sayLine(u, kind) {
+  const pf = (typeof PROFILES !== 'undefined' && PROFILES[u.id]) || { lines: [] };
+  const pool = kind === 'start' ? pf.lines.slice(0, 4) : kind === 'win' ? WIN_LINES.concat(pf.lines.slice(-3)) : LOW_LINES;
+  const line = pool[Math.floor(Math.random() * pool.length)] || '가자!';
+  popText(u.pos.clone().add(new THREE.Vector3(0, 3.3, 0)), 'say', line);
+}
+let voiceOn = true; try { voiceOn = localStorage.getItem('yangil.kingdom.voice') !== '0'; } catch (e) {}
+const synth = typeof speechSynthesis !== 'undefined' ? speechSynthesis : null;
+let koVoice = null; const pickVoice = () => { if (!synth) return; const vs = synth.getVoices(); koVoice = vs.find(v => /^ko/i.test(v.lang)) || null; };
+if (synth) { pickVoice(); synth.onvoiceschanged = pickVoice; }
+function speak(id, text) {
+  if (!voiceOn || !synth || !text) return;
+  try {
+    synth.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/[♪…]/g, ''));
+    u.lang = 'ko-KR'; if (koVoice) u.voice = koVoice;
+    let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const fem = PROFILES && PROFILES[id] && PROFILES[id].f;
+    u.pitch = fem ? 1.25 + (h % 5) * .07 : .75 + (h % 5) * .07; u.rate = 1.05 + (h % 3) * .07; u.volume = .9;
+    synth.speak(u);
+  } catch (e) {}
+}
+$('b-voice').onclick = () => { voiceOn = !voiceOn; $('b-voice').textContent = voiceOn ? '🔊' : '🔇'; try { localStorage.setItem('yangil.kingdom.voice', voiceOn ? '1' : '0'); } catch (e) {} };
+$('b-voice').textContent = voiceOn ? '🔊' : '🔇';
+
 /* ───────── 진행 ───────── */
 let started = false, over = false, paused = false, speed = 1, clockT = TIME_LIMIT, introT = 1.6;
 function finish(win) {
   if (over) return; over = true;
   const left = alive().length, stars = win ? (left === 5 ? 3 : left >= 3 ? 2 : 1) : 0;
-  const rw = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6 } : { know: 5, snack: 3, power: 0 };
-  try { const k = 'yangil.kingdom.v1', g = JSON.parse(localStorage.getItem(k)); if (g && g.res) { Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; }); localStorage.setItem(k, JSON.stringify(g)); } } catch (e) {}
+  const base = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6 } : { know: 5, snack: 3, power: 0 };
+  const rw = Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.round(v * SM.reward)]));
+  const g = loadCampus(); let unlocked = false, bondUp = [];
+  if (g) {
+    Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
+    if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); if (STAGE >= (g.stage || 1) && STAGE < MAX_STAGE) { g.stage = STAGE + 1; unlocked = true; try { localStorage.setItem('yangil.kingdom.stage', STAGE + 1); } catch (e) {} } }
+    saveCampus(g);
+  }
+  if (win) setTimeout(() => alive().forEach((u, i) => setTimeout(() => sayLine(u, 'win'), i * 260)), 500);
   setTimeout(() => {
     $('r-sub').textContent = win ? 'STAGE CLEAR' : 'STAGE FAILED';
     $('r-title').textContent = win ? '승리!' : clockT <= 0 ? '시간 초과…' : '패배…';
     $('r-stars').innerHTML = [0, 1, 2].map(i => i < stars ? '★' : '<i>★</i>').join('');
-    $('r-time').textContent = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 은행왕을 쓰러뜨렸다 · 남은 친구 ${left}명` : '은행왕이 너무 강했다. 스킬 타이밍을 바꿔 보자.';
+    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 은행왕을 쓰러뜨렸다 · 남은 친구 ${left}명${unlocked ? `<br><b style="color:#ffd779">스테이지 1-${STAGE + 1} 열림!</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : '은행왕이 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.';
     $('r-rw').innerHTML = `<span>📘 +${rw.know}</span><span>🍞 +${rw.snack}</span><span>💪 +${rw.power}</span>`;
     $('result').hidden = false;
   }, win ? 1300 : 800);
   if (win) { flash('#ffd27a', 10, bossCenter, 1.2); shake(.3, .6); tween(1.2, k => { boss.rotation.z = -k * .35; boss.position.y = -k * .8; }); }
 }
-$('go').onclick = () => { $('start').hidden = true; started = true; };
+$('go').onclick = () => { $('start').hidden = true; started = true; units.forEach((u, i) => setTimeout(() => sayLine(u, 'start'), 900 + i * 300)); };
 $('r-retry').onclick = () => location.reload();
 $('r-camp').onclick = () => { location.href = './'; };
 $('b-auto').onclick = () => { auto = !auto; $('b-auto').classList.toggle('on', auto); };
@@ -499,7 +471,7 @@ function step(dt) {
     B.slamT -= dt * haste; B.bombT -= dt * haste;
     if (B.slamT <= 0 && !bombs.length) {
       B.slamT = 2.6; const tgt = (B.taunt > 0 && B.tauntBy && !B.tauntBy.dead) ? B.tauntBy : alive().sort((a, b) => b.pos.x - a.pos.x)[0];
-      if (tgt) { arms.forEach(a => tween(.32, k => { a.rotation.z = a.userData.side * (-1.05 + Math.sin(k * Math.PI) * .7); a.rotation.x = -.25 + Math.sin(k * Math.PI) * .6; })); tween(.18, null, () => { if (B.miss > 0) { B.miss--; popText(tgt.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), 'block', '빗나감!'); return; } hurt(tgt, 300 + B.layer * 60); flash('#ffb070', 2.2, tgt.pos.clone().add(new THREE.Vector3(0, 1.4, 0))); shake(.07); }); }
+      if (tgt) { arms.forEach(a => tween(.32, k => { a.rotation.z = a.userData.side * (-1.05 + Math.sin(k * Math.PI) * .7); a.rotation.x = -.25 + Math.sin(k * Math.PI) * .6; })); tween(.18, null, () => { if (B.miss > 0) { B.miss--; popText(tgt.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), 'block', '빗나감!'); return; } hurt(tgt, (300 + B.layer * 60) * SM.dmg); flash('#ffb070', 2.2, tgt.pos.clone().add(new THREE.Vector3(0, 1.4, 0))); shake(.07); }); }
     }
     if (B.bombT <= 0 && !bombs.length) { B.bombT = rnd(8.5, 10.5); startBombs(); }
   }
@@ -565,6 +537,7 @@ function frame() {
   $('b-now').style.width = Math.max(0, B.hp / L * 100) + '%'; $('b-trail').style.width = Math.max(0, B.trail / L * 100) + '%';
   $('b-next').style.visibility = B.layer < LAYERS.length - 1 ? 'visible' : 'hidden';
   $('b-count').textContent = '×' + (LAYERS.length - B.layer);
+  if (!over) units.forEach(u => { if (!u.dead && !u.lowSaid && u.hp / u.max < .3) { u.lowSaid = true; sayLine(u, 'low'); } });
   $('timer').textContent = `${Math.floor(clockT / 60)}:${String(Math.floor(clockT % 60)).padStart(2, '0')}`;
   skillUI();
   // 화면 흔들림

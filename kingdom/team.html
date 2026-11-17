@@ -56,14 +56,52 @@
   .hint { font-size: 12px; color: var(--muted); margin: 8px 2px 0; line-height: 1.5; }
   .roles { font-size: 11px; color: var(--muted); margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
   .roles span { display: inline-flex; align-items: center; gap: 4px; }
+
+  .top .res { display: flex; gap: 8px; font-size: 13px; color: var(--ink); }
+  .top .res span { background: rgba(255,255,255,.08); border-radius: 999px; padding: 2px 9px; }
+  .top .stage { display: flex; align-items: center; gap: 6px; }
+  .top .stage span { text-align: center; } .top .stage b { display: inline; } .top .stage small { display: block; font-size: 10px; color: var(--muted); }
+  .sbtn { font: inherit; background: rgba(255,255,255,.1); color: var(--ink); border: 1px solid rgba(255,255,255,.2); border-radius: 8px; width: 28px; height: 28px; cursor: pointer; }
+  .sbtn:disabled { opacity: .3; cursor: default; }
+  @media (max-width: 720px) { .top { flex-wrap: wrap; } .top .res { order: 3; width: 100%; } }
+  .camp { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .camp b { color: #ffe2a0; font-weight: 700; }
+  .card .lv { position: absolute; top: 5px; left: 6px; font-size: 10px; font-weight: 700; color: #ffe2a0; }
+  .card .info { position: absolute; bottom: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; font-size: 12px; font-weight: 700; line-height: 20px; cursor: pointer; }
+  .modal { position: fixed; inset: 0; z-index: 50; background: rgba(6,4,12,.72); display: grid; place-items: center; padding: 12px; }
+  .modal[hidden] { display: none; }
+  .pf { width: min(640px, 100%); max-height: 92vh; overflow-y: auto; background: linear-gradient(160deg, var(--bg), #120e1c 55%); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; grid-template-columns: 150px 1fr; gap: 14px; position: relative; }
+  @media (max-width: 560px) { .pf { grid-template-columns: 1fr; } .pf .art { max-width: 150px; margin: 0 auto; } }
+  .pf .art img { width: 100%; display: block; filter: drop-shadow(0 8px 10px rgba(0,0,0,.5)); }
+  .pf .x { position: absolute; top: 8px; right: 10px; background: none; border: 0; color: var(--muted); font-size: 22px; cursor: pointer; }
+  .pf h2 { margin: 0; font-family: Jua, sans-serif; font-weight: 400; font-size: 26px; color: #fff3d0; }
+  .pf .sub { font-size: 12px; color: var(--muted); margin: 2px 0 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .pf .desc { font-size: 13px; line-height: 1.6; margin: 0 0 10px; }
+  .pf .box { background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 9px 11px; margin-bottom: 8px; }
+  .pf .box h3 { margin: 0 0 4px; font-size: 12px; color: var(--muted); font-weight: 400; letter-spacing: .06em; }
+  .pf .skn { font-family: Jua, sans-serif; font-size: 18px; color: #ffe2a0; } .pf .skd { font-size: 12.5px; line-height: 1.5; }
+  .pf .lvrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pf .lvrow b { font-family: Jua, sans-serif; font-size: 20px; font-weight: 400; }
+  .pf .lvbar { flex: 1; min-width: 80px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; } .pf .lvbar i { display: block; height: 100%; background: linear-gradient(90deg, #ffd779, #e0a12a); }
+  .pf .up { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 0; background: linear-gradient(#ffd779, #e0a12a); color: #2a1206; font-weight: 700; cursor: pointer; }
+  .pf .up:disabled { filter: grayscale(1) brightness(.6); cursor: not-allowed; }
+  .pf .hearts { color: #ff8aa8; letter-spacing: 2px; }
+  .pf .story { margin: 6px 0 0; padding: 0; list-style: none; }
+  .pf .story li { padding: 6px 0; border-top: 1px dashed rgba(255,255,255,.12); font-size: 12.5px; line-height: 1.55; }
+  .pf .story li b { display: block; color: #fff3d0; font-size: 13px; }
+  .pf .story li.lock { color: var(--muted); }
+  .pf .lines { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 5px; }
+  .pf .lines li { font-size: 12px; background: rgba(255,255,255,.08); border-radius: 10px 10px 10px 2px; padding: 4px 8px; }
+  .pf .acts { display: flex; gap: 8px; margin-top: 6px; }
 </style>
 </head>
 <body>
-<div class="top"><a href="./">← 캠퍼스</a><h1>팀 편성</h1><div class="stage">STAGE 1-1<b>은행나무길 · 은행왕</b></div></div>
+<div class="top"><a href="./">← 캠퍼스</a><h1>팀 편성</h1><div class="res" id="res"></div><div class="stage"><button class="sbtn" id="st-prev" aria-label="이전 스테이지">◀</button><span>STAGE <b id="st-n">1-1</b><small id="st-rec"></small></span><button class="sbtn" id="st-next" aria-label="다음 스테이지">▶</button></div></div>
 <div class="wrap">
   <section class="panel">
     <div class="field" id="field"></div>
     <div class="syn" id="syn"></div>
+    <div class="camp" id="camp"></div>
     <div class="foot"><span class="pow" id="pow"></span><button class="btn sub" id="auto">자동 편성</button><button class="btn go" id="go">전투 시작</button></div>
   </section>
   <section class="panel">
@@ -73,6 +111,7 @@
     <p class="hint" id="hint"></p>
   </section>
 </div>
+<div class="modal" id="pf" hidden></div>
 <script src="../avatar.js"></script>
 <script src="../avatar2.js"></script>
 <script src="../avatar3.js"></script>
@@ -80,6 +119,7 @@
 <script src="../fullbody.js"></script>
 <script src="roster.js"></script>
 <script src="kits.js"></script>
+<script src="profiles.js"></script>
 <script src="team.js"></script>
 </body>
 </html>
