@@ -104,6 +104,9 @@
   .syn:empty { display: none; }
   .syn b + b { margin-left: 10px; }
   .dmg.say { font-family: 'Gowun Dodum', sans-serif; font-weight: 700; font-size: 13px; color: #fff; text-shadow: 0 1px 3px #000, 0 0 6px rgba(0,0,0,.6); white-space: nowrap; }
+  #dim { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 62% 42%, rgba(0,0,0,0) 0 16%, rgba(4,2,10,.6) 45%, rgba(4,2,10,.9) 80%); opacity: 0; transition: opacity .25s; z-index: 1; }
+  #dim.on { opacity: 1; }
+  #flash { position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 2; mix-blend-mode: screen; }
 </style>
 </head>
 <body>
@@ -114,6 +117,7 @@
 <div class="syn glass" id="syn"></div>
 <div class="skills" id="skills"></div>
 <div class="cast" id="cast"></div>
+<div id="dim"></div><div id="flash"></div>
 <div id="hud"></div>
 <div class="overlay" id="start"><div class="panel glass"><small>STAGE 1-1</small><h2>은행나무길</h2><p>보스 · 은행왕</p><div class="btns"><a class="btn sub" href="team.html" style="text-decoration:none">팀 바꾸기</a><button class="btn go" id="go">전투 시작</button></div><div class="tip">친구들은 알아서 싸워요. 스킬 버튼이 빛나면 눌러 주세요.<br>바닥에 빨간 원이 뜨면 큰 공격이 와요. 방패 로봇이나 돌파 슛으로 막을 수 있어요.</div></div></div>
 <div class="overlay" id="result" hidden><div class="panel glass"><small id="r-sub">STAGE CLEAR</small><h2 id="r-title">승리!</h2><div class="stars" id="r-stars"></div><p id="r-time"></p><div class="rw" id="r-rw"></div><div class="btns"><a class="btn sub" href="team.html" style="text-decoration:none">팀 편성</a><button class="btn sub" id="r-retry">다시 하기</button><button class="btn go" id="r-camp">캠퍼스로</button></div></div></div>

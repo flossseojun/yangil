@@ -240,26 +240,42 @@ B.miss = 0;
 // 연출 묶음: 각자 맞을 때(onHit) 피해를 준다
 const VIS = {
   // 포물선으로 던지기 (농구공 · 플라스크 · 체스 말)
-  lob: (u, s, onHit, end) => { for (let i = 0; i < s.n; i++) tween(i * (s.gap ?? .22), null, () => { const sp = iconSprite(s.icon, s.size || .7), from = handOf(u), to = bossHit(.7); tween(s.dur || .55, k => { sp.position.lerpVectors(from, to, k); sp.position.y += Math.sin(k * Math.PI) * Math.min(2.4, s.arc ?? 2); sp.material.rotation = k * (s.spin ?? 8); }, () => { scene.remove(sp); flash(s.color, s.boom || 2.4, to, .4); onHit(i); if (i === s.n - 1) end(); }); }); },
+  lob: (u, s, onHit, end) => { for (let i = 0; i < s.n; i++) tween(i * (s.gap ?? .22), null, () => { const sp = iconSprite(s.icon, (s.size || .7) * (s.sc || 1)), from = handOf(u), to = bossHit(.7); tween(s.dur || .55, k => { sp.position.lerpVectors(from, to, k); sp.position.y += Math.sin(k * Math.PI) * Math.min(2.4, s.arc ?? 2); sp.material.rotation = k * (s.spin ?? 8); }, () => { scene.remove(sp); flash(s.color, (s.boom || 2.4) * (s.sc || 1), to, .4); onHit(i); if (i === s.n - 1) end(); }); }); },
   // 일직선으로 빠르게 (야구공 · 축구공 · 수리검)
-  shoot: (u, s, onHit, end) => { for (let i = 0; i < s.n; i++) tween(i * (s.gap ?? .12), null, () => { const sp = iconSprite(s.icon, s.size || .6), from = u.pos.clone().add(new THREE.Vector3(.4, s.low ? .5 : 1.8, 0)), to = bossHit(.5); const trail = new THREE.Sprite(additive(s.color, .9)); trail.scale.set(1.4, .5, 1); scene.add(trail); tween(s.dur || .2, k => { sp.position.lerpVectors(from, to, k); trail.position.lerpVectors(from, to, Math.max(0, k - .08)); sp.material.rotation = k * (s.spin ?? 12); }, () => { scene.remove(sp, trail); flash(s.color, s.boom || 2.6, to, .35); onHit(i); if (i === s.n - 1) end(); }); }); },
+  shoot: (u, s, onHit, end) => { for (let i = 0; i < s.n; i++) tween(i * (s.gap ?? .12), null, () => { const sp = iconSprite(s.icon, (s.size || .6) * (s.sc || 1)), from = u.pos.clone().add(new THREE.Vector3(.4, s.low ? .5 : 1.8, 0)), to = bossHit(.5); const trail = new THREE.Sprite(additive(s.color, .9)); trail.scale.set(1.4, .5, 1); scene.add(trail); tween(s.dur || .2, k => { sp.position.lerpVectors(from, to, k); trail.position.lerpVectors(from, to, Math.max(0, k - .08)); sp.material.rotation = k * (s.spin ?? 12); }, () => { scene.remove(sp, trail); flash(s.color, (s.boom || 2.6) * (s.sc || 1), to, .35); onHit(i); if (i === s.n - 1) end(); }); }); },
   // 하늘에서 비처럼 (고추 · 동전 · 별)
-  rain: (u, s, onHit, end) => { for (let i = 0; i < s.n; i++) tween(i * (s.gap ?? .09), null, () => { const sp = iconSprite(s.icon, s.size || .55), x = bossCenter.x + rnd(-1.8, 1.4), z = rnd(.6, 1.8), from = new THREE.Vector3(x, 7, z), to = new THREE.Vector3(x, rnd(1, 3.4), z); tween(s.dur || .45, k => { sp.position.lerpVectors(from, to, k * k); sp.material.rotation = k * 4; }, () => { scene.remove(sp); flash(s.color, 1.6, to, .3); onHit(i); if (i === s.n - 1) end(); }); }); },
+  rain: (u, s, onHit, end) => { for (let i = 0; i < s.n; i++) tween(i * (s.gap ?? .09), null, () => { const sp = iconSprite(s.icon, (s.size || .55) * (s.sc || 1)), x = bossCenter.x + rnd(-1.8, 1.4), z = rnd(.6, 1.8), from = new THREE.Vector3(x, 7, z), to = new THREE.Vector3(x, rnd(1, 3.4), z); tween(s.dur || .45, k => { sp.position.lerpVectors(from, to, k * k); sp.material.rotation = k * 4; }, () => { scene.remove(sp); flash(s.color, (1.6) * (s.sc || 1), to, .3); onHit(i); if (i === s.n - 1) end(); }); }); },
   // 보스 앞까지 돌진했다 돌아오기 (덩크 · 업어치기 · 할리)
-  dash: (u, s, onHit, end) => { const from = u.pos.clone(), to = new THREE.Vector3(bossCenter.x - 1.6, 0, .6); u.busy = true; tween(.22, k => { u.pos.lerpVectors(from, to, k); u.pos.y = Math.sin(k * Math.PI) * (s.jump || 0); }, () => { for (let i = 0; i < s.n; i++) tween(i * .14, null, () => { flash(s.color, 3, bossHit(.5), .35); const sp = iconSprite(s.icon, .9); sp.position.copy(bossHit(.4)); tween(.3, k => { sp.material.opacity = 1 - k; sp.scale.setScalar(.9 + k); }, () => scene.remove(sp)); onHit(i); if (i === s.n - 1) { shockwave(to, s.color); tween(.25, k => { u.pos.lerpVectors(to, from, k); }, () => { u.busy = false; end(); }); } }); }); },
+  dash: (u, s, onHit, end) => { const from = u.pos.clone(), to = new THREE.Vector3(bossCenter.x - 1.6, 0, .6); u.busy = true; tween(.22, k => { u.pos.lerpVectors(from, to, k); u.pos.y = Math.sin(k * Math.PI) * (s.jump || 0); }, () => { for (let i = 0; i < s.n; i++) tween(i * .14, null, () => { flash(s.color, (3) * (s.sc || 1), bossHit(.5), .35); const sp = iconSprite(s.icon, (.9) * (s.sc || 1)); sp.position.copy(bossHit(.4)); tween(.3, k => { sp.material.opacity = 1 - k; sp.scale.setScalar(.9 + k); }, () => scene.remove(sp)); onHit(i); if (i === s.n - 1) { shockwave(to, s.color, 4 * (s.sc || 1)); tween(.25, k => { u.pos.lerpVectors(to, from, k); }, () => { u.busy = false; end(); }); } }); }); },
   // 빛줄기 (코딩 폭격 · 아이언 빔)
-  beam: (u, s, onHit, end) => { beam(handOf(u), bossCenter.clone(), s.color); for (let i = 0; i < 5; i++) { const g = iconSprite(s.icon, .45), p = handOf(u).lerp(bossCenter, .2 + i * .15); g.position.copy(p).add(new THREE.Vector3(0, .6 + Math.sin(i) * .3, 0)); tween(.7, k => { g.material.opacity = 1 - k; g.position.y += .01; }, () => scene.remove(g)); } for (let i = 0; i < s.n; i++) tween(.25 + i * .12, null, () => { flash(s.color, 3.2, bossHit(.3), .4); onHit(i); if (i === s.n - 1) end(); }); },
+  beam: (u, s, onHit, end) => { beam(handOf(u), bossCenter.clone(), s.color); for (let i = 0; i < 5; i++) { const g = iconSprite(s.icon, (.45) * (s.sc || 1)), p = handOf(u).lerp(bossCenter, .2 + i * .15); g.position.copy(p).add(new THREE.Vector3(0, .6 + Math.sin(i) * .3, 0)); tween(.7, k => { g.material.opacity = 1 - k; g.position.y += .01; }, () => scene.remove(g)); } for (let i = 0; i < s.n; i++) tween(.25 + i * .12, null, () => { flash(s.color, (3.2) * (s.sc || 1), bossHit(.3), .4); onHit(i); if (i === s.n - 1) end(); }); },
   // 보스를 가로지르는 한 줄 (보조선 · 체크메이트)
-  slash: (u, s, onHit, end) => { const line = new THREE.Mesh(new THREE.PlaneGeometry(6, .12), new THREE.MeshBasicMaterial({ color: new THREE.Color(s.color).multiplyScalar(2.5), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); line.position.copy(bossCenter).add(new THREE.Vector3(0, 0, 1.2)); line.rotation.z = .5; scene.add(line); tween(.35, k => { line.scale.x = k; }, () => { flash(s.color, 5, bossCenter, .5); shake(.16); for (let i = 0; i < s.n; i++) tween(i * .1, null, () => { onHit(i); if (i === s.n - 1) { tween(.3, k => { line.material.opacity = 1 - k; }, () => { scene.remove(line); end(); }); } }); }); },
+  slash: (u, s, onHit, end) => { const line = new THREE.Mesh(new THREE.PlaneGeometry(6, .12), new THREE.MeshBasicMaterial({ color: new THREE.Color(s.color).multiplyScalar(2.5), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); line.position.copy(bossCenter).add(new THREE.Vector3(0, 0, 1.2)); line.rotation.z = .5; scene.add(line); tween(.35, k => { line.scale.x = k; }, () => { flash(s.color, (5) * (s.sc || 1), bossCenter, .5); shake(.16); for (let i = 0; i < s.n; i++) tween(i * .1, null, () => { onHit(i); if (i === s.n - 1) { tween(.3, k => { line.material.opacity = 1 - k; }, () => { scene.remove(line); end(); }); } }); }); },
   // 위로 쏘아 올렸다 떨어지기 (물로켓)
-  rocket: (u, s, onHit, end) => { const sp = iconSprite(s.icon, 1), from = handOf(u), top = new THREE.Vector3(bossCenter.x, 9, .5); tween(.4, k => { sp.position.lerpVectors(from, top, k); }, () => { sp.material.rotation = Math.PI; tween(.3, k => { sp.position.lerpVectors(top, bossCenter, k); }, () => { scene.remove(sp); flash(s.color, 6, bossCenter, .6); shake(.2); for (let i = 0; i < s.n; i++) tween(i * .08, null, () => { onHit(i); if (i === s.n - 1) end(); }); }); }); },
+  rocket: (u, s, onHit, end) => { const sp = iconSprite(s.icon, (1) * (s.sc || 1)), from = handOf(u), top = new THREE.Vector3(bossCenter.x, 9, .5); tween(.4, k => { sp.position.lerpVectors(from, top, k); }, () => { sp.material.rotation = Math.PI; tween(.3, k => { sp.position.lerpVectors(top, bossCenter, k); }, () => { scene.remove(sp); flash(s.color, (6) * (s.sc || 1), bossCenter, .6); shake(.2); for (let i = 0; i < s.n; i++) tween(i * .08, null, () => { onHit(i); if (i === s.n - 1) end(); }); }); }); },
   // 소리 · 응원이 퍼져 나가기 (팀 대상)
-  wave: (u, s, onHit, end) => { for (let r = 0; r < 3; r++) tween(r * .15, null, () => shockwave(u.pos.clone(), s.color, 6)); alive().forEach((x, i) => { const sp = iconSprite(s.icon, .55); sp.position.copy(x.pos).add(new THREE.Vector3(0, 2.6, 0)); tween(.9, k => { sp.position.y += .015; sp.material.opacity = 1 - k * .8; }, () => scene.remove(sp)); }); tween(.3, null, () => { onHit(0); end(); }); },
+  wave: (u, s, onHit, end) => { for (let r = 0; r < 3; r++) tween(r * .15, null, () => shockwave(u.pos.clone(), s.color, 6 * (s.sc || 1))); alive().forEach((x, i) => { const sp = iconSprite(s.icon, (.55) * (s.sc || 1)); sp.position.copy(x.pos).add(new THREE.Vector3(0, 2.6, 0)); tween(.9, k => { sp.position.y += .015; sp.material.opacity = 1 - k * .8; }, () => scene.remove(sp)); }); tween(.3, null, () => { onHit(0); end(); }); },
   // 팀 위로 무언가 떠오르기 (회복 · 보호막)
-  aura: (u, s, onHit, end) => { alive().forEach(x => { for (let i = 0; i < 3; i++) { const sp = iconSprite(s.icon, .45); sp.position.copy(x.pos).add(new THREE.Vector3(rnd(-.4, .4), .4 + i * .3, 0)); tween(.9 + i * .1, k => { sp.position.y += .02; sp.material.opacity = 1 - k; }, () => scene.remove(sp)); } flash(s.color, 2.6, x.pos.clone().add(new THREE.Vector3(0, 1.3, 0)), .7); }); tween(.25, null, () => { onHit(0); end(); }); },
+  aura: (u, s, onHit, end) => { alive().forEach(x => { for (let i = 0; i < 3; i++) { const sp = iconSprite(s.icon, (.45) * (s.sc || 1)); sp.position.copy(x.pos).add(new THREE.Vector3(rnd(-.4, .4), .4 + i * .3, 0)); tween(.9 + i * .1, k => { sp.position.y += .02; sp.material.opacity = 1 - k; }, () => scene.remove(sp)); } flash(s.color, (2.6) * (s.sc || 1), x.pos.clone().add(new THREE.Vector3(0, 1.3, 0)), .7); }); tween(.25, null, () => { onHit(0); end(); }); },
   // 연막 (시현): 팀을 덮는 연기 + 수리검
-  smoke: (u, s, onHit, end) => { alive().forEach(x => { for (let i = 0; i < 4; i++) { const sp = iconSprite('smoke', 1.2); sp.position.copy(x.pos).add(new THREE.Vector3(rnd(-.6, .6), rnd(.3, 1.6), .3)); tween(1.4, k => { sp.material.opacity = (1 - k) * .9; sp.scale.setScalar(1.2 + k); }, () => scene.remove(sp)); } }); VIS.shoot(u, { icon: 'shuriken', n: s.n, color: '#cfd8e0', gap: .08 }, onHit, end); },
+  smoke: (u, s, onHit, end) => { alive().forEach(x => { for (let i = 0; i < 4; i++) { const sp = iconSprite('smoke', 1.2 * (s.sc || 1)); sp.position.copy(x.pos).add(new THREE.Vector3(rnd(-.6, .6), rnd(.3, 1.6), .3)); tween(1.4, k => { sp.material.opacity = (1 - k) * .9; sp.scale.setScalar(1.2 + k); }, () => scene.remove(sp)); } }); VIS.shoot(u, { icon: 'shuriken', n: s.n, color: '#cfd8e0', gap: .08, sc: s.sc }, onHit, end); },
 };
+
+// 직접 누른 필살기의 마무리: 거대한 아이콘이 내리꽂히고 화면이 번쩍
+function finisher(s, teamSkill) {
+  const big = iconSprite(s.icon, 2.4);
+  const to = teamSkill ? teamCenter().add(new THREE.Vector3(0, 2.2, 0)) : bossCenter.clone().add(new THREE.Vector3(0, .4, 1));
+  const from = teamSkill ? to.clone().add(new THREE.Vector3(0, -2.5, 0)) : to.clone().add(new THREE.Vector3(-1.5, 7, 0));
+  tween(.32, k => { big.position.lerpVectors(from, to, k * k); big.material.rotation = (1 - k) * (teamSkill ? 0 : -1.4); const z = 2.4 * 1.45 * (teamSkill ? .4 + k * .8 : 1); big.scale.set(z, z, 1); }, () => {
+    screenFlash(teamSkill ? s.color : '#ffffff', teamSkill ? .45 : .8);
+    flash(s.color, 14, to, .8); flash('#ffffff', 7, to, .5); shockwave(new THREE.Vector3(to.x, 0, to.z), s.color, 14);
+    shake(teamSkill ? .12 : .45, .5);
+    for (let i = 0; i < 26; i++) { const d = new THREE.Sprite(additive(i % 3 ? s.color : '#ffffff')); const a = Math.random() * Math.PI * 2, v = new THREE.Vector3(Math.cos(a), Math.sin(a) * .8 + .3, rnd(-.3, .3)).multiplyScalar(rnd(3, 7)); d.position.copy(to); d.scale.setScalar(rnd(.25, .6)); scene.add(d); tween(.7, k => { d.position.addScaledVector(v, .016); v.y -= .12; d.material.opacity = 1 - k; }, () => scene.remove(d)); }
+    tween(.5, k => { big.material.opacity = 1 - k; const z = 2.4 * 1.45 * (1.2 + k * .6); big.scale.set(z, z, 1); }, () => scene.remove(big));
+  });
+}
+const teamCenter = () => { const a = alive(); const c = new THREE.Vector3(); a.forEach(u => c.add(u.pos)); return a.length ? c.multiplyScalar(1 / a.length) : new THREE.Vector3(-2, 0, 0); };
+function screenFlash(color, op) { const el = $('flash'); el.style.background = color; el.style.transition = 'none'; el.style.opacity = op; void el.offsetWidth; el.style.transition = 'opacity .45s ease-out'; el.style.opacity = 0; }
 function shockwave(at, color, size = 4) { const ring = new THREE.Mesh(new THREE.RingGeometry(.8, 1, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(at.x, .05, at.z); scene.add(ring); tween(.5, k => { ring.scale.setScalar(.3 + k * size); ring.material.opacity = 1 - k; }, () => scene.remove(ring)); }
 
 // 친구별 스킬: v 연출 · icon 아이콘 · n 타수 · dmg 한 대 피해 · 그 밖의 효과
@@ -331,8 +347,10 @@ const SKILL_SPEC = {
 const ROLE_SPEC = { tank: S('aura', 'shield', '#7fb3ff', { shield: 900, taunt: 6 }), striker: S('shoot', 'soccer', '#fff', { dmg: 1300, stun: 2.5, low: true }), blaster: S('lob', 'flask', '#ff8a3c', { dmg: 1500, burn: 5 }), mage: S('beam', 'star', '#b48bff', { n: 4, dmg: 650 }), healer: S('aura', 'cross', '#7dff9e', { heal: .35 }), support: S('wave', 'note', '#ffd779', { buff: 6, gauge: .2 }) };
 
 // 스킬 실행: 연출 → 맞을 때 피해 → 끝나면 보스 효과
-function castSkill(u) {
-  const s = SKILL_SPEC[u.id] || ROLE_SPEC[u.st.role];
+function castSkill(u, big) {
+  const base = SKILL_SPEC[u.id] || ROLE_SPEC[u.st.role], s = Object.assign({}, base, { sc: big ? 2.4 : 1.6 });
+  const teamSkill = !s.dmg && !s.after;
+  if (big) startUlt(teamSkill);
   if (s.say) popText(u.pos.clone().add(new THREE.Vector3(0, 3.2, 0)), 'say', s.say);
   // 팀 효과는 바로
   if (s.shield) alive().forEach(x => { x.shield = Math.max(x.shield, s.shield); x.shieldT = 6; });
@@ -350,18 +368,23 @@ function castSkill(u) {
     if (sp.weak) { weakT = Math.max(weakT, sp.weak); popText(bossCenter.clone().add(new THREE.Vector3(0, 1.8, 0)), 'info', '약해졌다!'); }
     if (sp.confuse) { B.miss += sp.confuse; popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '???'); }
   };
-  const run = (sp, done) => VIS[sp.v](u, sp, i => { if (sp.dmg) damageBoss(sp.dmg * SYNERGY * (buffT > 0 ? 1.2 : 1), { big: sp.n === 1 || i === sp.n - 1, crit: sp.crit && Math.random() < .5 ? true : undefined }); }, () => { bossFx(sp); done && done(); });
-  run(s, () => { if (s.after) run(Object.assign({ color: s.color }, s.after)); });
+  const run = (sp, done) => VIS[sp.v](u, Object.assign({ sc: s.sc }, sp), i => { if (sp.dmg) damageBoss(sp.dmg * SYNERGY * (buffT > 0 ? 1.2 : 1), { big: sp.n === 1 || i === sp.n - 1, crit: sp.crit && Math.random() < .5 ? true : undefined }); }, () => { bossFx(sp); done && done(); });
+  run(s, () => { if (s.after) run(Object.assign({ color: s.color }, s.after), () => { if (big) finisher(s, false); }); else if (big) finisher(s, teamSkill); });
+  if (big && teamSkill) tween(.35, null, () => finisher(s, true));
 }
 
-let cutLock = 0;          // 컷인이 도는 동안 전투가 멈춘다
+let cutLock = 0;
+let ultT = 0, zoomK = 0, zoomTeam = false;
+const camLook = new THREE.Vector3(-.4, 1.0, -.6);
+function startUlt(team) { ultT = 1.7; zoomTeam = team; $('dim').classList.add('on'); }
+function endUlt() { ultT = 0; $('dim').classList.remove('on'); if (queue.length) setTimeout(() => useSkill(queue.shift()), 80); }          // 컷인이 도는 동안 전투가 멈춘다
 const queue = [];
 function useSkill(id, fromAuto) {
   const u = U(id); if (!u || u.dead || u.gauge < 1 || over || !started) return;
-  if (fromAuto) { u.gauge = 0; u.castT = .6; castBanner(id); castSkill(u); return; }   // 자동: 멈추지 않고 짧은 띠만
-  if (cutLock > 0) { if (!queue.includes(id)) queue.push(id); return; }
+  if (fromAuto) { u.gauge = 0; u.castT = .6; castBanner(id); castSkill(u, false); return; }   // 자동: 멈추지 않고 짧은 띠만
+  if (cutLock > 0 || ultT > 0) { if (!queue.includes(id)) queue.push(id); return; }
   u.gauge = 0; cutIn(id); cutLock = 1.05;
-  pendingCast = () => { u.castT = .6; castSkill(u); };
+  pendingCast = () => { u.castT = .6; castSkill(u, true); };
 }
 let bannerT = 0;
 function castBanner(id) { const el = $('cast'); el.innerHTML = `<b>${STATS[id].skill}</b><small>${STATS[id].who}</small>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(() => el.classList.remove('show'), 900); }
@@ -498,15 +521,16 @@ function step(dt) {
       else bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk), .45, .6);
     }
   });
-  if (auto && cutLock <= 0) autoSkills();
+  if (auto && cutLock <= 0 && ultT <= 0) autoSkills();
 }
 
 /* ───────── 그리기 ───────── */
 const clock = new THREE.Clock();
 function frame() {
-  const real = Math.min(clock.getDelta(), .05);
+  const raw = Math.min(clock.getDelta(), .25), real = Math.min(raw, .05);   // 컷인 · 필살기는 실제 시간(raw), 전투는 끊김 방지용(real)
   if (!paused) {
-    if (cutLock > 0) { cutLock -= real; if (cutLock <= 0) { const f = pendingCast; pendingCast = null; f && f(); if (queue.length) setTimeout(() => useSkill(queue.shift()), 80); } runTweens(0); }
+    if (cutLock > 0) { cutLock -= raw; if (cutLock <= 0) { const f = pendingCast; pendingCast = null; f && f(); if (!ultT && queue.length) setTimeout(() => useSkill(queue.shift()), 80); } runTweens(0); }
+    else if (ultT > 0) { ultT -= raw; runTweens(raw); if (ultT <= 0) endUlt(); }
     else step(real * speed);
   }
   const now = performance.now() / 1000;
@@ -542,7 +566,11 @@ function frame() {
   $('timer').textContent = `${Math.floor(clockT / 60)}:${String(Math.floor(clockT % 60)).padStart(2, '0')}`;
   skillUI();
   // 화면 흔들림
-  if (shakeT > 0) { shakeT -= real; camera.position.set(camBase.x + rnd(-1, 1) * shakeAmp, camBase.y + rnd(-1, 1) * shakeAmp, camBase.z); } else { shakeAmp = 0; camera.position.copy(camBase); }
+  zoomK += ((ultT > 0 ? 1 : 0) - zoomK) * Math.min(1, real * (ultT > 0 ? 7 : 4));
+  const focus = zoomTeam ? teamCenter().add(new THREE.Vector3(0, 1.4, 0)) : bossCenter;
+  const camNow = camBase.clone().lerp(focus.clone().add(new THREE.Vector3(-1.2, 1.6, 7.5)), zoomK * .55);
+  if (shakeT > 0) { shakeT -= real; camNow.x += rnd(-1, 1) * shakeAmp; camNow.y += rnd(-1, 1) * shakeAmp; } else shakeAmp = 0;
+  camera.position.copy(camNow); camera.lookAt(camLook.clone().lerp(focus, zoomK * .8));
   composer.render();
   requestAnimationFrame(frame);
 }
