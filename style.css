@@ -1166,3 +1166,36 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 @keyframes revealFlash { 0% { opacity: 0; } 8% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes revealPop { 0% { transform: scale(.2) rotate(-20deg); } 18% { transform: scale(1) rotate(-4deg); } 85% { transform: scale(1) rotate(-4deg); } 100% { transform: scale(1.15) rotate(-4deg); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .boss-reveal, .boss-reveal-card, .boss-stage.hit .boss-photo-face { animation: none; } }
+
+/* 정기시험 성적표 카드 */
+.exam-card { background: #fffdf6; border: 1px solid #e8dfc4; border-radius: 12px; padding: 12px 12px 10px; margin: 6px 0 4px; color: #1f2a24; text-align: left; }
+.ec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ec-head small { display: block; font-size: 12px; color: #6b746f; }
+.ec-head b { display: block; font-family: Jua, sans-serif; font-weight: 400; font-size: 20px; }
+.ec-head em { display: inline-block; font-style: normal; font-size: 12px; margin-top: 2px; padding: 1px 7px; border-radius: 999px; background: #eef1ec; color: #4a554f; }
+.ec-head em.up { background: #dff1e4; color: #1f6b3a; } .ec-head em.down { background: #fbe3e0; color: #a33a2e; }
+.ec-avg { margin-left: auto; flex: 0 0 auto; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; align-content: center; background: var(--c); color: #fff; font-family: Jua, sans-serif; font-size: 24px; line-height: 1; box-shadow: inset 0 -3px 0 rgba(0,0,0,.15); }
+.ec-avg small { display: block; font-family: 'Gowun Dodum', sans-serif; font-size: 9px; margin-top: 3px; color: #fff; font-weight: 700; }
+.ec-rows { list-style: none; padding: 0; margin: 0; }
+.ec-rows li { display: grid; grid-template-columns: 86px 1fr 32px 50px; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed #e6dfcc; }
+.ec-rows li:last-child { border-bottom: 0; }
+.ec-sub { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ec-bar { height: 10px; border-radius: 6px; background: #eee8d8; overflow: hidden; }
+.ec-bar i { display: block; height: 100%; border-radius: 6px; background: var(--c); }
+.ec-sc { font-family: Jua, sans-serif; font-weight: 400; font-size: 17px; text-align: right; }
+.gb { display: inline-flex; align-items: baseline; justify-content: center; gap: 1px; min-width: 42px; padding: 2px 6px; border-radius: 8px; background: var(--c); color: #fff; font-family: Jua, sans-serif; font-size: 16px; line-height: 1.2; }
+.gb small { font-family: 'Gowun Dodum', sans-serif; font-size: 9px; opacity: .9; }
+.ec-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ec-table th { font-size: 11px; font-weight: 400; color: #6b746f; padding: 4px 2px; text-align: center; border-bottom: 1px solid #e6dfcc; }
+.ec-table th:first-child, .ec-table td:first-child { text-align: left; }
+.ec-table td { padding: 7px 2px; text-align: center; border-bottom: 1px dashed #e6dfcc; font-variant-numeric: tabular-nums; }
+.ec-table tr:last-child td { border-bottom: 0; }
+.ec-table .ec-fin { font-family: Jua, sans-serif; font-size: 16px; }
+.ec-rank { display: block; font-size: 10px; color: #6b746f; margin-top: 2px; }
+.ec-note { font-size: 11.5px; color: #6b746f; margin: 8px 0 0; }
+.ec-cmt { font-size: 13px; margin: 6px 0 0; }
+.ec-box { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #f3eefc; border-left: 3px solid #7a5bd6; font-size: 12.5px; line-height: 1.55; }
+.ec-box.boss { background: #fff3e0; border-left-color: #e0a12a; margin: 0 0 8px; }
+@media (max-width: 420px) { .ec-rows li { grid-template-columns: 78px 1fr 28px 48px; gap: 6px; } .ec-rows .ec-sub { font-size: 13px; } .ec-table { font-size: 13px; } .ec-avg { width: 56px; height: 56px; font-size: 21px; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .exam-card { background: #24302a; border-color: #3a4a42; color: #eef2ec; } :root:not([data-theme="light"]) .ec-bar { background: #34423b; } :root:not([data-theme="light"]) .ec-box { background: #2e2a40; } :root:not([data-theme="light"]) .ec-box.boss { background: #3a3020; } }
+:root[data-theme="dark"] .exam-card { background: #24302a; border-color: #3a4a42; color: #eef2ec; } :root[data-theme="dark"] .ec-bar { background: #34423b; } :root[data-theme="dark"] .ec-box { background: #2e2a40; } :root[data-theme="dark"] .ec-box.boss { background: #3a3020; }

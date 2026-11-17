@@ -816,12 +816,14 @@ function takeExam(mode, bonusExtra = 0) {
   if (first) {
     const prep = typeof makePrep === 'function' ? makePrep(s, s.exams[s.exams.length - 1]) : null;
     if (prep) { s.bossPrep = s.bossPrep || {}; s.bossPrep[key] = prep; }
+    S._examCard = { kind: 'first', type, rows: subs.map(x => ({ name: x.sub.name, score: x.score, grade: x.grade, letter: x.letter })), avg: score, grade: wavg(subs.map(x => x.grade)), prep: prep ? prepText(prep).trim() : '', comment: comment.trim() };
     return (prep ? prepText(prep).trim() + '\n\n' : '') + `${type} 결과 (지필 · 가채점)\n` + subs.map(x => `${x.sub.name} ${x.score}점 · 지금이라면 ${x.letter ? `${x.letter} (절대평가)` : `${x.grade}등급`}`).join('\n') + `\n수행평가와 2차 시험까지 합쳐서 학기 등급이 나온다.${comment}`;
   }
   const fin = finalizeSemester();
   const bossNote = s._bossNote ? s._bossNote + '\n' : ''; s._bossNote = null;
   if (fin.grade <= 1.5) SFX.play('fanfare');
   const react = fin.grade <= 1.5 ? '교실 뒤에서 탄성이 들렸다.' : fin.grade <= 2.5 ? '꽤 잘했다. 1등급 과목을 늘려 보자.' : fin.grade <= 3.5 ? '딱 중간. 약한 과목부터 챙기자.' : '성적표를 접어서 가방 깊숙이 넣었다.';
+  { const pv = s.semGrades[s.semGrades.length - 2]; S._examCard = { kind: 'final', type, rows: fin.subjects.map(x => ({ name: x.name, w: x.w, perf: x.perf, score: x.score, grade: x.grade, letter: x.letter, rank: x.rank, n: x.n })), grade: fin.grade, prev: pv ? pv.grade : null, boss: bossNote.trim(), react, comment: comment.trim() }; }
   return bossNote + `${type} 결과 → 학기 최종 평균 ${fin.grade}등급\n` + fin.subjects.map(x => `${x.name} 지필 ${x.w.join('·')} + 수행 ${x.perf} → ${x.letter ? `${x.letter} (절대평가)` : `${x.grade}등급 (${x.rank}/${x.n})`}`).join('\n') + `\n${react}${comment}`;
 }
 
