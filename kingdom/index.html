@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>양일 캠퍼스</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+  :root { --ink: #1f2a24; --paper: #fffdf6; --green: #2b4a3c; --yellow: #ffd23f; --muted: #6b746f; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #bfe3f5; font-family: 'Gowun Dodum', sans-serif; color: var(--ink); touch-action: none; user-select: none; -webkit-user-select: none; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .hud { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; gap: 6px; align-items: center; pointer-events: none; z-index: 5; }
+  .res { pointer-events: auto; background: rgba(255,253,246,.94); border: 2px solid #e8dfc4; border-radius: 999px; padding: 4px 11px 4px 6px; display: flex; align-items: center; gap: 5px; font-family: Jua, sans-serif; font-size: 16px; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+  .res i { font-style: normal; font-size: 17px; }
+  .title { margin-left: auto; pointer-events: auto; background: var(--green); color: #fff; border-radius: 12px; padding: 5px 10px; font-family: Jua, sans-serif; font-size: 15px; box-shadow: 0 2px 6px rgba(0,0,0,.18); }
+  .title small { display: block; font-family: 'Gowun Dodum'; font-size: 10px; opacity: .8; }
+  .side { position: fixed; right: 10px; top: 64px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+  .rbtn { width: 46px; height: 46px; border-radius: 14px; border: 2px solid #e8dfc4; background: var(--paper); font-size: 20px; box-shadow: 0 2px 6px rgba(0,0,0,.15); cursor: pointer; display: grid; place-items: center; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 8px 10px max(10px, env(safe-area-inset-bottom)); background: linear-gradient(transparent, rgba(31,42,36,.25)); z-index: 5; }
+  .cards { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+  .cards::-webkit-scrollbar { display: none; }
+  .bcard { flex: 0 0 auto; width: 92px; background: var(--paper); border: 2px solid #e8dfc4; border-radius: 14px; padding: 6px 6px 7px; text-align: center; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,.15); font-family: inherit; color: var(--ink); }
+  .bcard .ico { font-size: 26px; line-height: 1.1; display: block; }
+  .bcard b { display: block; font-family: Jua, sans-serif; font-weight: 400; font-size: 14px; margin-top: 2px; }
+  .bcard small { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; white-space: nowrap; }
+  .bcard.off { opacity: .5; }
+  .bcard.on { border-color: var(--yellow); background: #fff6d0; }
+  .place { position: fixed; left: 50%; bottom: 128px; transform: translateX(-50%); display: none; gap: 8px; z-index: 6; }
+  .place.show { display: flex; }
+  .pbtn { border: 0; border-radius: 999px; padding: 11px 18px; font-family: Jua, sans-serif; font-size: 16px; box-shadow: 0 3px 10px rgba(0,0,0,.25); cursor: pointer; }
+  .pbtn.ok { background: var(--yellow); color: var(--ink); } .pbtn.no { background: #fff; color: var(--ink); } .pbtn.rot { background: #e9f2ff; color: #1d4f80; }
+  .pbtn:disabled { opacity: .45; }
+  .toast { position: fixed; left: 50%; top: 70px; transform: translateX(-50%); background: rgba(31,42,36,.92); color: #fff; padding: 8px 14px; border-radius: 12px; font-size: 14px; z-index: 9; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 86vw; text-align: center; }
+  .toast.show { opacity: 1; }
+  .bubble { position: fixed; z-index: 7; transform: translate(-50%, -100%); background: #fff; border-radius: 12px; padding: 7px 10px; font-size: 13px; box-shadow: 0 3px 10px rgba(0,0,0,.2); max-width: 200px; pointer-events: none; }
+  .bubble b { display: block; font-family: Jua, sans-serif; font-weight: 400; font-size: 14px; color: var(--green); }
+  .bubble small { display: block; color: var(--muted); font-size: 11px; }
+  .bubble::after { content: ''; position: absolute; left: 50%; bottom: -7px; margin-left: -7px; border: 7px solid transparent; border-top-color: #fff; border-bottom: 0; }
+  .float { position: fixed; z-index: 8; transform: translate(-50%, -50%); font-family: Jua, sans-serif; font-size: 18px; color: #fff; text-shadow: 0 2px 0 #1f2a24, 0 0 6px rgba(0,0,0,.4); pointer-events: none; animation: up 1s ease-out forwards; }
+  @keyframes up { to { transform: translate(-50%, -160%); opacity: 0; } }
+  .info { position: fixed; left: 50%; bottom: 128px; transform: translateX(-50%); background: var(--paper); border: 2px solid #e8dfc4; border-radius: 14px; padding: 9px 12px; z-index: 6; display: none; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,.2); max-width: 92vw; }
+  .info.show { display: flex; }
+  .info b { font-family: Jua, sans-serif; font-weight: 400; font-size: 16px; } .info small { display: block; color: var(--muted); font-size: 12px; }
+  .info button { border: 0; background: #f4e3e0; color: #a33; border-radius: 10px; padding: 7px 10px; font-family: inherit; cursor: pointer; }
+  .loading { position: fixed; inset: 0; display: grid; place-items: center; background: #bfe3f5; z-index: 20; font-family: Jua, sans-serif; font-size: 22px; color: var(--green); }
+  @media (prefers-reduced-motion: reduce) { .float { animation-duration: .01s; } }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="양일 캠퍼스 3D 화면"></canvas>
+<div class="hud">
+  <span class="res" title="지식"><i>📘</i><span id="r-know">0</span></span>
+  <span class="res" title="간식"><i>🍞</i><span id="r-snack">0</span></span>
+  <span class="res" title="체력"><i>💪</i><span id="r-power">0</span></span>
+  <span class="title" id="lv">양일 캠퍼스<small>Lv.1 · 친구 0명</small></span>
+</div>
+<div class="side">
+  <button class="rbtn" id="b-rot" aria-label="화면 돌리기">⟳</button>
+  <button class="rbtn" id="b-in" aria-label="가까이">＋</button>
+  <button class="rbtn" id="b-out" aria-label="멀리">－</button>
+  <button class="rbtn" id="b-back" aria-label="원래 게임으로">🏫</button>
+</div>
+<div class="place" id="place"><button class="pbtn rot" id="p-rot">돌리기</button><button class="pbtn no" id="p-no">취소</button><button class="pbtn ok" id="p-ok">여기에 짓기</button></div>
+<div class="info" id="info"></div>
+<div class="bar"><div class="cards" id="cards"></div></div>
+<div class="toast" id="toast"></div>
+<div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
+
+<script src="../avatar.js"></script>
+<script src="../avatar2.js"></script>
+<script src="../avatar3.js"></script>
+<script src="../scene.js"></script>
+<script src="../fullbody.js"></script>
+<script src="roster.js"></script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+<script type="module" src="kingdom.js"></script>
+</body>
+</html>
