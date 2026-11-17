@@ -123,7 +123,7 @@ function overlay() {
   const H = document.getElementById('hud'), parts = [];
   people.forEach(({ t, s }) => { const [x, y] = toScreen(new THREE.Vector3(t.x, 3.5, t.z)); parts.push(`<div class="unit" style="left:${x}px;top:${y}px"><div class="bar"><i style="width:${t.id === 'junyoung' ? 68 : t.id === 'jeonggyu' ? 84 : 100}%"></i></div><div class="nm">${t.name}</div></div>`); });
   const d = (v, cls, html) => { const [x, y] = toScreen(v); parts.push(`<div class="dmg ${cls}" style="left:${x}px;top:${y}px">${html}</div>`); };
-  d(new THREE.Vector3(2.4, 4.4, 1), 'big', '24,816<small>약점 · 크리티컬</small>'); d(new THREE.Vector3(7.1, 2.6, 1), 'mid', '3,402'); d(new THREE.Vector3(3.4, 1.2, 1), 'mid', '2,980');
+  d(new THREE.Vector3(2.4, 4.4, 1), 'big', '24,816<small>크리티컬!</small>'); d(new THREE.Vector3(7.1, 2.6, 1), 'mid', '3,402'); d(new THREE.Vector3(3.4, 1.2, 1), 'mid', '2,980');
   d(new THREE.Vector3(-1.3, 2.9, .9), 'heal', '+1,240'); d(new THREE.Vector3(-2.9, 2.9, -.6), 'heal', '+1,240');
   H.innerHTML = parts.join('');
 }
