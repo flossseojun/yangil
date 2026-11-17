@@ -56,4 +56,6 @@ const ROSTER = [
   { id: "namjiho", name: "남지호", role: "밝음 담당 · 장난 장인", title: "장난 공범" },
   { id: "seungmin", name: "전승민", role: "노래하는 무대 체질", title: "듀엣 파트너" },
   { id: "sihyeon", name: "정시현", role: "방송부 · 닌자 지망생", title: "닌자 수련 동료" },
+  { id: "minjeong", name: "손민정", role: "학생회 만능 일꾼 · 공노비 모드", title: "학생회 동료" },
+  { id: "intak", name: "정인탁", role: "야구 보기도 하기도 좋아하는 친구", title: "야구 직관 메이트" },
 ];

@@ -204,6 +204,8 @@ Object.assign(FRIEND_LOOKS, {
   namjiho:     { av: { hair: 'long', hairColor: '#8a5a34', skin: '#fcebdf', face: 'wink', acc: 'none', eyes: 'round', lash: true } },
   seungmin:    { av: { hair: 'side', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'droop' } },
   sihyeon:     { av: { hair: 'bob', hairColor: '#7a4b2a', skin: '#fcebdf', face: 'proud', acc: 'none', eyes: 'sharp', lash: true } },
+  minjeong:    { av: { hair: 'bob', hairColor: '#1e1b1a', skin: '#fcebdf', face: 'smile', acc: 'none', eyes: 'droop', lash: true } },
+  intak:       { av: { hair: 'curly', hairColor: '#1e1b1a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'round' } },
   yuna:        { av: { hair: 'long', hairColor: '#7a4b2a', skin: '#f6dcc6', face: 'smile', acc: 'none', eyes: 'round', lash: true } },
 });
 const lookOf = id => FRIEND_LOOKS[id] || { av: randomAvatar('m', typeof seededRng === 'function' ? seededRng('look-' + id) : Math.random) };

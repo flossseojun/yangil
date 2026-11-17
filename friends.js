@@ -1009,6 +1009,59 @@ MORE_CAMEOS.seungmin = { name: '전승민', role: '노래하는 무대 체질', 
 ['baekho', 'yeonju', 'bojun', 'namjiho', 'seungmin'].forEach(id => { CAMEOS[id] = MORE_CAMEOS[id]; CAMEO_IDS.push(id); });
 MORE_CAMEOS.sihyeon = { name: '정시현', role: '방송부 · 닌자 지망생', color: '#5b4a8a', desc: '꿈은 진지하게 닌자. 갈색 중단발을 질끈 묶고 복도를 소리 없이 걷는 연습을 한다. 어느새 뒤에 서 있다가 "…닌닌" 하고 사라지는 게 특기. 은신술은 아직 수련 중이라 대부분 들킨다. 동아리는 방송부. 방송실에서도 소리 없이 움직인다.', title: '닌자 수련 동료' };
 CAMEOS.sihyeon = MORE_CAMEOS.sihyeon; CAMEO_IDS.push('sihyeon');
+MORE_CAMEOS.minjeong = { name: '손민정', role: '학생회 만능 일꾼 · 공노비 모드', color: '#7a5bd6', desc: '검정 단발에 손에는 늘 결재 서류. 학생회 일이라면 행사 준비부터 포스터 붙이기까지 다 민정이 손을 거친다. 본인은 "나 학교 공노비야…"라고 하지만, 덕분에 학교 행사가 굴러간다.', title: '학생회 동료' };
+MORE_CAMEOS.intak = { name: '정인탁', role: '야구 보기도 하기도 좋아하는 친구', color: '#1f4f8b', desc: '곱슬기 있는 검정 머리. 야구 중계는 하루도 안 빼고 보고, 쉬는 시간엔 직접 배트를 휘두른다. 응원가도 전부 외워서 경기 얘기가 시작되면 멈추지 않는다.', title: '야구 직관 메이트' };
+['minjeong', 'intak'].forEach(id => { CAMEOS[id] = MORE_CAMEOS[id]; CAMEO_IDS.push(id); });
+Object.assign(CAMEO_ROLLING, {
+  minjeong: ['졸업 축하해! 이제 학생회 서류 안 봐도 된다 ㅠㅠ', '행사 준비 같이 해 줘서 진짜 살았어. 너 없었으면 공노비 과로사했을 거야.', '어디서 뭘 하든, 네가 부르면 결재 도장 들고 달려갈게.'],
+  intak: ['졸업 축하해! 개막전 직관 가자.', '같이 본 역전 홈런, 평생 못 잊어.', '언젠가 같이 야구장 응원석에서 목 터지게 응원하자. 그게 약속이야.'],
+});
+Object.assign(MORE_CAMEO_EVENTS, {
+  minjeong: [
+    { title: '학생회실의 불빛', text: '방과후, 학생회실에만 불이 켜져 있다. 손민정이 서류 더미 사이에서 고개를 든다. "아… 너구나. 나 지금 공노비 근무 중이야."',
+      choices: [
+        { label: '서류 정리를 도와준다', run: s => { G.grow('social', 2); G.add('rep', 2); return '둘이 하니까 한 시간 만에 끝났다. 민정이가 "너 학생회 들어와…"라며 진지하게 붙잡았다.'; } },
+        { label: '매점 간식을 사다 준다', run: s => { G.fat(-5); G.grow('social', 1); return '"이게 나의 월급이야." 민정이가 초코우유를 소중하게 마셨다.'; } },
+      ] },
+    { title: '포스터 100장', text: '민정이가 포스터 뭉치를 들고 복도에 서 있다. "녹향제 포스터 100장… 오늘 안에 다 붙여야 돼."',
+      choices: [
+        { label: '반씩 나눠서 붙인다', run: s => { G.grow('stamina', 2); G.add('rep', 2); return '복도 끝에서 끝까지 달렸다. 마지막 장을 붙이고 둘이 동시에 바닥에 주저앉았다.'; } },
+        { label: '반 친구들을 불러 모은다', run: s => { G.grow('social', 3); return '열 명이 모이니 10분 만에 끝났다. 민정이가 "이게 바로 인맥…"이라며 감동했다.'; } },
+      ] },
+    { title: '공노비의 휴일', text: '드디어 학생회 일이 없는 날. 민정이가 멍하니 창밖을 본다. "…쉬는 법을 까먹었어."',
+      choices: [
+        { label: '같이 아무것도 안 하기', run: s => { G.fat(-10); return '벤치에 앉아 구름만 봤다. 민정이가 "이게 쉬는 거구나" 하며 처음으로 웃었다.'; } },
+        { label: '분식집에 데려간다', run: s => { G.fat(-6); G.grow('social', 2); return '떡볶이를 먹던 민정이가 갑자기 "다음 주 행사 예산이…" 하다가 스스로 입을 막았다.'; } },
+      ] },
+    { title: '학생회 동료의 약속', text: '졸업 날, 민정이가 손때 묻은 결재 도장을 건넨다. "이거 내 공노비 인생의 전부야. 너한테 맡길게."',
+      choices: [
+        { label: '도장을 소중히 받는다', run: s => { G.add('luck', 3); G.grow('social', 2); return '민정이가 마지막 서류에 도장을 찍었다. 제목은 「3년 동안 고마웠어」.'; } },
+        { label: '"이제 진짜 쉬어" 말해 준다', run: s => { G.grow('social', 3); return '민정이가 눈물을 글썽였다. "…응. 근데 대학 가서도 학생회 할 것 같아."'; } },
+      ] },
+  ],
+  intak: [
+    { title: '어제 경기 봤어?', text: '아침부터 정인탁이 흥분해 있다. 곱슬머리가 더 부스스하다. "어제 9회 말 끝내기! 봤어? 봤지?"',
+      choices: [
+        { label: '하이라이트를 같이 본다', run: s => { G.grow('social', 2); G.fat(-5); return '인탁이가 장면마다 해설을 붙였다. 중계보다 열정적이었다.'; } },
+        { label: '응원가를 배운다', run: s => { G.grow('social', 2); G.absurd(); return '쉬는 시간 내내 응원가를 불렀다. 옆 반에서 같이 따라 부르기 시작했다.'; } },
+      ] },
+    { title: '쉬는 시간 배팅', text: '운동장 구석에서 인탁이가 배트를 휘두르고 있다. "공 좀 던져 줄래? 오늘 감 좋아."',
+      choices: [
+        { label: '공을 던져 준다', run: s => { G.grow('stamina', 3); return '딱! 인탁이 타구가 운동장 끝까지 날아갔다. "봤지? 홈런 각이야!"'; } },
+        { label: '나도 쳐 본다', run: s => { G.grow('stamina', 2); G.absurd(); return '세 번 헛스윙 끝에 겨우 맞혔다. 인탁이가 "타고난 타자"라며 과하게 칭찬했다.'; } },
+      ] },
+    { title: '직관 약속', text: '인탁이가 휴대폰 화면을 보여 준다. 야구장 예매 화면이다. "이번 주말 경기, 같이 갈래? 응원석 잡았어."',
+      choices: [
+        { label: '같이 간다', run: s => { G.grow('social', 3); G.fat(-8); return '목이 쉬도록 응원했다. 역전승이 나오자 인탁이가 나를 끌어안고 소리 질렀다.'; } },
+        { label: '치킨을 사 가기로 한다', run: s => { G.grow('social', 2); G.add('luck', 2); return '"야구장엔 치킨이지." 인탁이가 인정했다. 둘 다 경기보다 치킨에 더 집중했다.'; } },
+      ] },
+    { title: '야구 직관 메이트의 약속', text: '졸업 날, 인탁이가 사인볼 하나를 건넨다. 직접 쓴 사인이다. "나중에 비싸질 거야. 그리고 개막전은 무조건 같이 가."',
+      choices: [
+        { label: '사인볼을 받는다', run: s => { G.add('luck', 3); G.grow('social', 2); return '인탁이가 새끼손가락을 걸었다. "평생 직관 메이트."'; } },
+        { label: '마지막 캐치볼을 한다', run: s => { G.grow('stamina', 2); G.grow('social', 2); return '교복 입고 하는 마지막 캐치볼. 인탁이가 공마다 "나이스!"를 외쳤다.'; } },
+      ] },
+  ],
+});
 CAMEO_ROLLING.sihyeon = ['졸업 축하해! …닌닌.', '3년 동안 내 은신술 몰래 봐 준 거 알아. 고마워.', '어디에 있든, 네가 부르면 연기처럼 나타날게. 그게 닌자의 약속이야.'];
 MORE_CAMEO_EVENTS.sihyeon = [
   { title: '소리 없는 발걸음', text: '복도를 걷는데 뒤에서 아주 작은 소리가 들린다. "…닌닌." 돌아보니 정시현이 벽에 딱 붙어 있다. "들켰다. 은신술 수련 중이었어."',
@@ -1665,6 +1718,10 @@ Object.assign(TALK_MORE, {
 });
 TALK_SIG.sihyeon = ['…닌닌. 방금 내가 뒤에 있던 거 몰랐지?', 'likes:playful'];
 TALK_MORE.sihyeon = ['…닌닌.', '방금 나 못 봤지?', '수리검 하나 줄까?', '은신술 수련 중이야.', '너는 내 닌자단 1호 단원이야.', '임무 같이 갈래?', '네가 부르면 연기처럼 나타날게.', '닌자의 약속은 평생이야.'];
+TALK_SIG.minjeong = ['나 지금 공노비 근무 중… 도와줄 거야?', 'likes:sincere'];
+TALK_SIG.intak = ['어제 경기 봤어? 9회 말 진짜 미쳤어.', 'likes:playful'];
+TALK_MORE.minjeong = ['나 학교 공노비야…', '포스터 붙이는 거 도와줄래?', '오늘도 학생회실 야근이야.', '초코우유가 내 월급이야.', '너 학생회 들어와. 진심이야.', '너랑 하면 일이 금방 끝나.', '네 덕분에 행사가 굴러가.', '졸업해도 같이 일하자. …아니 놀자.'];
+TALK_MORE.intak = ['어제 경기 봤어?', '응원가 알려 줄까?', '쉬는 시간에 배팅하자.', '오늘 감 좋아.', '직관 같이 갈래?', '너랑 보면 꼭 이기더라.', '야구장엔 치킨이지.', '개막전은 무조건 같이 가.'];
 CAMEO_IDS.filter(id => !CAMEOS[id].fixed).forEach(id => {
   const c = CAMEOS[id], sig = TALK_SIG[id] || ['오늘도 좋은 하루!', 'likes:sincere'];
   CHARACTERS[id] = { name: c.name, role: c.role, color: c.color, desc: c.desc, home: null, perk: null, real: true,

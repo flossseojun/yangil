@@ -70,6 +70,8 @@ const KITS = {
   namjiho: K('support', '장난 작전', 'star'),
   seungmin: K('healer', '치유의 노래', 'mic'),
   sihyeon: K('striker', '연막 은신술', 'shuriken', 'broadcast', 'bcast'),
+  minjeong: K('support', '결재 폭풍', 'book'),
+  intak: K('striker', '끝내기 홈런', 'baseball', 'sport', 'sport'),
 };
 const kitOf = id => KITS[id] || K('striker', '전력 질주', 'ball');
 

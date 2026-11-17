@@ -343,6 +343,8 @@ const SKILL_SPEC = {
   jaehee: S('aura', 'zzz', '#cfe0ff', { sleep: 3, say: '공부는… 내일부터…' }),
   baekho: S('wave', 'lightstick', '#ff9ad5', { buff: 6, gauge: .2, say: '응원봉 파도!' }),
   namjiho: S('wave', 'laugh', '#ffd779', { confuse: 2, buff: 4, say: '장난 작전 개시!' }),
+  minjeong: S('rain', 'book', '#b48bff', { n: 8, dmg: 0, gauge: .35, buff: 4, say: '결재 완료! 다들 출동!' }),
+  intak: S('shoot', 'baseball', '#ffd779', { n: 1, dmg: 1450, stun: 2.5, dur: .3, size: .8, say: '끝내기 홈런!' }),
 };
 const ROLE_SPEC = { tank: S('aura', 'shield', '#7fb3ff', { shield: 900, taunt: 6 }), striker: S('shoot', 'soccer', '#fff', { dmg: 1300, stun: 2.5, low: true }), blaster: S('lob', 'flask', '#ff8a3c', { dmg: 1500, burn: 5 }), mage: S('beam', 'star', '#b48bff', { n: 4, dmg: 650 }), healer: S('aura', 'cross', '#7dff9e', { heal: .35 }), support: S('wave', 'note', '#ffd779', { buff: 6, gauge: .2 }) };
 
