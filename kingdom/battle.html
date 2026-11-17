@@ -101,6 +101,8 @@
   .btn.sub { background: rgba(255,255,255,.12); color: #f4efe3; border: 1px solid rgba(255,255,255,.25); }
   .tip { font-size: 12px; opacity: .75; margin-top: 10px; line-height: 1.5; }
   .cast.show { opacity: 1; }
+  .syn:empty { display: none; }
+  .syn b + b { margin-left: 10px; }
 </style>
 </head>
 <body>
@@ -108,12 +110,12 @@
 <div class="stage glass">1-1 · 은행나무길<b id="timer">1:30</b></div>
 <div class="ctl"><button class="glass" id="b-auto">AUTO</button><button class="glass" id="b-speed">×1</button><button class="glass" id="b-pause" aria-label="일시정지">❚❚</button></div>
 <div class="boss"><div class="bmain"><div class="bname"><b>은행왕</b><i>BOSS</i></div><div class="bbar"><div class="layer next" id="b-next"></div><div class="trail" id="b-trail"></div><div class="layer now" id="b-now"></div><span class="shine"></span></div></div><div class="bcount" id="b-count">×3</div></div>
-<div class="syn glass"><b>발명</b>프롤로그 화학부 + 공학부 · 스킬 피해 +15%</div>
+<div class="syn glass" id="syn"></div>
 <div class="skills" id="skills"></div>
 <div class="cast" id="cast"></div>
 <div id="hud"></div>
-<div class="overlay" id="start"><div class="panel glass"><small>STAGE 1-1</small><h2>은행나무길</h2><p>보스 · 은행왕</p><div class="btns"><button class="btn go" id="go">전투 시작</button></div><div class="tip">친구들은 알아서 싸워요. 스킬 버튼이 빛나면 눌러 주세요.<br>바닥에 빨간 원이 뜨면 큰 공격이 와요. 방패 로봇이나 돌파 슛으로 막을 수 있어요.</div></div></div>
-<div class="overlay" id="result" hidden><div class="panel glass"><small id="r-sub">STAGE CLEAR</small><h2 id="r-title">승리!</h2><div class="stars" id="r-stars"></div><p id="r-time"></p><div class="rw" id="r-rw"></div><div class="btns"><button class="btn sub" id="r-retry">다시 하기</button><button class="btn go" id="r-camp">캠퍼스로</button></div></div></div>
+<div class="overlay" id="start"><div class="panel glass"><small>STAGE 1-1</small><h2>은행나무길</h2><p>보스 · 은행왕</p><div class="btns"><a class="btn sub" href="team.html" style="text-decoration:none">팀 바꾸기</a><button class="btn go" id="go">전투 시작</button></div><div class="tip">친구들은 알아서 싸워요. 스킬 버튼이 빛나면 눌러 주세요.<br>바닥에 빨간 원이 뜨면 큰 공격이 와요. 방패 로봇이나 돌파 슛으로 막을 수 있어요.</div></div></div>
+<div class="overlay" id="result" hidden><div class="panel glass"><small id="r-sub">STAGE CLEAR</small><h2 id="r-title">승리!</h2><div class="stars" id="r-stars"></div><p id="r-time"></p><div class="rw" id="r-rw"></div><div class="btns"><a class="btn sub" href="team.html" style="text-decoration:none">팀 편성</a><button class="btn sub" id="r-retry">다시 하기</button><button class="btn go" id="r-camp">캠퍼스로</button></div></div></div>
 <div class="cutin" id="cutin"><div class="dim"></div><div class="band"><div class="lines"></div><div class="grad"></div><div class="who"><img id="cut-img" alt=""></div><div class="txt"><small>ULTIMATE</small><b id="cut-name"></b><span id="cut-who"></span></div></div></div>
 
 <script src="../avatar.js"></script>
@@ -121,6 +123,8 @@
 <script src="../avatar3.js"></script>
 <script src="../scene.js"></script>
 <script src="../fullbody.js"></script>
+<script src="roster.js"></script>
+<script src="kits.js"></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module" src="battle.js"></script>
 </body>

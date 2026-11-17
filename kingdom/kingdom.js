@@ -31,7 +31,7 @@ function fresh() {
     res: { know: 20, snack: 10, power: 0 },
     b: [{ t: 'main', x: 6, z: 3, r: 0, at: Date.now() }, { t: 'store', x: 3, z: 7, r: 0, at: Date.now() },
       ...[[5, 7], [5, 8], [5, 9], [5, 10], [10, 7], [10, 8], [10, 9], [10, 10]].map(([x, z]) => ({ t: 'ginkgo', x, z, r: 0, at: 0 }))],
-    friends: ['seojun', others[0].id, others[1].id], clubs: 0,
+    friends: ['seojun', ...others.slice(0, 4).map(f => f.id)], clubs: 0,
   };
 }
 function load() { try { const g = JSON.parse(localStorage.getItem(SAVE)); if (g && g.b) return g; } catch (e) {} return fresh(); }
@@ -305,7 +305,7 @@ $('b-rot').onclick = () => { camAngle += Math.PI / 2; placeCamera(); };
 $('b-in').onclick = () => { camera.zoom = Math.min(controls.maxZoom, camera.zoom * 1.25); camera.updateProjectionMatrix(); };
 $('b-out').onclick = () => { camera.zoom = Math.max(controls.minZoom, camera.zoom / 1.25); camera.updateProjectionMatrix(); };
 $('b-back').onclick = () => { location.href = '../'; };
-$('b-fight').onclick = () => { save(); location.href = 'battle.html'; };
+$('b-fight').onclick = () => { save(); location.href = 'team.html'; };
 
 /* ───────── 반복 ───────── */
 const clock = new THREE.Clock();

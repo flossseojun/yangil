@@ -5,28 +5,14 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-/* ───────── 동아리 옷 ───────── */
-Object.assign(OUTFIT_TOP, {
-  labcoat: jk => `<path d="${jk}" fill="#f4f4f0" stroke="#c9ccd2" stroke-width="1"/><path d="M40 76 L50 96 L60 76" fill="#3b4a66"/><path d="M40 76 L46 100 M60 76 L54 100" stroke="#c9ccd2" stroke-width="1.4"/><rect x="61" y="88" width="9" height="7" rx="1" fill="none" stroke="#c9ccd2"/><path d="M63 86 v4" stroke="#3f7fb8" stroke-width="1.6"/>`,
-  work: jk => `<path d="${jk}" fill="#e2772d" stroke="#a9521a" stroke-width="1"/><path d="M14 92 H86" stroke="#f5f0c8" stroke-width="3" opacity=".9"/><path d="M50 76 V100" stroke="#a9521a" stroke-width="1.4"/><path d="M42 76 L50 84 L58 76" fill="#2b2f36"/>`,
-  sona: jk => `<path d="${jk}" fill="#23262c"/><path d="M33 75 Q50 86 67 75 L64 82 Q50 90 36 82Z" fill="#33373e"/><text x="50" y="96" text-anchor="middle" font-size="7" fill="#5dff8a" font-family="monospace">&lt;/&gt;</text>`,
-  medic: jk => `<path d="${jk}" fill="#f7f7f5" stroke="#cfd3d8" stroke-width="1"/><path d="M42 76 L50 86 L58 76" fill="#7fc4b8"/><rect x="25" y="84" width="10" height="10" rx="1.5" fill="#e5484d"/><path d="M30 86 v6 M27 89 h6" stroke="#fff" stroke-width="1.8"/>`,
-  sport: jk => `<path d="${jk}" fill="#1f6f8b" stroke="#164f63" stroke-width="1"/><path d="M42 75 L50 81 L58 75" fill="none" stroke="#fff" stroke-width="2"/><text x="50" y="97" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="sans-serif">10</text>`,
-});
-const GEAR = {
-  shield: '<g transform="translate(14 150)"><path d="M0 0 Q12 -6 24 0 L22 22 Q12 32 2 22Z" fill="#5b6b7d" stroke="#2b3440" stroke-width="2"/><path d="M12 2 V26 M3 12 H21" stroke="#e2772d" stroke-width="3"/></g><g transform="translate(80 160) rotate(30)"><rect x="-2" y="0" width="4" height="20" rx="2" fill="#9aa4ad"/><path d="M-6 -2 a6 6 0 1 1 12 0 l-3 3 h-6Z" fill="#9aa4ad"/></g>',
-  ball: '<g transform="translate(86 188)"><circle r="7" fill="#fff" stroke="#222" stroke-width="1.2"/><path d="M0 -3 l3 2 -1 3.5 h-4 l-1 -3.5Z" fill="#222"/></g>',
-  flask: '<g transform="translate(84 156)"><circle cx="0" cy="16" r="16" fill="#5dff8a" opacity=".25"/><path d="M-3 0 h6 v8 l7 14 a3 3 0 0 1 -3 4 h-14 a3 3 0 0 1 -3 -4 l7 -14Z" fill="#dff" stroke="#7aa" stroke-width="1.2"/><path d="M-8 18 h16 l2 5 a3 3 0 0 1 -3 3 h-14 a3 3 0 0 1 -3 -3Z" fill="#5dff8a"/><circle cx="3" cy="12" r="1.6" fill="#b8ffd0"/></g>',
-  laptop: '<g transform="translate(74 158)"><rect x="0" y="0" width="26" height="17" rx="2" fill="#2a2f36"/><rect x="2" y="2" width="22" height="13" fill="#0f1720"/><text x="4" y="10" font-size="6" fill="#5dff8a" font-family="monospace">run()</text><path d="M-3 17 h32 l-3 4 h-26Z" fill="#3a4049"/></g><g transform="translate(86 120)"><ellipse rx="10" ry="3" fill="#2a2f36"/><circle r="3" cy="-2" fill="#5dff8a"/><path d="M-12 -2 h-4 M12 -2 h4" stroke="#9aa4ad" stroke-width="2"/></g>',
-  medkit: '<g transform="translate(76 164)"><rect x="0" y="0" width="22" height="16" rx="3" fill="#f7f7f5" stroke="#cfd3d8"/><rect x="7" y="-4" width="8" height="5" rx="1" fill="none" stroke="#cfd3d8" stroke-width="2"/><path d="M11 3 v10 M6 8 h10" stroke="#e5484d" stroke-width="3"/></g>',
-};
-const TEAM = [   // 앞줄부터
-  { id: 'junyoung', top: 'work', jacket: '#e2772d', gear: 'shield', x: -1.3, z: .9, role: '#7fb3ff', name: '박준영' },
-  { id: 'jeonggyu', top: 'sport', jacket: '#1f6f8b', gear: 'ball', x: -2.9, z: -.6, role: '#ff8a5c', name: '이정규' },
-  { id: 'yunsu', top: 'labcoat', jacket: '#f4f4f0', gear: 'flask', x: -4.5, z: 1.1, role: '#ffb84d', name: '송윤수' },
-  { id: 'seojun', top: 'sona', jacket: '#23262c', gear: 'laptop', x: -6.0, z: -.5, role: '#b48bff', name: '염서준', cast: true },
-  { id: 'yejun', top: 'medic', jacket: '#f7f7f5', gear: 'medkit', x: -7.6, z: 1.0, role: '#7dff9e', name: '김예준' },
-];
+/* ───────── 팀 구성 (팀 편성 화면에서 고른 친구) ───────── */
+const DEFAULT_TEAM = ['junyoung', 'jeonggyu', 'yunsu', 'seojun', 'yejun'];
+let PICK = [];
+try { PICK = (JSON.parse(localStorage.getItem(TEAM_KEY)) || []).slice(0, 5); } catch (e) {}
+if (!PICK.length) PICK = DEFAULT_TEAM.slice();
+const FX = teamFx(PICK);
+const nameOf = id => (ROSTER.find(f => f.id === id) || { name: id }).name;
+const introOf = id => (ROSTER.find(f => f.id === id) || { role: '' }).role.split(' · ')[0];
 
 /* ───────── 장면 ───────── */
 const canvas = document.getElementById('c');
@@ -92,16 +78,19 @@ pts.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
 scene.add(new THREE.Points(pts, new THREE.PointsMaterial({ map: leafT, size: .28, transparent: true, depthWrite: false })));
 
 /* ───────── 전투 데이터 ───────── */
-// 친구별 능력치와 스킬 (역할: 방어 · 돌격 · 폭발 · 마법 · 회복)
-const STATS = {
-  junyoung: { hp: 3400, atk: 120, rate: 1.1, melee: true, home: [2.5, .7], cd: 15, skill: '방패 로봇', who: '박준영 · 프롤로그 공학부 부장', c1: '#1c3358', bg: '#22385a' },
-  jeonggyu: { hp: 2500, atk: 170, rate: .9, melee: true, home: [2.3, -1.0], cd: 10, skill: '돌파 슛', who: '이정규', c1: '#5a2018', bg: '#5a2418' },
-  yunsu:    { hp: 1900, atk: 135, rate: 1.25, home: [-1.0, 1.1], cd: 12, skill: '폭발 실험', who: '송윤수 · 프롤로그 화학부 부장', c1: '#5a3010', bg: '#6a3a12', bolt: '#ffb84d' },
-  seojun:   { hp: 1800, atk: 150, rate: 1.3, home: [-2.6, -.6], cd: 13, skill: '코딩 폭격', who: '염서준 · 소나 부장', c1: '#2a1d55', bg: '#3a2a66', bolt: '#7dffb0' },
-  yejun:    { hp: 1800, atk: 90, rate: 1.4, home: [-4.1, .9], cd: 11, skill: '응급처치', who: '김예준 · 메디하트', c1: '#14503a', bg: '#1d5b3a', bolt: '#7dff9e' },
-};
-const SKILL_ORDER = ['yejun', 'seojun', 'yunsu', 'junyoung', 'jeonggyu'];
-const SYNERGY = 1.15;                  // 발명: 프롤로그 화학부 + 공학부 → 스킬 피해 +15%
+const BOLT = { blaster: '#ffb84d', mage: '#b48bff', healer: '#7dff9e', support: '#ffd779' };
+const CUT_BG = { tank: '#1c3358', striker: '#5a2018', blaster: '#5a3010', mage: '#2a1d55', healer: '#14503a', support: '#4a3c10' };
+// 앞줄(방어·돌격)은 보스 앞, 뒷줄은 뒤에서
+const FRONT = [[2.5, .7], [2.3, -1.0], [1.1, .2]], BACK = [[-1.0, 1.1], [-2.6, -.6], [-4.1, .9], [-.2, -1.4], [-5.4, -.4]];
+const ordered = PICK.slice().sort((a, b) => ROLE_ORDER.indexOf(kitOf(a).role) - ROLE_ORDER.indexOf(kitOf(b).role));
+let fi = 0, bi = 0;
+const STATS = Object.fromEntries(ordered.map(id => {
+  const k = kitOf(id), r = ROLES[k.role], front = !!r.melee && fi < FRONT.length, home = front ? FRONT[fi++] : BACK[bi++] || [-5, 0];
+  return [id, { role: k.role, hp: Math.round(r.hp * FX.hp), atk: r.atk * (r.melee ? FX.melee : FX.ranged), rate: r.rate, melee: front, home, cd: r.cd / FX.charge, skill: k.skill, who: `${nameOf(id)} · ${introOf(id)}`, c1: CUT_BG[k.role], bg: CUT_BG[k.role], bolt: BOLT[k.role] || '#ffffff', color: r.color }];
+}));
+const SKILL_ORDER = ordered;
+document.getElementById('syn').innerHTML = teamSynergy(PICK).filter(x => x.on).map(x => `<b>${x.name}</b>${x.desc}`).join(' · ');
+const SYNERGY = FX.skill;
 const LAYERS = [13000, 13000, 13000];     // 보스 체력 3겹
 const TIME_LIMIT = 90;
 
@@ -121,18 +110,17 @@ function flash(color, size, pos, dur = .45) { const s = new THREE.Sprite(additiv
 let shakeT = 0, shakeAmp = 0; const shake = (amp, dur = .3) => { shakeAmp = Math.max(shakeAmp, amp); shakeT = Math.max(shakeT, dur); };
 
 /* ───────── 친구들 ───────── */
-function spriteTex(av, pose, expr, jacket, gear, cb) {
-  let svg = avatarFullSVG(av, '', { pose, expr, jacket }); svg = svg.replace(/<\/svg>$/, GEAR[gear] + '</svg>');
+function spriteTex(id, pose, expr, cb) {
   const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); c.width = 240; c.height = 504; c.getContext('2d').drawImage(img, 0, 0, 240, 504); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; cb(t); };
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  img.src = svgURL(kitSVG(id, pose, expr));
 }
-const units = TEAM.map(t => {
-  const st = STATS[t.id], av = Object.assign({}, lookOf(t.id).av, { top: t.top });
+const units = ordered.map(id => {
+  const st = STATS[id];
   const mat = new THREE.SpriteMaterial({ transparent: true, alphaTest: .05 });
   const spr = new THREE.Sprite(mat); spr.center.set(.5, 0); spr.scale.set(1.6, 3.36, 1);
-  const u = { id: t.id, t, st, hp: st.hp, max: st.hp, home: new THREE.Vector3(st.home[0], 0, st.home[1]), pos: new THREE.Vector3(st.home[0] - 9, 0, st.home[1]), atkT: rnd(0, st.rate), gauge: rnd(.25, .55), shield: 0, shieldT: 0, dead: false, spr, frames: {}, hitT: 0, lunge: 0, step: 0 };
-  ['stand', 'walk', 'wave'].forEach(pose => spriteTex(av, pose, pose === 'wave' ? 'proud' : 'smile', t.jacket, t.gear, tx => { u.frames[pose] = tx; if (!mat.map) { mat.map = tx; mat.needsUpdate = true; } }));
-  u.ring = new THREE.Mesh(new THREE.RingGeometry(.42, .6, 32), new THREE.MeshBasicMaterial({ color: t.role, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); u.ring.rotation.x = -Math.PI / 2;
+  const u = { id, st, hp: st.hp, max: st.hp, home: new THREE.Vector3(st.home[0], 0, st.home[1]), pos: new THREE.Vector3(st.home[0] - 9, 0, st.home[1]), atkT: rnd(0, st.rate), gauge: rnd(.25, .55), shield: 0, shieldT: 0, dead: false, spr, frames: {}, hitT: 0, lunge: 0, step: 0 };
+  ['stand', 'walk', 'wave'].forEach(pose => spriteTex(id, pose, pose === 'wave' ? 'proud' : 'smile', tx => { u.frames[pose] = tx; if (!mat.map) { mat.map = tx; mat.needsUpdate = true; } }));
+  u.ring = new THREE.Mesh(new THREE.RingGeometry(.42, .6, 32), new THREE.MeshBasicMaterial({ color: st.color, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); u.ring.rotation.x = -Math.PI / 2;
   u.shadow = new THREE.Mesh(new THREE.CircleGeometry(.38, 20), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: .35 })); u.shadow.rotation.x = -Math.PI / 2;
   u.bubble = new THREE.Sprite(additive('#7fb3ff', 0)); u.bubble.scale.set(1.9, 2.6, 1);
   scene.add(spr, u.ring, u.shadow, u.bubble);
@@ -141,6 +129,7 @@ const units = TEAM.map(t => {
 });
 const U = id => units.find(u => u.id === id);
 const alive = () => units.filter(u => !u.dead);
+let buffT = 0;   // 지원 스킬: 팀 공격력 +40%
 
 /* ───────── 보스 상태 ───────── */
 const B = { layer: 0, hp: LAYERS[0], trail: LAYERS[0], slamT: 3, bombT: 6.5, stun: 0, burn: 0, burnT: 0, stagger: 0, taunt: 0, dead: false, flashT: 0 };
@@ -165,7 +154,7 @@ function damageBoss(n, opts = {}) {
 }
 function hurt(u, n, cls = 'taken') {
   if (u.dead || over) return;
-  let left = Math.round(n * rnd(.92, 1.08));
+  let left = Math.round(n * FX.guard * rnd(.92, 1.08));
   if (u.shield > 0) { const used = Math.min(u.shield, left); u.shield -= used; left -= used; if (used) popText(u.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), 'block', '막음 ' + fmt(used)); }
   if (left <= 0) return;
   u.hp -= left; u.hitT = .18; popText(u.pos.clone().add(new THREE.Vector3(.3, 2.3, 0)), cls, '-' + fmt(left));
@@ -188,28 +177,28 @@ function beam(from, to) {
 
 /* ───────── 스킬 ───────── */
 const SKILLS = {
-  yejun: () => { alive().forEach(u => heal(u, u.max * .35)); },
-  seojun: (u) => { const from = u.pos.clone().add(new THREE.Vector3(.4, 2.2, 0)); beam(from, bossCenter.clone()); tween(.25, null, () => { damageBoss(2600 * SYNERGY, { big: true }); flash('#ffe28a', 5, bossCenter); flash('#7dffb0', 3, bossCenter); }); },
-  yunsu: (u) => { bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone(), '#ffb84d', .45, () => { damageBoss(1500 * SYNERGY, { big: true }); B.burn = 5; flash('#ff8a3c', 6, bossCenter, .6); flash('#ffe28a', 3.5, bossCenter); shake(.18); }, .9, 2.2); },
-  junyoung: () => { alive().forEach(x => { x.shield = 900; x.shieldT = 6; }); B.taunt = 6; popText(U('junyoung').pos.clone().add(new THREE.Vector3(0, 3.4, 0)), 'info', '전원 보호막!'); },
-  jeonggyu: (u) => { bolt(u.pos.clone().add(new THREE.Vector3(.4, .6, 0)), bossCenter.clone().add(new THREE.Vector3(0, -.6, 0)), '#ffffff', .22, () => { damageBoss(1300 * SYNERGY, { big: true }); B.stun = 2.5; cancelBombs(); flash('#ffffff', 4, bossCenter); shake(.15); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '기절!'); }, .7, .3); },
+  healer: () => { alive().forEach(u => heal(u, u.max * .35 * FX.heal)); },
+  mage: (u) => { const from = u.pos.clone().add(new THREE.Vector3(.4, 2.2, 0)); beam(from, bossCenter.clone()); tween(.25, null, () => { damageBoss(2600 * SYNERGY, { big: true }); flash('#ffe28a', 5, bossCenter); flash('#b48bff', 3, bossCenter); }); },
+  blaster: (u) => { bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone(), '#ffb84d', .45, () => { damageBoss(1500 * SYNERGY, { big: true }); B.burn = 5; flash('#ff8a3c', 6, bossCenter, .6); flash('#ffe28a', 3.5, bossCenter); shake(.18); }, .9, 2.2); },
+  tank: (u) => { alive().forEach(x => { x.shield = 900; x.shieldT = 6; }); B.taunt = 6; B.tauntBy = u; popText(u.pos.clone().add(new THREE.Vector3(0, 3.4, 0)), 'info', '전원 보호막!'); },
+  striker: (u) => { bolt(u.pos.clone().add(new THREE.Vector3(.4, .6, 0)), bossCenter.clone().add(new THREE.Vector3(0, -.6, 0)), '#ffffff', .22, () => { damageBoss(1300 * SYNERGY, { big: true }); B.stun = 2.5; cancelBombs(); flash('#ffffff', 4, bossCenter); shake(.15); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '기절!'); }, .7, .3); },
+  support: (u) => { buffT = 6; alive().forEach(x => { if (x !== u) x.gauge = Math.min(1, x.gauge + .2); flash('#ffd779', 2.2, x.pos.clone().add(new THREE.Vector3(0, 1.4, 0)), .6); }); popText(u.pos.clone().add(new THREE.Vector3(0, 3.4, 0)), 'info', '팀 공격력 UP!'); },
 };
 let cutLock = 0;          // 컷인이 도는 동안 전투가 멈춘다
 const queue = [];
 function useSkill(id, fromAuto) {
   const u = U(id); if (!u || u.dead || u.gauge < 1 || over || !started) return;
-  if (fromAuto) { u.gauge = 0; u.castT = .6; castBanner(id); SKILLS[id](u); return; }   // 자동: 멈추지 않고 짧은 띠만
+  if (fromAuto) { u.gauge = 0; u.castT = .6; castBanner(id); SKILLS[u.st.role](u); return; }   // 자동: 멈추지 않고 짧은 띠만
   if (cutLock > 0) { if (!queue.includes(id)) queue.push(id); return; }
   u.gauge = 0; cutIn(id); cutLock = 1.05;
-  pendingCast = () => { u.castT = .6; SKILLS[id](u); };
+  pendingCast = () => { u.castT = .6; SKILLS[u.st.role](u); };
 }
 let bannerT = 0;
 function castBanner(id) { const el = $('cast'); el.innerHTML = `<b>${STATS[id].skill}</b><small>${STATS[id].who}</small>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(() => el.classList.remove('show'), 900); }
 let pendingCast = null;
 const CUT = Object.fromEntries(Object.entries(STATS).map(([id, s]) => [id, [s.skill, s.who, s.c1]]));
 function cutIn(id) {
-  const t = U(id).t, av = Object.assign({}, lookOf(id).av, { top: t.top });
-  const svg = avatarSVG(av, '', { expr: 'proud', pose: id === 'yejun' ? 'hold' : id === 'jeonggyu' ? 'cheer' : 'v' });
+  const role = STATS[id].role, svg = kitHeadSVG(id, { pose: role === 'healer' ? 'hold' : role === 'striker' ? 'cheer' : 'v' });
   const el = $('cutin'), [nm, who, c1] = CUT[id];
   $('cut-img').src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   $('cut-name').textContent = nm; $('cut-who').textContent = who;
@@ -219,8 +208,7 @@ function cutIn(id) {
 }
 // 스킬 버튼
 $('skills').innerHTML = SKILL_ORDER.map(id => {
-  const u = U(id), av = Object.assign({}, lookOf(id).av, { top: u.t.top });
-  const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(avatarSVG(av, '', { expr: 'proud' }));
+  const u = U(id), src = svgURL(kitHeadSVG(id));
   return `<div class="sk" data-id="${id}" style="--bg:linear-gradient(160deg, ${u.st.bg}, #0d0b14)"><div class="face"><img src="${src}" alt=""></div><div class="cd"></div><span class="ult">READY</span><b>${u.st.skill}</b></div>`;
 }).join('');
 $('skills').addEventListener('click', e => { const k = e.target.closest('.sk'); if (k) useSkill(k.dataset.id); });
@@ -265,12 +253,15 @@ function stepBombs(dt) {
 /* ───────── 자동 스킬 ───────── */
 let auto = false;
 function autoSkills() {
-  const ready = id => { const u = U(id); return u && !u.dead && u.gauge >= 1; };
-  if (bombs.length && ready('junyoung')) return useSkill('junyoung', true);
-  if (bombs.length && ready('jeonggyu')) return useSkill('jeonggyu', true);
-  if (ready('yejun') && alive().some(u => u.hp / u.max < .55)) return useSkill('yejun', true);
-  for (const id of ['seojun', 'yunsu']) if (ready(id)) return useSkill(id, true);
-  if (ready('jeonggyu') && B.bombT > 3) return useSkill('jeonggyu', true);
+  const ready = role => units.find(u => !u.dead && u.gauge >= 1 && u.st.role === role);
+  let u;
+  if (bombs.length && (u = ready('tank'))) return useSkill(u.id, true);
+  if (bombs.length && (u = ready('striker'))) return useSkill(u.id, true);
+  if ((u = ready('healer')) && alive().some(x => x.hp / x.max < .55)) return useSkill(u.id, true);
+  if ((u = ready('support'))) return useSkill(u.id, true);
+  for (const r of ['mage', 'blaster']) if ((u = ready(r))) return useSkill(u.id, true);
+  if ((u = ready('striker')) && B.bombT > 3) return useSkill(u.id, true);
+  if ((u = ready('tank')) && alive().some(x => x.hp / x.max < .4)) return useSkill(u.id, true);
 }
 
 /* ───────── 진행 ───────── */
@@ -304,7 +295,7 @@ function step(dt) {
   if (introT > 0) { introT -= dt; }
   clockT -= dt; if (clockT <= 0) { clockT = 0; finish(false); }
   // 보스
-  B.flashT = Math.max(0, B.flashT - dt); B.taunt = Math.max(0, B.taunt - dt);
+  B.flashT = Math.max(0, B.flashT - dt); B.taunt = Math.max(0, B.taunt - dt); buffT = Math.max(0, buffT - dt);
   if (B.burn > 0) { B.burn -= dt; B.burnT += dt; if (B.burnT >= 1) { B.burnT = 0; damageBoss(150, { crit: false }); } }
   if (B.stun > 0) B.stun -= dt;
   else if (B.stagger > 0) B.stagger -= dt;
@@ -312,7 +303,7 @@ function step(dt) {
     const haste = 1 + B.layer * .15;
     B.slamT -= dt * haste; B.bombT -= dt * haste;
     if (B.slamT <= 0 && !bombs.length) {
-      B.slamT = 2.6; const tgt = (B.taunt > 0 && !U('junyoung').dead) ? U('junyoung') : alive().sort((a, b) => b.pos.x - a.pos.x)[0];
+      B.slamT = 2.6; const tgt = (B.taunt > 0 && B.tauntBy && !B.tauntBy.dead) ? B.tauntBy : alive().sort((a, b) => b.pos.x - a.pos.x)[0];
       if (tgt) { arms.forEach(a => tween(.32, k => { a.rotation.z = a.userData.side * (-1.05 + Math.sin(k * Math.PI) * .7); a.rotation.x = -.25 + Math.sin(k * Math.PI) * .6; })); tween(.18, null, () => { hurt(tgt, 300 + B.layer * 60); flash('#ffb070', 2.2, tgt.pos.clone().add(new THREE.Vector3(0, 1.4, 0))); shake(.07); }); }
     }
     if (B.bombT <= 0 && !bombs.length) { B.bombT = rnd(8.5, 10.5); startBombs(); }
@@ -330,8 +321,9 @@ function step(dt) {
     u.atkT -= dt;
     if (u.atkT <= 0) {
       u.atkT = u.st.rate;
-      if (u.st.melee) { u.lunge = .3; tween(.12, null, () => damageBoss(u.st.atk)); }
-      else bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(u.st.atk), .45, .6);
+      const atk = u.st.atk * (buffT > 0 ? 1.4 : 1);
+      if (u.st.melee) { u.lunge = .3; tween(.12, null, () => damageBoss(atk)); }
+      else bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk), .45, .6);
     }
   });
   if (auto && cutLock <= 0) autoSkills();
