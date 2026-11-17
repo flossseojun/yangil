@@ -138,7 +138,7 @@ const LEAF_COLORS = ['#f2b720', '#ff8a2a', '#ff4a3a'];
 const stunStars = new THREE.Group(); for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(additive('#ffe58a')); s.scale.set(.5, .5, 1); stunStars.add(s); } stunStars.visible = false; stunStars.position.set(5.2, 6.4, -.4); scene.add(stunStars);
 function damageBoss(n, opts = {}) {
   if (B.dead || over) return;
-  const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * rnd(.92, 1.08));
+  const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * rnd(.92, 1.08));
   B.hp -= dmg; B.flashT = .12;
   const at = bossCenter.clone().add(new THREE.Vector3(rnd(-1.2, 1.2), rnd(-.6, 1.4), 1));
   popText(at, crit || opts.big ? 'big' : 'mid', fmt(dmg) + (crit ? '<small>크리티컬!</small>' : ''));
@@ -154,6 +154,7 @@ function damageBoss(n, opts = {}) {
 }
 function hurt(u, n, cls = 'taken') {
   if (u.dead || over) return;
+  if (veilT > 0) { popText(u.pos.clone().add(new THREE.Vector3(0, 2.4, 0)), 'block', '회피!'); return; }
   let left = Math.round(n * FX.guard * rnd(.92, 1.08));
   if (u.shield > 0) { const used = Math.min(u.shield, left); u.shield -= used; left -= used; if (used) popText(u.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), 'block', '막음 ' + fmt(used)); }
   if (left <= 0) return;
@@ -168,30 +169,199 @@ function bolt(from, to, color, dur, done, size = .55, arc = 0) {
   tween(dur, k => { s.position.lerpVectors(from, to, k); s.position.y += Math.sin(k * Math.PI) * arc; }, () => { scene.remove(s); done && done(); });
 }
 const beamMat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#7dffb0').multiplyScalar(2.5), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
-function beam(from, to) {
+function beam(from, to, color = '#7dffb0') {
   const curve = new THREE.QuadraticBezierCurve3(from, new THREE.Vector3((from.x + to.x) / 2, 5.4, 0), to);
-  const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, .09, 8), beamMat.clone()); scene.add(m);
-  const glow = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, .24, 8), new THREE.MeshBasicMaterial({ color: '#2dff8a', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); scene.add(glow);
+  const mm = beamMat.clone(); mm.color = new THREE.Color(color).multiplyScalar(2.5); const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, .09, 8), mm); scene.add(m);
+  const glow = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, .24, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); scene.add(glow);
   tween(.7, k => { const o = k < .25 ? k / .25 : 1 - (k - .25) / .75; m.material.opacity = .95 * o; glow.material.opacity = .25 * o; }, () => { scene.remove(m, glow); });
 }
 
 /* ───────── 스킬 ───────── */
-const SKILLS = {
-  healer: () => { alive().forEach(u => heal(u, u.max * .35 * FX.heal)); },
-  mage: (u) => { const from = u.pos.clone().add(new THREE.Vector3(.4, 2.2, 0)); beam(from, bossCenter.clone()); tween(.25, null, () => { damageBoss(2600 * SYNERGY, { big: true }); flash('#ffe28a', 5, bossCenter); flash('#b48bff', 3, bossCenter); }); },
-  blaster: (u) => { bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone(), '#ffb84d', .45, () => { damageBoss(1500 * SYNERGY, { big: true }); B.burn = 5; flash('#ff8a3c', 6, bossCenter, .6); flash('#ffe28a', 3.5, bossCenter); shake(.18); }, .9, 2.2); },
-  tank: (u) => { alive().forEach(x => { x.shield = 900; x.shieldT = 6; }); B.taunt = 6; B.tauntBy = u; popText(u.pos.clone().add(new THREE.Vector3(0, 3.4, 0)), 'info', '전원 보호막!'); },
-  striker: (u) => { bolt(u.pos.clone().add(new THREE.Vector3(.4, .6, 0)), bossCenter.clone().add(new THREE.Vector3(0, -.6, 0)), '#ffffff', .22, () => { damageBoss(1300 * SYNERGY, { big: true }); B.stun = 2.5; cancelBombs(); flash('#ffffff', 4, bossCenter); shake(.15); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '기절!'); }, .7, .3); },
-  support: (u) => { buffT = 6; alive().forEach(x => { if (x !== u) x.gauge = Math.min(1, x.gauge + .2); flash('#ffd779', 2.2, x.pos.clone().add(new THREE.Vector3(0, 1.4, 0)), .6); }); popText(u.pos.clone().add(new THREE.Vector3(0, 3.4, 0)), 'info', '팀 공격력 UP!'); },
+/* ───────── 친구별 스킬 연출과 효과 ───────── */
+// 아이콘: 캔버스로 그린 작은 그림 (공 · 플라스크 · 음표 · 체스 말 …)
+const ICON = {};
+function iconTex(kind) {
+  if (ICON[kind]) return ICON[kind];
+  const t = tex(128, 128, (g) => {
+    g.translate(64, 64); g.lineCap = 'round'; g.lineJoin = 'round';
+    const circle = (r, fill, stroke, w = 6) => { g.beginPath(); g.arc(0, 0, r, 0, 7); g.fillStyle = fill; g.fill(); if (stroke) { g.lineWidth = w; g.strokeStyle = stroke; g.stroke(); } };
+    const text = (s, size, color, stroke) => { g.font = `bold ${size}px Jua, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; if (stroke) { g.lineWidth = 10; g.strokeStyle = stroke; g.strokeText(s, 0, 4); } g.fillStyle = color; g.fillText(s, 0, 4); };
+    const D = {
+      soccer: () => { circle(46, '#fff', '#222'); g.fillStyle = '#222'; g.beginPath(); for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; g.lineTo(Math.cos(a) * 18, Math.sin(a) * 18); } g.fill(); },
+      baseball: () => { circle(44, '#fff', '#bbb'); g.strokeStyle = '#e5484d'; g.lineWidth = 5; g.beginPath(); g.arc(-58, 0, 44, -.7, .7); g.stroke(); g.beginPath(); g.arc(58, 0, 44, Math.PI - .7, Math.PI + .7); g.stroke(); },
+      basketball: () => { circle(46, '#e8823a', '#7a3b10'); g.strokeStyle = '#7a3b10'; g.lineWidth = 5; g.beginPath(); g.moveTo(-46, 0); g.lineTo(46, 0); g.moveTo(0, -46); g.lineTo(0, 46); g.stroke(); g.beginPath(); g.arc(-60, 0, 44, -.8, .8); g.stroke(); g.beginPath(); g.arc(60, 0, 44, Math.PI - .8, Math.PI + .8); g.stroke(); },
+      flask: () => { g.fillStyle = '#dff'; g.strokeStyle = '#6aa'; g.lineWidth = 5; g.beginPath(); g.moveTo(-10, -44); g.lineTo(10, -44); g.lineTo(10, -14); g.lineTo(38, 34); g.quadraticCurveTo(40, 46, 28, 46); g.lineTo(-28, 46); g.quadraticCurveTo(-40, 46, -38, 34); g.lineTo(-10, -14); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#5dff8a'; g.beginPath(); g.moveTo(-30, 22); g.lineTo(30, 22); g.lineTo(36, 38); g.lineTo(-36, 38); g.fill(); },
+      code: () => text('</>', 56, '#5dff8a', '#0b2a16'),
+      note: () => text('♪', 96, '#ffd779', '#4a3000'),
+      heart: () => { g.fillStyle = '#ff6b8b'; g.beginPath(); g.moveTo(0, 40); g.bezierCurveTo(-60, 0, -30, -50, 0, -18); g.bezierCurveTo(30, -50, 60, 0, 0, 40); g.fill(); },
+      cross: () => { circle(46, '#fff', '#e5484d'); g.fillStyle = '#e5484d'; g.fillRect(-10, -30, 20, 60); g.fillRect(-30, -10, 60, 20); },
+      star: () => { g.fillStyle = '#ffd779'; g.strokeStyle = '#b8860b'; g.lineWidth = 5; g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 20 : 48, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.stroke(); },
+      shuriken: () => { g.fillStyle = '#9aa4ad'; g.strokeStyle = '#2b3440'; g.lineWidth = 4; g.beginPath(); for (let i = 0; i < 8; i++) { const r = i % 2 ? 12 : 50, a = i * Math.PI / 4; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.stroke(); circle(8, '#2b3440'); },
+      chess: () => text('♛', 100, '#f4f1e8', '#2a2420'),
+      knight: () => text('♞', 100, '#2a2420', '#f4f1e8'),
+      coin: () => { circle(42, '#ffd23f', '#b8860b'); text('₩', 50, '#b8860b'); },
+      pepper: () => { g.fillStyle = '#e0301e'; g.beginPath(); g.ellipse(4, 8, 18, 40, -.5, 0, 7); g.fill(); g.fillStyle = '#3f8a3a'; g.fillRect(-14, -46, 14, 16); },
+      drill: () => { g.fillStyle = '#4a7fd6'; g.beginPath(); g.moveTo(-40, -22); g.lineTo(50, 0); g.lineTo(-40, 22); g.closePath(); g.fill(); g.strokeStyle = '#cfe0ff'; g.lineWidth = 4; for (let i = -24; i < 40; i += 16) { g.beginPath(); g.moveTo(i, -18 + (i + 40) * .2); g.lineTo(i + 8, 18 - (i + 40) * .2); g.stroke(); } },
+      rocket: () => { g.fillStyle = '#e8eef5'; g.beginPath(); g.ellipse(0, -4, 18, 44, 0, 0, 7); g.fill(); g.fillStyle = '#e5484d'; g.beginPath(); g.moveTo(-18, 20); g.lineTo(-32, 44); g.lineTo(-10, 34); g.fill(); g.beginPath(); g.moveTo(18, 20); g.lineTo(32, 44); g.lineTo(10, 34); g.fill(); circle(0, '#fff'); g.fillStyle = '#3f7fb8'; g.beginPath(); g.arc(0, -10, 8, 0, 7); g.fill(); },
+      drop: () => { g.fillStyle = '#5ab8ff'; g.beginPath(); g.moveTo(0, -48); g.bezierCurveTo(30, -10, 40, 10, 0, 44); g.bezierCurveTo(-40, 10, -30, -10, 0, -48); g.fill(); g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.ellipse(-10, 6, 6, 12, 0, 0, 7); g.fill(); },
+      sprout: () => { g.strokeStyle = '#3f8a3a'; g.lineWidth = 8; g.beginPath(); g.moveTo(0, 46); g.lineTo(0, -6); g.stroke(); g.fillStyle = '#6bc36b'; g.beginPath(); g.ellipse(-20, -14, 24, 12, -.5, 0, 7); g.fill(); g.beginPath(); g.ellipse(20, -24, 24, 12, .5, 0, 7); g.fill(); },
+      smoke: () => { g.fillStyle = 'rgba(210,214,224,.95)'; [[-20, 6, 28], [16, 0, 30], [0, -18, 26], [-4, 16, 24]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }); },
+      wrench: () => { g.rotate(-.7); g.fillStyle = '#b8c0c8'; g.fillRect(-7, -10, 14, 56); g.beginPath(); g.arc(0, -24, 22, 0, 7); g.fill(); g.fillStyle = 'rgba(0,0,0,0)'; g.globalCompositeOperation = 'destination-out'; g.fillRect(-7, -48, 14, 22); },
+      laugh: () => text('ㅋㅋ', 60, '#ffd779', '#4a3000'),
+      zzz: () => text('Zz', 64, '#cfe0ff', '#1d2a50'),
+      wave: () => { g.strokeStyle = '#ffd779'; g.lineWidth = 8; [18, 32, 46].forEach(r => { g.beginPath(); g.arc(-30, 0, r, -.7, .7); g.stroke(); }); },
+      card: () => { g.fillStyle = '#e8c14a'; g.strokeStyle = '#a8861a'; g.lineWidth = 5; g.beginPath(); g.roundRect(-44, -28, 88, 56, 8); g.fill(); g.stroke(); g.fillStyle = '#a8861a'; g.fillRect(-32, -12, 20, 14); },
+      book: () => { g.fillStyle = '#3f7fb8'; g.fillRect(-44, -32, 88, 64); g.fillStyle = '#f4f1e8'; g.fillRect(-38, -26, 76, 52); g.strokeStyle = '#3f7fb8'; g.lineWidth = 4; g.beginPath(); g.moveTo(0, -26); g.lineTo(0, 26); g.stroke(); },
+      bolt: () => { g.fillStyle = '#ffe14d'; g.strokeStyle = '#9a6a10'; g.lineWidth = 4; g.beginPath(); g.moveTo(8, -50); g.lineTo(-24, 6); g.lineTo(-2, 6); g.lineTo(-10, 50); g.lineTo(26, -8); g.lineTo(4, -8); g.closePath(); g.fill(); g.stroke(); },
+      lightstick: () => { g.rotate(.5); g.fillStyle = '#2a2f36'; g.fillRect(-7, 6, 14, 42); g.fillStyle = '#ff9ad5'; g.beginPath(); g.arc(0, -16, 26, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(-8, -24, 8, 0, 7); g.fill(); },
+      egg: () => { g.fillStyle = '#fff7e8'; g.strokeStyle = '#d9c7a3'; g.lineWidth = 4; g.beginPath(); g.ellipse(0, 4, 32, 42, 0, 0, 7); g.fill(); g.stroke(); },
+      robot: () => { g.fillStyle = '#9aa4ad'; g.beginPath(); g.roundRect(-34, -26, 68, 52, 10); g.fill(); g.fillStyle = '#5dd8ff'; g.fillRect(-22, -10, 14, 10); g.fillRect(8, -10, 14, 10); g.strokeStyle = '#e2772d'; g.lineWidth = 5; g.beginPath(); g.moveTo(0, -26); g.lineTo(0, -44); g.stroke(); circle(0, '#fff'); },
+      shield: () => { g.fillStyle = '#5b8def'; g.strokeStyle = '#1d3a7a'; g.lineWidth = 5; g.beginPath(); g.moveTo(0, -46); g.lineTo(38, -30); g.lineTo(34, 10); g.quadraticCurveTo(22, 38, 0, 48); g.quadraticCurveTo(-22, 38, -34, 10); g.lineTo(-38, -30); g.closePath(); g.fill(); g.stroke(); },
+      dumbbell: () => { g.fillStyle = '#6b7280'; g.fillRect(-36, -6, 72, 12); g.fillStyle = '#2a2f36'; g.fillRect(-50, -24, 16, 48); g.fillRect(34, -24, 16, 48); },
+      flag: () => { g.fillStyle = '#222'; g.fillRect(-36, -44, 6, 92); for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) { g.fillStyle = (i + j) % 2 ? '#fff' : '#111'; g.fillRect(-30 + i * 16, -44 + j * 16, 16, 16); } },
+      mic: () => { g.fillStyle = '#2a2f36'; g.fillRect(-7, 4, 14, 44); circle(24, '#b8bec6', '#6b7280'); g.translate(0, -18); },
+      map: () => { g.fillStyle = '#f4e6c4'; g.strokeStyle = '#b8a070'; g.lineWidth = 4; g.beginPath(); g.moveTo(-44, -30); g.lineTo(-14, -20); g.lineTo(14, -30); g.lineTo(44, -20); g.lineTo(44, 34); g.lineTo(14, 24); g.lineTo(-14, 34); g.lineTo(-44, 24); g.closePath(); g.fill(); g.stroke(); g.setLineDash([6, 6]); g.strokeStyle = '#e5484d'; g.beginPath(); g.moveTo(-30, 14); g.quadraticCurveTo(0, -24, 30, 4); g.stroke(); },
+      blueprint: () => { g.fillStyle = '#2f6fbf'; g.fillRect(-46, -32, 92, 64); g.strokeStyle = '#cfe6ff'; g.lineWidth = 4; g.strokeRect(-34, -20, 30, 40); g.strokeRect(6, -6, 28, 26); },
+      punch: () => { g.fillStyle = '#ffe14d'; g.strokeStyle = '#ff5a3c'; g.lineWidth = 5; g.beginPath(); for (let i = 0; i < 16; i++) { const r = i % 2 ? 22 : 50, a = i * Math.PI / 8; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.stroke(); },
+      line: () => { g.strokeStyle = '#fff'; g.lineWidth = 10; g.beginPath(); g.moveTo(-50, 30); g.lineTo(50, -30); g.stroke(); },
+      phone: () => { g.fillStyle = '#2a2f36'; g.beginPath(); g.roundRect(-24, -44, 48, 88, 8); g.fill(); g.fillStyle = '#7fd0ff'; g.fillRect(-18, -34, 36, 62); text('★', 36, '#ffd779'); },
+      makeup: () => { g.rotate(.6); g.fillStyle = '#d4606f'; g.fillRect(-10, -6, 20, 40); g.fillStyle = '#f4c2c2'; g.beginPath(); g.moveTo(-10, -6); g.lineTo(0, -40); g.lineTo(10, -6); g.fill(); },
+    };
+    (D[kind] || D.star)();
+  });
+  ICON[kind] = t; return t;
+}
+const iconSprite = (kind, size = .7) => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: iconTex(kind), transparent: true, depthWrite: false, depthTest: false })); s.renderOrder = 20; const z = size * 1.45; s.scale.set(z, z, 1); scene.add(s); return s; };
+const handOf = u => u.pos.clone().add(new THREE.Vector3(.45, 1.9, 0));
+const bossHit = (spread = 1) => bossCenter.clone().add(new THREE.Vector3(rnd(-.7, .7) * spread, rnd(-.9, 1.1) * spread, .9));
+let weakT = 0, hasteT = 0, veilT = 0;
+B.miss = 0;
+
+// 연출 묶음: 각자 맞을 때(onHit) 피해를 준다
+const VIS = {
+  // 포물선으로 던지기 (농구공 · 플라스크 · 체스 말)
+  lob: (u, s, onHit, end) => { for (let i = 0; i < s.n; i++) tween(i * (s.gap ?? .22), null, () => { const sp = iconSprite(s.icon, s.size || .7), from = handOf(u), to = bossHit(.7); tween(s.dur || .55, k => { sp.position.lerpVectors(from, to, k); sp.position.y += Math.sin(k * Math.PI) * Math.min(2.4, s.arc ?? 2); sp.material.rotation = k * (s.spin ?? 8); }, () => { scene.remove(sp); flash(s.color, s.boom || 2.4, to, .4); onHit(i); if (i === s.n - 1) end(); }); }); },
+  // 일직선으로 빠르게 (야구공 · 축구공 · 수리검)
+  shoot: (u, s, onHit, end) => { for (let i = 0; i < s.n; i++) tween(i * (s.gap ?? .12), null, () => { const sp = iconSprite(s.icon, s.size || .6), from = u.pos.clone().add(new THREE.Vector3(.4, s.low ? .5 : 1.8, 0)), to = bossHit(.5); const trail = new THREE.Sprite(additive(s.color, .9)); trail.scale.set(1.4, .5, 1); scene.add(trail); tween(s.dur || .2, k => { sp.position.lerpVectors(from, to, k); trail.position.lerpVectors(from, to, Math.max(0, k - .08)); sp.material.rotation = k * (s.spin ?? 12); }, () => { scene.remove(sp, trail); flash(s.color, s.boom || 2.6, to, .35); onHit(i); if (i === s.n - 1) end(); }); }); },
+  // 하늘에서 비처럼 (고추 · 동전 · 별)
+  rain: (u, s, onHit, end) => { for (let i = 0; i < s.n; i++) tween(i * (s.gap ?? .09), null, () => { const sp = iconSprite(s.icon, s.size || .55), x = bossCenter.x + rnd(-1.8, 1.4), z = rnd(.6, 1.8), from = new THREE.Vector3(x, 7, z), to = new THREE.Vector3(x, rnd(1, 3.4), z); tween(s.dur || .45, k => { sp.position.lerpVectors(from, to, k * k); sp.material.rotation = k * 4; }, () => { scene.remove(sp); flash(s.color, 1.6, to, .3); onHit(i); if (i === s.n - 1) end(); }); }); },
+  // 보스 앞까지 돌진했다 돌아오기 (덩크 · 업어치기 · 할리)
+  dash: (u, s, onHit, end) => { const from = u.pos.clone(), to = new THREE.Vector3(bossCenter.x - 1.6, 0, .6); u.busy = true; tween(.22, k => { u.pos.lerpVectors(from, to, k); u.pos.y = Math.sin(k * Math.PI) * (s.jump || 0); }, () => { for (let i = 0; i < s.n; i++) tween(i * .14, null, () => { flash(s.color, 3, bossHit(.5), .35); const sp = iconSprite(s.icon, .9); sp.position.copy(bossHit(.4)); tween(.3, k => { sp.material.opacity = 1 - k; sp.scale.setScalar(.9 + k); }, () => scene.remove(sp)); onHit(i); if (i === s.n - 1) { shockwave(to, s.color); tween(.25, k => { u.pos.lerpVectors(to, from, k); }, () => { u.busy = false; end(); }); } }); }); },
+  // 빛줄기 (코딩 폭격 · 아이언 빔)
+  beam: (u, s, onHit, end) => { beam(handOf(u), bossCenter.clone(), s.color); for (let i = 0; i < 5; i++) { const g = iconSprite(s.icon, .45), p = handOf(u).lerp(bossCenter, .2 + i * .15); g.position.copy(p).add(new THREE.Vector3(0, .6 + Math.sin(i) * .3, 0)); tween(.7, k => { g.material.opacity = 1 - k; g.position.y += .01; }, () => scene.remove(g)); } for (let i = 0; i < s.n; i++) tween(.25 + i * .12, null, () => { flash(s.color, 3.2, bossHit(.3), .4); onHit(i); if (i === s.n - 1) end(); }); },
+  // 보스를 가로지르는 한 줄 (보조선 · 체크메이트)
+  slash: (u, s, onHit, end) => { const line = new THREE.Mesh(new THREE.PlaneGeometry(6, .12), new THREE.MeshBasicMaterial({ color: new THREE.Color(s.color).multiplyScalar(2.5), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); line.position.copy(bossCenter).add(new THREE.Vector3(0, 0, 1.2)); line.rotation.z = .5; scene.add(line); tween(.35, k => { line.scale.x = k; }, () => { flash(s.color, 5, bossCenter, .5); shake(.16); for (let i = 0; i < s.n; i++) tween(i * .1, null, () => { onHit(i); if (i === s.n - 1) { tween(.3, k => { line.material.opacity = 1 - k; }, () => { scene.remove(line); end(); }); } }); }); },
+  // 위로 쏘아 올렸다 떨어지기 (물로켓)
+  rocket: (u, s, onHit, end) => { const sp = iconSprite(s.icon, 1), from = handOf(u), top = new THREE.Vector3(bossCenter.x, 9, .5); tween(.4, k => { sp.position.lerpVectors(from, top, k); }, () => { sp.material.rotation = Math.PI; tween(.3, k => { sp.position.lerpVectors(top, bossCenter, k); }, () => { scene.remove(sp); flash(s.color, 6, bossCenter, .6); shake(.2); for (let i = 0; i < s.n; i++) tween(i * .08, null, () => { onHit(i); if (i === s.n - 1) end(); }); }); }); },
+  // 소리 · 응원이 퍼져 나가기 (팀 대상)
+  wave: (u, s, onHit, end) => { for (let r = 0; r < 3; r++) tween(r * .15, null, () => shockwave(u.pos.clone(), s.color, 6)); alive().forEach((x, i) => { const sp = iconSprite(s.icon, .55); sp.position.copy(x.pos).add(new THREE.Vector3(0, 2.6, 0)); tween(.9, k => { sp.position.y += .015; sp.material.opacity = 1 - k * .8; }, () => scene.remove(sp)); }); tween(.3, null, () => { onHit(0); end(); }); },
+  // 팀 위로 무언가 떠오르기 (회복 · 보호막)
+  aura: (u, s, onHit, end) => { alive().forEach(x => { for (let i = 0; i < 3; i++) { const sp = iconSprite(s.icon, .45); sp.position.copy(x.pos).add(new THREE.Vector3(rnd(-.4, .4), .4 + i * .3, 0)); tween(.9 + i * .1, k => { sp.position.y += .02; sp.material.opacity = 1 - k; }, () => scene.remove(sp)); } flash(s.color, 2.6, x.pos.clone().add(new THREE.Vector3(0, 1.3, 0)), .7); }); tween(.25, null, () => { onHit(0); end(); }); },
+  // 연막 (시현): 팀을 덮는 연기 + 수리검
+  smoke: (u, s, onHit, end) => { alive().forEach(x => { for (let i = 0; i < 4; i++) { const sp = iconSprite('smoke', 1.2); sp.position.copy(x.pos).add(new THREE.Vector3(rnd(-.6, .6), rnd(.3, 1.6), .3)); tween(1.4, k => { sp.material.opacity = (1 - k) * .9; sp.scale.setScalar(1.2 + k); }, () => scene.remove(sp)); } }); VIS.shoot(u, { icon: 'shuriken', n: s.n, color: '#cfd8e0', gap: .08 }, onHit, end); },
 };
+function shockwave(at, color, size = 4) { const ring = new THREE.Mesh(new THREE.RingGeometry(.8, 1, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(at.x, .05, at.z); scene.add(ring); tween(.5, k => { ring.scale.setScalar(.3 + k * size); ring.material.opacity = 1 - k; }, () => scene.remove(ring)); }
+
+// 친구별 스킬: v 연출 · icon 아이콘 · n 타수 · dmg 한 대 피해 · 그 밖의 효과
+const S = (v, icon, color, o) => Object.assign({ v, icon, color, n: 1 }, o);
+const SKILL_SPEC = {
+  // 방어
+  junyoung: S('aura', 'robot', '#7fb3ff', { shield: 900, taunt: 6, say: '방패 로봇 출동!' }),
+  jaewon: S('aura', 'shield', '#9fb8d8', { shield: 700, taunt: 6, veil: 1.5, say: '비둘기도 못 뚫어!' }),
+  isan: S('aura', 'dumbbell', '#7fb3ff', { shield: 800, taunt: 6, buff: 4, say: '버텨! 한 개 더!' }),
+  siwoo: S('aura', 'blueprint', '#5aa0ff', { shield: 1000, taunt: 6, say: '바리케이드 설치' }),
+  hyeongseop: S('aura', 'shield', '#7fb3ff', { shield: 800, taunt: 6, weak: 4, say: '계산대로야' }),
+  yuchan: S('aura', 'shield', '#ffd779', { shield: 900, taunt: 6, heal: .1, say: '의리!' }),
+  hyunsu: S('aura', 'shield', '#3a3a3a', { shield: 800, taunt: 6, confuse: 1, say: '…덤벼.' }),
+  beomsik: S('aura', 'heart', '#7fb3ff', { shield: 900, taunt: 6, heal: .12, say: '내 뒤에 있어' }),
+  kimhyeonseo: S('aura', 'shield', '#7fb3ff', { shield: 1100, taunt: 6, say: '높이로 막는다' }),
+  // 돌격
+  jeonggyu: S('shoot', 'soccer', '#ffffff', { n: 1, dmg: 1300, stun: 2.5, low: true, size: .7, say: '골!' }),
+  eunseong: S('dash', 'bolt', '#ffe14d', { n: 4, dmg: 360, stun: 1.5, say: '에너지 풀충전!' }),
+  soyul: S('dash', 'basketball', '#ff8a3c', { n: 1, dmg: 1500, stun: 2, jump: 2.6, say: '덩크!' }),
+  hyunwoo: S('shoot', 'soccer', '#cfe0ff', { n: 1, dmg: 1100, stun: 2.5, low: true, weak: 3, say: '이론상 완벽한 슛' }),
+  jio: S('lob', 'soccer', '#ffffff', { n: 1, dmg: 1350, stun: 2.5, arc: 3.4, say: '왼발 크로스!' }),
+  sion: S('dash', 'robot', '#b48bff', { n: 3, dmg: 430, stun: 2, say: '로봇 댄스 타임' }),
+  munyunsu: S('shoot', 'soccer', '#ff8a5c', { n: 3, dmg: 450, stun: 2, low: true, gap: .15, say: '텐션 100%!' }),
+  hyeonseo: S('shoot', 'soccer', '#7dff9e', { n: 5, dmg: 270, stun: 2, low: true, gap: .1, say: '메시처럼!' }),
+  minah: S('dash', 'bolt', '#ff5a3c', { n: 2, dmg: 650, stun: 2.5, say: '부릉부릉!' }),
+  wooseok: S('dash', 'punch', '#ff5a3c', { n: 1, dmg: 1400, stun: 3, jump: 1.4, say: '업어치기 한판!' }),
+  seoeun: S('dash', 'star', '#ff9ad5', { n: 1, dmg: 1250, stun: 2.5, jump: 3, say: '기록 갱신!' }),
+  yul: S('lob', 'basketball', '#ff8a3c', { n: 3, dmg: 450, stun: 1.5, arc: 4, gap: .3, say: '…나이스.' }),
+  bojun: S('shoot', 'baseball', '#ff6a3a', { n: 1, dmg: 1500, stun: 2.5, dur: .14, crit: true, say: '강속구!' }),
+  sihyeon: S('smoke', 'shuriken', '#cfd8e0', { n: 5, dmg: 240, stun: 1.5, veil: 3, say: '…닌닌.' }),
+  // 폭발
+  yunsu: S('lob', 'flask', '#ff8a3c', { n: 1, dmg: 1500, burn: 5, boom: 6, say: '실험 시작!' }),
+  yejin: S('aura', 'flag', '#ff5a3c', { haste: 6, say: 'F1 터보 부스트!' }),
+  jaejun: S('beam', 'bolt', '#7fd0ff', { n: 3, dmg: 480, burn: 3, say: '리펄서 빔!' }),
+  taeyeol: S('lob', 'drop', '#5ab8ff', { n: 3, dmg: 420, weak: 6, gap: .18, say: '수질 분석 완료' }),
+  jiho: S('rocket', 'rocket', '#ffb84d', { n: 1, dmg: 1650, burn: 3, say: '3, 2, 1, 발사!' }),
+  yuna: S('rain', 'pepper', '#ff3a1a', { n: 10, dmg: 130, burn: 7, say: '마라 최고 단계!' }),
+  yeonju: S('shoot', 'drill', '#4a7fd6', { n: 6, dmg: 250, burn: 2, gap: .07, dur: .25, spin: 0, say: '천원돌파!' }),
+  // 마법
+  seojun: S('beam', 'code', '#7dffb0', { n: 4, dmg: 650, say: '코딩 폭격!' }),
+  yunbo: S('slash', 'line', '#9fd3ff', { n: 1, dmg: 2600, say: '보조선 하나면 끝' }),
+  younggeun: S('wave', 'book', '#b48bff', { n: 1, dmg: 0, weak: 6, after: { v: 'lob', icon: 'book', n: 4, dmg: 480, arc: 1.4, spin: 3 }, say: 'Ladies and gentlemen!' }),
+  sia: S('rain', 'star', '#cfe0ff', { n: 8, dmg: 310, say: '별이 쏟아진다' }),
+  hayeon: S('rain', 'blueprint', '#5aa0ff', { n: 6, dmg: 420, weak: 3, size: .8, say: '설계도 폭풍' }),
+  taejeong: S('rain', 'phone', '#ffd779', { n: 6, dmg: 420, say: '레이드 소환!' }),
+  leeyunho: S('lob', 'knight', '#f4f1e8', { n: 3, dmg: 380, arc: 3, spin: 0, size: .9, after: { v: 'rain', icon: 'chess', n: 1, dmg: 1500, size: 1.4 }, say: '체크메이트.' }),
+  suae: S('rain', 'star', '#ff9ad5', { n: 10, dmg: 250, crit: true, say: '천장 도달!' }),
+  // 회복
+  yejun: S('aura', 'cross', '#7dff9e', { heal: .35, say: '응급처치!' }),
+  jiyong: S('aura', 'egg', '#fff3c4', { heal: .25, shield: 400, say: '부화의 온기' }),
+  jejun: S('aura', 'heart', '#9fe0ff', { heal: .3, gauge: .1, say: '다들 잘하고 있어!' }),
+  sihun: S('aura', 'sprout', '#6bc36b', { heal: .15, hot: .3, say: '새싹아 자라라' }),
+  sunbi: S('aura', 'makeup', '#ff9ad5', { heal: .25, buff: 4, say: '메이크업 완성!' }),
+  seungmin: S('wave', 'note', '#ffd779', { hot: .45, heal: .05, say: '♪ 치유의 노래' }),
+  // 지원
+  ryun: S('aura', 'map', '#ffd779', { haste: 5, gauge: .15, say: '지름길 이쪽이야!' }),
+  mingyeol: S('wave', 'laugh', '#ffd779', { confuse: 2, gauge: .15, say: '개그 한 방!' }),
+  geonwoo: S('rain', 'coin', '#ffd23f', { n: 12, dmg: 0, gauge: .4, say: '1000억 투자!' }),
+  yejunsim: S('wave', 'mic', '#ffd779', { buff: 7, gauge: .2, say: '전교회장으로서 명한다!' }),
+  seongjun: S('rain', 'card', '#ffd23f', { n: 6, dmg: 0, heal: .12, gauge: .25, say: '오늘은 내가 쏜다!' }),
+  seoan: S('aura', 'heart', '#ffb3c8', { buff: 5, heal: .08, say: '치이카와 화이팅!' }),
+  yunho: S('wave', 'wave', '#ffd779', { buff: 6, gauge: .15, say: '다들 힘내!!!' }),
+  sangwoong: S('wave', 'mic', '#ffd779', { buff: 6, gauge: .25, say: '양일고 응원 방송!' }),
+  taegeon: S('wave', 'laugh', '#ffd779', { sleep: 1.5, gauge: .2, say: '웃음 폭탄!' }),
+  jaehee: S('aura', 'zzz', '#cfe0ff', { sleep: 3, say: '공부는… 내일부터…' }),
+  baekho: S('wave', 'lightstick', '#ff9ad5', { buff: 6, gauge: .2, say: '응원봉 파도!' }),
+  namjiho: S('wave', 'laugh', '#ffd779', { confuse: 2, buff: 4, say: '장난 작전 개시!' }),
+};
+const ROLE_SPEC = { tank: S('aura', 'shield', '#7fb3ff', { shield: 900, taunt: 6 }), striker: S('shoot', 'soccer', '#fff', { dmg: 1300, stun: 2.5, low: true }), blaster: S('lob', 'flask', '#ff8a3c', { dmg: 1500, burn: 5 }), mage: S('beam', 'star', '#b48bff', { n: 4, dmg: 650 }), healer: S('aura', 'cross', '#7dff9e', { heal: .35 }), support: S('wave', 'note', '#ffd779', { buff: 6, gauge: .2 }) };
+
+// 스킬 실행: 연출 → 맞을 때 피해 → 끝나면 보스 효과
+function castSkill(u) {
+  const s = SKILL_SPEC[u.id] || ROLE_SPEC[u.st.role];
+  if (s.say) popText(u.pos.clone().add(new THREE.Vector3(0, 3.2, 0)), 'say', s.say);
+  // 팀 효과는 바로
+  if (s.shield) alive().forEach(x => { x.shield = Math.max(x.shield, s.shield); x.shieldT = 6; });
+  if (s.taunt) { B.taunt = s.taunt; B.tauntBy = u; }
+  if (s.heal) alive().forEach(x => heal(x, x.max * s.heal * FX.heal));
+  if (s.hot) alive().forEach(x => { x.hot = x.max * s.hot * FX.heal / 5; x.hotT = 5; });
+  if (s.buff) buffT = Math.max(buffT, s.buff);
+  if (s.haste) hasteT = Math.max(hasteT, s.haste);
+  if (s.gauge) alive().forEach(x => { if (x !== u) x.gauge = Math.min(1, x.gauge + s.gauge); });
+  if (s.veil) veilT = Math.max(veilT, s.veil);
+  const bossFx = sp => {
+    if (sp.stun) { B.stun = Math.max(B.stun, sp.stun); cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '기절!'); }
+    if (sp.sleep) { B.stun = Math.max(B.stun, sp.sleep); cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '쿨쿨…'); const z = iconSprite('zzz', 1); z.position.copy(bossCenter).add(new THREE.Vector3(.6, 2, 1)); tween(sp.sleep, k => { z.position.y += .004; z.material.opacity = 1 - k * .6; }, () => scene.remove(z)); }
+    if (sp.burn) { B.burn = Math.max(B.burn, sp.burn); }
+    if (sp.weak) { weakT = Math.max(weakT, sp.weak); popText(bossCenter.clone().add(new THREE.Vector3(0, 1.8, 0)), 'info', '약해졌다!'); }
+    if (sp.confuse) { B.miss += sp.confuse; popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '???'); }
+  };
+  const run = (sp, done) => VIS[sp.v](u, sp, i => { if (sp.dmg) damageBoss(sp.dmg * SYNERGY * (buffT > 0 ? 1.2 : 1), { big: sp.n === 1 || i === sp.n - 1, crit: sp.crit && Math.random() < .5 ? true : undefined }); }, () => { bossFx(sp); done && done(); });
+  run(s, () => { if (s.after) run(Object.assign({ color: s.color }, s.after)); });
+}
+
 let cutLock = 0;          // 컷인이 도는 동안 전투가 멈춘다
 const queue = [];
 function useSkill(id, fromAuto) {
   const u = U(id); if (!u || u.dead || u.gauge < 1 || over || !started) return;
-  if (fromAuto) { u.gauge = 0; u.castT = .6; castBanner(id); SKILLS[u.st.role](u); return; }   // 자동: 멈추지 않고 짧은 띠만
+  if (fromAuto) { u.gauge = 0; u.castT = .6; castBanner(id); castSkill(u); return; }   // 자동: 멈추지 않고 짧은 띠만
   if (cutLock > 0) { if (!queue.includes(id)) queue.push(id); return; }
   u.gauge = 0; cutIn(id); cutLock = 1.05;
-  pendingCast = () => { u.castT = .6; SKILLS[u.st.role](u); };
+  pendingCast = () => { u.castT = .6; castSkill(u); };
 }
 let bannerT = 0;
 function castBanner(id) { const el = $('cast'); el.innerHTML = `<b>${STATS[id].skill}</b><small>${STATS[id].who}</small>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(() => el.classList.remove('show'), 900); }
@@ -295,7 +465,7 @@ function step(dt) {
   if (introT > 0) { introT -= dt; }
   clockT -= dt; if (clockT <= 0) { clockT = 0; finish(false); }
   // 보스
-  B.flashT = Math.max(0, B.flashT - dt); B.taunt = Math.max(0, B.taunt - dt); buffT = Math.max(0, buffT - dt);
+  B.flashT = Math.max(0, B.flashT - dt); B.taunt = Math.max(0, B.taunt - dt); buffT = Math.max(0, buffT - dt); weakT = Math.max(0, weakT - dt); hasteT = Math.max(0, hasteT - dt); veilT = Math.max(0, veilT - dt);
   if (B.burn > 0) { B.burn -= dt; B.burnT += dt; if (B.burnT >= 1) { B.burnT = 0; damageBoss(150, { crit: false }); } }
   if (B.stun > 0) B.stun -= dt;
   else if (B.stagger > 0) B.stagger -= dt;
@@ -304,7 +474,7 @@ function step(dt) {
     B.slamT -= dt * haste; B.bombT -= dt * haste;
     if (B.slamT <= 0 && !bombs.length) {
       B.slamT = 2.6; const tgt = (B.taunt > 0 && B.tauntBy && !B.tauntBy.dead) ? B.tauntBy : alive().sort((a, b) => b.pos.x - a.pos.x)[0];
-      if (tgt) { arms.forEach(a => tween(.32, k => { a.rotation.z = a.userData.side * (-1.05 + Math.sin(k * Math.PI) * .7); a.rotation.x = -.25 + Math.sin(k * Math.PI) * .6; })); tween(.18, null, () => { hurt(tgt, 300 + B.layer * 60); flash('#ffb070', 2.2, tgt.pos.clone().add(new THREE.Vector3(0, 1.4, 0))); shake(.07); }); }
+      if (tgt) { arms.forEach(a => tween(.32, k => { a.rotation.z = a.userData.side * (-1.05 + Math.sin(k * Math.PI) * .7); a.rotation.x = -.25 + Math.sin(k * Math.PI) * .6; })); tween(.18, null, () => { if (B.miss > 0) { B.miss--; popText(tgt.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), 'block', '빗나감!'); return; } hurt(tgt, 300 + B.layer * 60); flash('#ffb070', 2.2, tgt.pos.clone().add(new THREE.Vector3(0, 1.4, 0))); shake(.07); }); }
     }
     if (B.bombT <= 0 && !bombs.length) { B.bombT = rnd(8.5, 10.5); startBombs(); }
   }
@@ -314,13 +484,15 @@ function step(dt) {
     if (u.dead) return;
     u.hitT = Math.max(0, u.hitT - dt); u.castT = Math.max(0, (u.castT || 0) - dt);
     if (u.shieldT > 0) { u.shieldT -= dt; if (u.shieldT <= 0) u.shield = 0; }
+    if (u.hotT > 0) { u.hotT -= dt; u.hotAcc = (u.hotAcc || 0) + dt; if (u.hotAcc >= 1) { u.hotAcc = 0; heal(u, u.hot); } }
+    if (u.busy) return;
     const toHome = u.home.clone().sub(u.pos); toHome.y = 0;
     if (toHome.length() > .05) { u.pos.add(toHome.clampLength(0, dt * 5)); u.moving = true; return; }
     u.moving = false;
     u.gauge = Math.min(1, u.gauge + dt / u.st.cd);
     u.atkT -= dt;
     if (u.atkT <= 0) {
-      u.atkT = u.st.rate;
+      u.atkT = u.st.rate / (hasteT > 0 ? 1.6 : 1);
       const atk = u.st.atk * (buffT > 0 ? 1.4 : 1);
       if (u.st.melee) { u.lunge = .3; tween(.12, null, () => damageBoss(atk)); }
       else bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk), .45, .6);
