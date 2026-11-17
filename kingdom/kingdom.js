@@ -305,6 +305,7 @@ $('b-rot').onclick = () => { camAngle += Math.PI / 2; placeCamera(); };
 $('b-in').onclick = () => { camera.zoom = Math.min(controls.maxZoom, camera.zoom * 1.25); camera.updateProjectionMatrix(); };
 $('b-out').onclick = () => { camera.zoom = Math.max(controls.minZoom, camera.zoom / 1.25); camera.updateProjectionMatrix(); };
 $('b-back').onclick = () => { location.href = '../'; };
+$('b-fight').onclick = () => { save(); location.href = 'battle.html'; };
 
 /* ───────── 반복 ───────── */
 const clock = new THREE.Clock();

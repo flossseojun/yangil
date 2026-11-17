@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>양일 캠퍼스 전투</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #120d1c; font-family: 'Gowun Dodum', sans-serif; color: #f4efe3; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; }
+  .glass { background: rgba(14, 12, 22, .62); border: 1px solid rgba(255, 214, 120, .28); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .stage { position: fixed; top: 10px; left: 12px; padding: 6px 12px; border-radius: 8px; font-size: 12px; letter-spacing: .04em; }
+  .stage b { display: block; font-family: Jua, sans-serif; font-weight: 400; font-size: 16px; letter-spacing: 0; }
+  .ctl { position: fixed; top: 10px; right: 12px; display: flex; gap: 6px; }
+  .ctl span { padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; }
+  .ctl span.on { color: #ffd779; border-color: rgba(255, 214, 120, .7); }
+  .boss { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); width: min(46vw, 420px); display: flex; align-items: center; gap: 8px; }
+  .bface { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; padding: 2px; background: linear-gradient(145deg, #ffe39a, #a8661a); box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+  .bface span { display: block; width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 50% 62%, #5a3a24 0 34%, transparent 35%), radial-gradient(circle at 50% 36%, #f2b720 0 46%, #a05a00 47% 100%); position: relative; }
+  .bface span::before, .bface span::after { content: ''; position: absolute; top: 56%; width: 6px; height: 3px; border-radius: 2px; background: #ffef9a; box-shadow: 0 0 6px #ffcf4a; }
+  .bface span::before { left: 37%; transform: rotate(12deg); } .bface span::after { right: 37%; transform: rotate(-12deg); }
+  .bmain { flex: 1; min-width: 0; }
+  .bname { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+  .bname b { font-family: Jua, sans-serif; font-weight: 400; font-size: 17px; color: #fff3d0; letter-spacing: .02em; }
+  .bname i { font-style: normal; font-size: 9px; font-weight: 700; letter-spacing: .18em; color: #2a1206; background: linear-gradient(#ffd779, #e09a2a); padding: 1px 5px; border-radius: 3px; }
+  .bbar { position: relative; height: 14px; border-radius: 7px; overflow: hidden; background: #1a0f12; box-shadow: 0 0 0 2px rgba(255, 214, 120, .75), 0 3px 10px rgba(0,0,0,.55); }
+  .bbar .layer { position: absolute; inset: 0 auto 0 0; border-radius: 7px; }
+  .bbar .next { width: 100%; background: linear-gradient(#9a6bff, #5a32c8); }
+  .bbar .trail { position: absolute; inset: 0 auto 0 0; width: 66%; background: #fff1d6; border-radius: 7px; }
+  .bbar .now { width: 58%; background: linear-gradient(#ffb15c, #e2401f 70%, #b82a14); }
+  .bbar .shine { position: absolute; left: 4px; right: 4px; top: 2px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.35); }
+  .bcount { flex: 0 0 auto; font-family: Jua, sans-serif; font-size: 20px; color: #fff3d0; text-shadow: 0 2px 0 #7a3a10, 0 0 8px rgba(0,0,0,.6); margin-top: 16px; }
+  .syn { position: fixed; top: 62px; left: 12px; padding: 5px 10px; border-radius: 8px; font-size: 12px; }
+  .syn b { color: #9fd3ff; font-weight: 700; margin-right: 6px; }
+  .skills { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 10px; }
+  .sk { position: relative; width: 78px; height: 92px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
+  .sk .face { position: absolute; inset: 0 0 22px 0; background: var(--bg); }
+  .sk .face img { position: absolute; left: 50%; bottom: -6px; width: 80px; transform: translateX(-50%); }
+  .sk b { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; line-height: 22px; text-align: center; background: rgba(10,8,16,.9); font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+  .sk .cd { position: absolute; inset: 0 0 22px 0; background: conic-gradient(rgba(8,6,14,.72) var(--p), transparent 0); display: grid; place-items: center; font-family: Jua, sans-serif; font-size: 24px; color: #fff; }
+  .sk.ready { border-color: #ffd779; box-shadow: 0 0 0 2px rgba(255,215,121,.5), 0 0 22px rgba(255,190,80,.65); }
+  .sk .ult { position: absolute; top: 4px; right: 4px; font-size: 9px; font-weight: 700; letter-spacing: .08em; color: #1a1206; background: #ffd779; padding: 1px 4px; border-radius: 3px; }
+  .cast { position: fixed; left: 50%; top: 17%; opacity: 0; pointer-events: none; transition: opacity .15s; transform: translateX(-50%) skewX(-8deg); text-align: center; padding: 6px 26px; background: linear-gradient(90deg, transparent, rgba(10,8,16,.85) 20%, rgba(10,8,16,.85) 80%, transparent); border-top: 1px solid rgba(255,214,120,.6); border-bottom: 1px solid rgba(255,214,120,.6); }
+  .cast b { display: block; font-family: Jua, sans-serif; font-weight: 400; font-size: 26px; color: #ffe2a0; letter-spacing: .04em; }
+  .cast small { font-size: 12px; opacity: .8; }
+  .dmg { position: fixed; transform: translate(-50%, -50%); font-family: Jua, sans-serif; color: #fff; text-shadow: 0 2px 0 #7a160f, 0 0 10px rgba(255,80,40,.8); pointer-events: none; }
+  .dmg.big { font-size: 40px; color: #ffe58a; text-shadow: 0 3px 0 #8a4a00, 0 0 16px rgba(255,190,60,.9); }
+  .dmg.big small { display: block; font-size: 13px; color: #fff; letter-spacing: .1em; text-align: center; }
+  .dmg.mid { font-size: 24px; }
+  .dmg.heal { font-size: 18px; color: #8dffb0; text-shadow: 0 2px 0 #145a2c, 0 0 8px rgba(80,255,140,.7); }
+  .unit { position: fixed; transform: translate(-50%, -100%); width: 44px; pointer-events: none; }
+  .unit .bar { height: 4px; background: rgba(10,10,14,.75); border-radius: 3px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,.35); }
+  .unit .bar i { display: block; height: 100%; background: linear-gradient(#7dff9e, #2fbf62); }
+  .unit .nm { display: none; }
+
+  /* 필살기 컷인 */
+  .cutin { position: fixed; inset: 0; z-index: 20; pointer-events: none; display: none; }
+  .cutin.show { display: block; }
+  .cutin .dim { position: absolute; inset: 0; background: rgba(6,4,12,.55); animation: cfade 1.1s ease forwards; }
+  .cutin .band { position: absolute; left: -10%; right: -10%; top: 50%; height: 62%; transform: translateY(-50%) skewY(-8deg); background: var(--c1); overflow: hidden; box-shadow: 0 0 0 3px #ffd779, 0 0 40px rgba(255,200,90,.6); animation: cband 1.1s cubic-bezier(.2,.9,.3,1) forwards; }
+  .cutin .lines { position: absolute; inset: -50%; background: repeating-conic-gradient(from 0deg at 30% 50%, rgba(255,255,255,.16) 0 2deg, transparent 2deg 9deg); animation: cspin 1.1s linear forwards; }
+  .cutin .grad { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.0) 30%, rgba(0,0,0,.55)); }
+  .cutin .who { position: absolute; left: 4%; bottom: -12%; height: 125%; transform: skewY(8deg); animation: cwho 1.1s cubic-bezier(.2,.9,.3,1) forwards; filter: drop-shadow(0 0 0 #fff) drop-shadow(6px 6px 0 rgba(0,0,0,.35)); }
+  .cutin .who img { height: 100%; }
+  .cutin .txt { position: absolute; right: 9%; top: 50%; transform: translateY(-50%) skewY(-8deg); text-align: right; animation: ctxt 1.1s cubic-bezier(.2,.9,.3,1) forwards; }
+  .cutin .txt small { display: block; font-size: 13px; letter-spacing: .3em; color: #ffd779; }
+  .cutin .txt b { display: block; font-family: Jua, sans-serif; font-weight: 400; font-size: 54px; line-height: 1.05; color: #fff; text-shadow: 0 4px 0 rgba(0,0,0,.4), 0 0 24px rgba(255,215,121,.7); }
+  .cutin .txt span { display: block; font-size: 14px; opacity: .9; margin-top: 4px; }
+  .cutin.hold .dim, .cutin.hold .band, .cutin.hold .lines, .cutin.hold .who, .cutin.hold .txt { animation-play-state: paused; animation-delay: -.45s; }
+  @keyframes cfade { 0% { opacity: 0 } 12% { opacity: 1 } 80% { opacity: 1 } 100% { opacity: 0 } }
+  @keyframes cband { 0% { clip-path: inset(0 100% 0 0) } 18% { clip-path: inset(0 0 0 0) } 82% { clip-path: inset(0 0 0 0); opacity: 1 } 100% { clip-path: inset(0 0 0 0); opacity: 0 } }
+  @keyframes cwho { 0% { transform: skewY(8deg) translateX(-60%); opacity: 1 } 22% { transform: skewY(8deg) translateX(0); opacity: 1 } 80% { transform: skewY(8deg) translateX(4%); opacity: 1 } 100% { transform: skewY(8deg) translateX(30%); opacity: 0 } }
+  @keyframes ctxt { 0% { transform: translateY(-50%) skewY(-8deg) translateX(60%); opacity: 0 } 25% { transform: translateY(-50%) skewY(-8deg) translateX(0); opacity: 1 } 80% { opacity: 1 } 100% { transform: translateY(-50%) skewY(-8deg) translateX(-10%); opacity: 0 } }
+  @keyframes cspin { to { transform: rotate(6deg) scale(1.1) } }
+  @media (prefers-reduced-motion: reduce) { .cutin * { animation-duration: .01s !important; } }
+  .sk { pointer-events: auto; cursor: pointer; }
+
+  .ctl button { font: inherit; color: #f4efe3; padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; cursor: pointer; }
+  .ctl button.on { color: #ffd779; border-color: rgba(255, 214, 120, .7); }
+  .sk.dead { filter: grayscale(1) brightness(.5); }
+  .sk.dead::after { content: '쓰러짐'; position: absolute; inset: 0 0 22px 0; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #ffb4a8; }
+  .dmg { animation: dmgUp .9s ease-out forwards; }
+  @keyframes dmgUp { 0% { opacity: 0; margin-top: 8px; } 15% { opacity: 1; margin-top: 0; } 75% { opacity: 1; } 100% { opacity: 0; margin-top: -26px; } }
+  .dmg.taken { font-size: 18px; color: #ffb4a8; text-shadow: 0 2px 0 #5a0f0a, 0 0 6px rgba(0,0,0,.6); }
+  .dmg.block { font-size: 15px; color: #a8d4ff; text-shadow: 0 2px 0 #12325a; }
+  .dmg.info { font-size: 22px; color: #ffe2a0; text-shadow: 0 2px 0 #6a3a10, 0 0 10px rgba(0,0,0,.6); }
+  .bcount { transition: transform .2s; } .bcount.pop { transform: scale(1.5); }
+  .overlay { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(8,6,14,.66); }
+  .overlay[hidden] { display: none; }
+  .panel { text-align: center; padding: 18px 26px 20px; border-radius: 14px; min-width: 260px; }
+  .panel small { display: block; letter-spacing: .25em; font-size: 11px; color: #ffd779; }
+  .panel h2 { font-family: Jua, sans-serif; font-weight: 400; font-size: 34px; margin: 4px 0 2px; color: #fff3d0; }
+  .panel p { margin: 4px 0 12px; font-size: 13px; opacity: .85; }
+  .stars { font-size: 30px; letter-spacing: 6px; color: #ffd779; text-shadow: 0 0 12px rgba(255,200,80,.7); }
+  .stars i { font-style: normal; color: #4a4250; text-shadow: none; }
+  .rw { display: flex; gap: 10px; justify-content: center; margin: 8px 0 14px; font-size: 15px; }
+  .btns { display: flex; gap: 8px; justify-content: center; }
+  .btn { font: inherit; font-family: Jua, sans-serif; font-size: 17px; padding: 9px 18px; border-radius: 10px; border: 0; cursor: pointer; }
+  .btn.go { background: linear-gradient(#ffd779, #e0a12a); color: #2a1206; box-shadow: 0 3px 0 #9a6a10; }
+  .btn.sub { background: rgba(255,255,255,.12); color: #f4efe3; border: 1px solid rgba(255,255,255,.25); }
+  .tip { font-size: 12px; opacity: .75; margin-top: 10px; line-height: 1.5; }
+  .cast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="stage glass">1-1 · 은행나무길<b id="timer">1:30</b></div>
+<div class="ctl"><button class="glass" id="b-auto">AUTO</button><button class="glass" id="b-speed">×1</button><button class="glass" id="b-pause" aria-label="일시정지">❚❚</button></div>
+<div class="boss"><div class="bmain"><div class="bname"><b>은행왕</b><i>BOSS</i></div><div class="bbar"><div class="layer next" id="b-next"></div><div class="trail" id="b-trail"></div><div class="layer now" id="b-now"></div><span class="shine"></span></div></div><div class="bcount" id="b-count">×3</div></div>
+<div class="syn glass"><b>발명</b>프롤로그 화학부 + 공학부 · 스킬 피해 +15%</div>
+<div class="skills" id="skills"></div>
+<div class="cast" id="cast"></div>
+<div id="hud"></div>
+<div class="overlay" id="start"><div class="panel glass"><small>STAGE 1-1</small><h2>은행나무길</h2><p>보스 · 은행왕</p><div class="btns"><button class="btn go" id="go">전투 시작</button></div><div class="tip">친구들은 알아서 싸워요. 스킬 버튼이 빛나면 눌러 주세요.<br>바닥에 빨간 원이 뜨면 큰 공격이 와요. 방패 로봇이나 돌파 슛으로 막을 수 있어요.</div></div></div>
+<div class="overlay" id="result" hidden><div class="panel glass"><small id="r-sub">STAGE CLEAR</small><h2 id="r-title">승리!</h2><div class="stars" id="r-stars"></div><p id="r-time"></p><div class="rw" id="r-rw"></div><div class="btns"><button class="btn sub" id="r-retry">다시 하기</button><button class="btn go" id="r-camp">캠퍼스로</button></div></div></div>
+<div class="cutin" id="cutin"><div class="dim"></div><div class="band"><div class="lines"></div><div class="grad"></div><div class="who"><img id="cut-img" alt=""></div><div class="txt"><small>ULTIMATE</small><b id="cut-name"></b><span id="cut-who"></span></div></div></div>
+
+<script src="../avatar.js"></script>
+<script src="../avatar2.js"></script>
+<script src="../avatar3.js"></script>
+<script src="../scene.js"></script>
+<script src="../fullbody.js"></script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+<script type="module" src="battle.js"></script>
+</body>
+</html>
