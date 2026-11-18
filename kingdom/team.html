@@ -93,10 +93,20 @@
   .pf .lines { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 5px; }
   .pf .lines li { font-size: 12px; background: rgba(255,255,255,.08); border-radius: 10px 10px 10px 2px; padding: 4px 8px; }
   .pf .acts { display: flex; gap: 8px; margin-top: 6px; }
+  .chaps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+  @media (max-width: 560px) { .chaps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ch { text-align: left; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 10px; padding: 7px 10px; font-family: inherit; cursor: pointer; min-height: 58px; }
+  .ch small { display: block; font-size: 9px; letter-spacing: .14em; color: var(--muted); }
+  .ch b { display: block; font-family: Jua, sans-serif; font-weight: 400; font-size: 15px; color: #fff3d0; margin: 1px 0; }
+  .ch span { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ch.on { border-color: var(--gold); background: linear-gradient(160deg, rgba(255,215,121,.22), rgba(18,14,28,.8)); box-shadow: 0 0 0 1px var(--gold) inset; }
+  .ch.lock { opacity: .5; }
+  .ch.lock b { color: var(--muted); }
 </style>
 </head>
 <body>
 <div class="top"><a href="./">← 캠퍼스</a><h1>팀 편성</h1><div class="res" id="res"></div><div class="stage"><button class="sbtn" id="st-prev" aria-label="이전 스테이지">◀</button><span>STAGE <b id="st-n">1-1</b><small id="st-rec"></small></span><button class="sbtn" id="st-next" aria-label="다음 스테이지">▶</button></div></div>
+<div class="chaps" id="chaps"></div>
 <div class="wrap">
   <section class="panel">
     <div class="field" id="field"></div>

@@ -12,12 +12,12 @@ if (owned.length < 5) DEFAULT_TEAM.forEach(id => { if (!owned.includes(id) && ow
 let team = [];
 try { team = (JSON.parse(localStorage.getItem(TEAM_KEY)) || []).filter(id => owned.includes(id)).slice(0, 5); } catch (e) {}
 if (!team.length) team = DEFAULT_TEAM.filter(id => owned.includes(id));
-let stage = 1; try { stage = Math.max(1, Math.min(G.stage || 1, +localStorage.getItem('yangil.kingdom.stage') || (G.stage || 1))); } catch (e) {}
+let { ch, st: stage } = loadSel(G);
 let tab = 'all';
 const imgCache = {};
 const fullImg = id => imgCache['f' + id] || (imgCache['f' + id] = svgURL(kitSVG(id, 'stand', 'smile')));
 const headImg = id => imgCache['h' + id] || (imgCache['h' + id] = svgURL(kitHeadSVG(id)));
-const save = () => { try { localStorage.setItem(TEAM_KEY, JSON.stringify(team)); localStorage.setItem('yangil.kingdom.stage', stage); } catch (e) {} };
+const save = () => { try { localStorage.setItem(TEAM_KEY, JSON.stringify(team)); } catch (e) {} saveSel(ch, stage); };
 const BG = { tank: '#22385a', striker: '#5a2418', blaster: '#6a3a12', mage: '#3a2a66', healer: '#1d5b3a', support: '#5a4a16' };
 const fmt = n => n.toLocaleString('ko-KR');
 
@@ -29,9 +29,10 @@ function layout(ids) {
 function teamTagCount(s) { const tags = teamTags(team); return Object.keys(tags).some(t => ({ invent: ['chem', 'eng'], code: ['sona'], city: ['zec'], cheer: ['bcast'], sprout: ['seed'], squid: ['squid'], sport: ['sport'] })[s.id].includes(t)); }
 function renderTop() {
   $('res').innerHTML = `<span>📘 ${fmt(G.res.know || 0)}</span><span>🍞 ${fmt(G.res.snack || 0)}</span><span>💪 ${fmt(G.res.power || 0)}</span>`;
-  const sm = stageMul(stage);
-  $('st-n').textContent = '1-' + stage; $('st-rec').textContent = `추천 ${fmt(sm.rec)}`;
-  $('st-prev').disabled = stage <= 1; $('st-next').disabled = stage >= Math.min(MAX_STAGE, G.stage || 1);
+  const sm = chapMul(ch, stage);
+  $('st-n').textContent = ch + '-' + stage; $('st-rec').textContent = `추천 ${fmt(sm.rec)}`;
+  $('st-prev').disabled = stage <= 1; $('st-next').disabled = stage >= Math.min(MAX_STAGE, progOf(G, ch));
+  $('chaps').innerHTML = CHAPTERS.map(c => { const open = progOf(G, c.n) > 0; return `<button class="ch${c.n === ch ? ' on' : ''}${open ? '' : ' lock'}" data-ch="${c.n}" ${open ? '' : 'aria-disabled="true"'}><small>CHAPTER ${c.n}</small><b>${open ? c.place : '🔒 ' + c.place}</b><span>${open ? '보스 · ' + c.boss : `${c.n - 1}-${CHAP_UNLOCK} 클리어 시 열림`}</span></button>`; }).join('');
 }
 function renderField() {
   const L = layout(team);
@@ -42,7 +43,7 @@ function renderField() {
   $('syn').innerHTML = syn.filter(s => s.on || teamTagCount(s)).map(s => `<span class="${s.on ? 'on' : ''}"><b>${s.name}</b>${s.on ? s.desc : s.need}</span>`).join('') || '<span>같은 동아리 친구를 함께 넣으면 시너지가 켜져요</span>';
   const cb = campusBonus(G);
   $('camp').innerHTML = cb.list.length ? '<b>캠퍼스 보너스</b> · ' + cb.list.join(' · ') : '<b>캠퍼스 보너스</b> · 캠퍼스에 과학실 · 체육관 · 도서관 · 매점을 지으면 전투가 강해져요';
-  const pw = team.reduce((a, id) => a + powerOf(G, id), 0), rec = stageMul(stage).rec;
+  const pw = team.reduce((a, id) => a + powerOf(G, id), 0), rec = chapMul(ch, stage).rec;
   $('pow').innerHTML = `팀 전투력 ${fmt(pw)}<small style="color:${pw >= rec ? '#7dff9e' : '#ffb4a8'}">추천 ${fmt(rec)}</small>`;
   $('go').disabled = !team.length;
 }
@@ -105,8 +106,9 @@ addEventListener('keydown', e => { if (e.key === 'Escape') $('pf').hidden = true
 $('list').addEventListener('click', e => { const i = e.target.closest('[data-pf]'); if (i) { openProfile(i.dataset.pf); return; } const c = e.target.closest('.card'); if (c) toggle(c.dataset.id); });
 $('field').addEventListener('click', e => { const s = e.target.closest('.slot[data-id]'); if (s) openProfile(s.dataset.id); });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
+$('chaps').addEventListener('click', e => { const b = e.target.closest('.ch'); if (!b) return; const n = +b.dataset.ch; if (!progOf(G, n)) { const c = CHAPTERS[n - 1]; $('hint').textContent = `${n - 1}-${CHAP_UNLOCK} 스테이지를 깨면 「${c.place}」${josa(c.place, '이', '가').slice(c.place.length)} 열려요`; $('hint').scrollIntoView({ block: 'nearest' }); return; } ch = n; stage = progOf(G, n); save(); render(); });
 $('st-prev').onclick = () => { stage = Math.max(1, stage - 1); save(); render(); };
-$('st-next').onclick = () => { stage = Math.min(Math.min(MAX_STAGE, G.stage || 1), stage + 1); save(); render(); };
+$('st-next').onclick = () => { stage = Math.min(Math.min(MAX_STAGE, progOf(G, ch)), stage + 1); save(); render(); };
 $('auto').onclick = autoPick;
 $('go').onclick = () => { save(); location.href = 'battle.html'; };
 render();

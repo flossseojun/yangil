@@ -107,19 +107,32 @@
   #dim { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 62% 42%, rgba(0,0,0,0) 0 16%, rgba(4,2,10,.6) 45%, rgba(4,2,10,.9) 80%); opacity: 0; transition: opacity .25s; z-index: 1; }
   #dim.on { opacity: 1; }
   #flash { position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 2; mix-blend-mode: screen; }
+  .sk.sleep { filter: saturate(.4) brightness(.7) hue-rotate(200deg); }
+  .sk.sleep::after { content: 'Zz 잠듦'; position: absolute; inset: 0 0 22px 0; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #cfe0ff; }
+  .panel p small { opacity: .8; }
+  #reveal { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; pointer-events: none; background: radial-gradient(circle, rgba(10,30,16,.55), rgba(0,0,0,.85)); }
+  #reveal[hidden] { display: none; }
+  #reveal .rv-card { width: min(260px, 70vw); background: #0f1a14; border: 2px solid #5dff8a; border-radius: 14px; padding: 10px; text-align: center; box-shadow: 0 0 40px rgba(93,255,138,.5); }
+  #reveal img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 8px; display: block; }
+  #reveal b { display: block; font-family: Jua, sans-serif; font-weight: 400; font-size: 20px; color: #9dffb0; margin-top: 8px; }
+  #reveal small { color: #cfe8d6; font-size: 12px; }
+  #reveal.show { animation: rv-bg 2.8s ease forwards; } #reveal.show .rv-card { animation: rv-card 2.8s cubic-bezier(.2,1.4,.4,1) forwards; }
+  @keyframes rv-bg { 0% { opacity: 0; } 8% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes rv-card { 0% { transform: scale(.3) rotate(-8deg); opacity: 0; } 14% { transform: scale(1.06) rotate(2deg); opacity: 1; } 22% { transform: scale(1) rotate(0); } 85% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.1); opacity: 0; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div class="stage glass"><span id="stg">1-1</span> · 은행나무길<b id="timer">1:30</b></div>
+<div class="stage glass"><span id="stg">1-1</span> · <span id="st-place">은행나무길</span><b id="timer">1:30</b></div>
 <div class="ctl"><button class="glass" id="b-auto">AUTO</button><button class="glass" id="b-speed">×1</button><button class="glass" id="b-pause" aria-label="일시정지">❚❚</button><button class="glass" id="b-voice" aria-label="목소리 켜고 끄기">🔊</button></div>
-<div class="boss"><div class="bmain"><div class="bname"><b>은행왕</b><i>BOSS</i></div><div class="bbar"><div class="layer next" id="b-next"></div><div class="trail" id="b-trail"></div><div class="layer now" id="b-now"></div><span class="shine"></span></div></div><div class="bcount" id="b-count">×3</div></div>
+<div class="boss"><div class="bmain"><div class="bname"><b id="boss-name">은행왕</b><i>BOSS</i></div><div class="bbar"><div class="layer next" id="b-next"></div><div class="trail" id="b-trail"></div><div class="layer now" id="b-now"></div><span class="shine"></span></div></div><div class="bcount" id="b-count">×3</div></div>
 <div class="syn glass" id="syn"></div>
 <div class="skills" id="skills"></div>
 <div class="cast" id="cast"></div>
 <div id="dim"></div><div id="flash"></div>
 <div id="hud"></div>
-<div class="overlay" id="start"><div class="panel glass"><small id="st-sub">STAGE 1-1</small><h2>은행나무길</h2><p id="st-desc">보스 · 은행왕</p><div class="btns"><a class="btn sub" href="team.html" style="text-decoration:none">팀 바꾸기</a><button class="btn go" id="go">전투 시작</button></div><div class="tip">친구들은 알아서 싸워요. 스킬 버튼이 빛나면 눌러 주세요.<br>바닥에 빨간 원이 뜨면 큰 공격이 와요. 방패 로봇이나 돌파 슛으로 막을 수 있어요.</div></div></div>
+<div id="reveal" hidden><div class="rv-card"><img src="../seojun-photo.jpg" alt="염서준 사진"><b>게임 제작자 염서준 등장!</b><small>이 게임을 만든 사람이 직접 나타났다</small></div></div>
+<div class="overlay" id="start"><div class="panel glass"><small id="st-sub">STAGE 1-1</small><h2 id="st-title">은행나무길</h2><p id="st-desc">보스 · 은행왕</p><div class="btns"><a class="btn sub" href="team.html" style="text-decoration:none">팀 바꾸기</a><button class="btn go" id="go">전투 시작</button></div><div class="tip">친구들은 알아서 싸워요. 스킬 버튼이 빛나면 눌러 주세요.<br>바닥에 빨간 원이 뜨면 큰 공격이 와요. 방패 로봇이나 돌파 슛으로 막을 수 있어요.</div></div></div>
 <div class="overlay" id="result" hidden><div class="panel glass"><small id="r-sub">STAGE CLEAR</small><h2 id="r-title">승리!</h2><div class="stars" id="r-stars"></div><p id="r-time"></p><div class="rw" id="r-rw"></div><div class="btns"><a class="btn sub" href="team.html" style="text-decoration:none">팀 편성</a><button class="btn sub" id="r-retry">다시 하기</button><button class="btn go" id="r-camp">캠퍼스로</button></div></div></div>
 <div class="cutin" id="cutin"><div class="dim"></div><div class="band"><div class="lines"></div><div class="grad"></div><div class="who"><img id="cut-img" alt=""></div><div class="txt"><small>ULTIMATE</small><b id="cut-name"></b><span id="cut-who"></span></div></div></div>
 

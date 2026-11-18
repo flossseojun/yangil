@@ -261,3 +261,25 @@ function campusBonus(g) {
 const MAX_STAGE = 10;
 const stageMul = st => ({ hp: 1 + (st - 1) * .4, dmg: 1 + (st - 1) * .18, reward: 1 + (st - 1) * .35, rec: Math.round((4200 + (st - 1) * 900) / 10) * 10 });
 function powerOf(g, id) { const r = ROLES[kitOf(id).role], m = lvMult(lvOf(g, id)); return Math.round((r.hp / 4 + r.atk * 4) * m); }
+// 챕터: 각 챕터 1-5를 깨면 다음 챕터가 열린다
+const CHAPTERS = [
+  { n: 1, place: '은행나무길', boss: '은행왕', desc: '은행 폭탄을 조심!' },
+  { n: 2, place: '다목적관', boss: 'LED 스크린', desc: '레이저 줄 공격 · 눈부신 화면(평타 빗나감)' },
+  { n: 3, place: '밤의 교실', boss: '야자의 유령', desc: '사라지기(받는 피해 절반) · 가위눌림(친구 잠듦)' },
+  { n: 4, place: '본관 옥상', boss: '본관', desc: '마지막 한 겹에서 누군가 나타난다…' },
+];
+const CHAP_UNLOCK = 5;
+const progOf = (g, ch) => ch === 1 ? Math.max(1, (g && g.stage) || 1) : Math.max(((g && g.chs) || {})[ch] || 0, progOf(g, ch - 1) > CHAP_UNLOCK ? 1 : 0);   // 이미 앞 챕터 1-5를 깬 저장도 열린다
+function setProg(g, ch, v) { if (ch === 1) g.stage = v; else { g.chs = g.chs || {}; g.chs[ch] = v; } }
+const effStage = (ch, st) => st + (ch - 1) * 4;          // 2-1은 1-5와 비슷한 세기
+// 챕터 2~4는 특수 공격이 있는 대신 수치는 완만하게 오른다
+const chapMul = (ch, st) => { if (ch === 1) return stageMul(st); const e = effStage(ch, st); return { hp: 1 + (e - 1) * .26, dmg: 1 + (e - 1) * .11, reward: 1 + (e - 1) * .35, rec: Math.round((4200 + (e - 1) * 650) / 10) * 10 }; };
+const josa = (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return w + (c >= 0 && c <= 11171 && c % 28 ? a : b); };
+function loadSel(g) {
+  let ch = 1, st = 1;
+  try { ch = +localStorage.getItem('yangil.kingdom.chap') || 1; st = +localStorage.getItem('yangil.kingdom.stage') || 1; } catch (e) {}
+  if (!progOf(g, ch)) ch = 1;
+  st = Math.max(1, Math.min(st, progOf(g, ch), MAX_STAGE));
+  return { ch, st };
+}
+function saveSel(ch, st) { try { localStorage.setItem('yangil.kingdom.chap', ch); localStorage.setItem('yangil.kingdom.stage', st); } catch (e) {} }

@@ -1,9 +1,10 @@
-// 팀 전투 (1-1 은행나무길 · 보스 은행왕): 자동 공격 · 스킬 게이지 · 필살기 컷인 · 위험 구역 · 3겹 체력
+// 팀 전투 (챕터 1~4 · 보스는 bosses.js): 자동 공격 · 스킬 게이지 · 필살기 컷인 · 위험 구역 · 3겹 체력
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { buildArena } from './bosses.js';
 
 /* ───────── 팀 구성 (팀 편성 화면에서 고른 친구) ───────── */
 const DEFAULT_TEAM = ['junyoung', 'jeonggyu', 'yunsu', 'seojun', 'yejun'];
@@ -13,10 +14,11 @@ if (!PICK.length) PICK = DEFAULT_TEAM.slice();
 const CAMP = loadCampus() || { res: { know: 0, snack: 0, power: 0 }, b: [], friends: [] };
 const CB = campusBonus(CAMP);
 const FX = teamFx(PICK); FX.heal *= CB.heal; FX.charge *= CB.charge;
-let STAGE = 1; try { STAGE = Math.max(1, Math.min(MAX_STAGE, +localStorage.getItem('yangil.kingdom.stage') || 1, CAMP.stage || 1)); } catch (e) {}
-const SM = stageMul(STAGE);
-document.getElementById('stg').textContent = '1-' + STAGE; document.getElementById('st-sub').textContent = 'STAGE 1-' + STAGE;
-document.getElementById('st-desc').textContent = STAGE > 1 ? `보스 · 은행왕 (강화 ${STAGE - 1}단계) · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}` : '보스 · 은행왕';
+const SEL = loadSel(CAMP), CH = SEL.ch, STAGE = SEL.st, CHD = CHAPTERS[CH - 1];
+const SM = chapMul(CH, STAGE), SID = CH + '-' + STAGE;
+document.getElementById('stg').textContent = SID; document.getElementById('st-sub').textContent = 'STAGE ' + SID;
+document.getElementById('st-place').textContent = CHD.place; document.getElementById('st-title').textContent = CHD.place; document.getElementById('boss-name').textContent = CHD.boss;
+document.getElementById('st-desc').innerHTML = `보스 · ${CHD.boss}${STAGE > 1 ? ` (강화 ${STAGE - 1}단계)` : ''} · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}<br><small>${CHD.desc}</small>`;
 const nameOf = id => (ROSTER.find(f => f.id === id) || { name: id }).name;
 const introOf = id => (ROSTER.find(f => f.id === id) || { role: '' }).role.split(' · ')[0];
 
@@ -39,49 +41,11 @@ composer.addPass(bloom); composer.addPass(new OutputPass());
 addEventListener('resize', () => { composer.setSize(innerWidth, innerHeight); }); 
 addEventListener('resize', resize); resize(); composer.setSize(innerWidth, innerHeight); composer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
-scene.add(new THREE.HemisphereLight('#ffb98a', '#2a2040', .55));
+const hemi = new THREE.HemisphereLight('#ffb98a', '#2a2040', .55); scene.add(hemi);
 const sun = new THREE.DirectionalLight('#ffb070', 2.2); sun.position.set(-8, 7, -6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 10, bottom: -6, near: 1, far: 40 }); sun.shadow.bias = -.0005; scene.add(sun);
 const fill = new THREE.DirectionalLight('#8fa8ff', .55); fill.position.set(6, 5, 10); scene.add(fill);
 
-// 바닥: 돌판 안뜰
-const floorT = tex(512, 512, (g) => { g.fillStyle = '#6b5a52'; g.fillRect(0, 0, 512, 512); for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { const l = 38 + Math.random() * 10; g.fillStyle = `hsl(20, 12%, ${l}%)`; g.fillRect(i * 64 + 2, j * 64 + 2, 60, 60); } g.fillStyle = 'rgba(255,200,80,.18)'; for (let k = 0; k < 90; k++) { g.beginPath(); g.ellipse(Math.random() * 512, Math.random() * 512, 6, 4, Math.random() * 3, 0, 7); g.fill(); } });
-floorT.wrapS = floorT.wrapT = THREE.RepeatWrapping; floorT.repeat.set(6, 3);
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), new THREE.MeshStandardMaterial({ map: floorT, roughness: .9 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
-// 뒤쪽 본관 실루엣 + 불 켜진 창문
-const winT = tex(256, 128, (g, w, h) => { g.fillStyle = '#3a2f45'; g.fillRect(0, 0, w, h); for (let i = 0; i < 16; i++) for (let j = 0; j < 4; j++) { g.fillStyle = Math.random() < .55 ? '#ffd27a' : '#2a2236'; g.fillRect(i * 16 + 4, j * 32 + 8, 8, 14); } });
-const bld = new THREE.Mesh(new THREE.BoxGeometry(26, 7, 3), [0, 0, 0, 0, 1, 0].map(k => new THREE.MeshStandardMaterial(k ? { map: winT, emissive: '#ffffff', emissiveMap: winT, emissiveIntensity: .55 } : { color: '#3a2f45' })));
-bld.position.set(1, 3.5, -12); scene.add(bld);
-const tower = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 3), new THREE.MeshStandardMaterial({ color: '#3a2f45' })); tower.position.set(1, 9, -12); scene.add(tower);
-const clockM = new THREE.Mesh(new THREE.CircleGeometry(.9, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color('#ffe2a0').multiplyScalar(1.8) })); clockM.position.set(1, 9.3, -10.45); scene.add(clockM);
-// 양옆 은행나무 (어둑하게)
-function tree(x, z, s) { const g = new THREE.Group(); const tr = new THREE.Mesh(new THREE.CylinderGeometry(.18 * s, .28 * s, 2 * s, 7), new THREE.MeshStandardMaterial({ color: '#4a3020' })); tr.position.y = s; tr.castShadow = true; g.add(tr); const lm = new THREE.MeshStandardMaterial({ color: '#d99a1e', flatShading: true, roughness: .8 }); [[0, 2.4, 0, 1.1], [.6, 2, .3, .8], [-.6, 2.1, -.2, .85], [0, 3, 0, .8]].forEach(([a, b, c, r]) => { const l = new THREE.Mesh(new THREE.IcosahedronGeometry(r * s, 0), lm); l.position.set(a * s, b * s, c * s); l.castShadow = true; g.add(l); }); g.position.set(x, 0, z); scene.add(g); }
-[[-11, -5, 1.2], [-8, -8, 1], [11, -5, 1.2], [8.5, -8.5, 1], [-14, 0, 1.3], [14, -1, 1.3]].forEach(a => tree(...a));
-
-/* ───────── 보스: 은행나무 골렘 ───────── */
-const boss = new THREE.Group(); boss.position.set(5.2, 0, -.6); scene.add(boss);
-const bark = new THREE.MeshStandardMaterial({ color: '#5a3a24', roughness: .95, flatShading: true });
-const leafM = new THREE.MeshStandardMaterial({ color: '#f2b720', emissive: '#a05a00', emissiveIntensity: .35, flatShading: true, roughness: .6 });
-const cast = o => { o.castShadow = true; o.receiveShadow = true; return o; };
-const trunk = cast(new THREE.Mesh(new THREE.CylinderGeometry(.85, 1.25, 3.4, 9, 3), bark)); trunk.position.y = 2.3; trunk.rotation.z = .06; boss.add(trunk);
-[[-.9, .45, .5, -.7], [.95, .4, .4, .8], [0, .4, -1, 0], [.2, .4, 1.05, .3]].forEach(([x, y, z, r]) => { const root = cast(new THREE.Mesh(new THREE.ConeGeometry(.42, 1.6, 6), bark)); root.position.set(x, y, z); root.rotation.set(z * .6, 0, r + Math.PI); boss.add(root); });
-const arms = [];
-function arm(side) { const g = new THREE.Group(); arms.push(g); g.userData.side = side; const a = cast(new THREE.Mesh(new THREE.CylinderGeometry(.22, .34, 2.4, 7), bark)); a.position.y = 1.1; g.add(a); const fist = cast(new THREE.Mesh(new THREE.IcosahedronGeometry(.55, 0), leafM)); fist.position.y = 2.4; g.add(fist); g.position.set(side * 1, 3.1, .2); g.rotation.z = side * -1.05; g.rotation.x = -.25; boss.add(g); }
-arm(-1); arm(1);
-[[0, 5, 0, 1.6], [1.1, 4.6, .3, 1.15], [-1.1, 4.7, -.1, 1.2], [.3, 5.9, -.2, 1.1], [-.5, 4.3, .9, .9], [.7, 4.2, -.9, 1]].forEach(([x, y, z, r]) => { const l = cast(new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), leafM)); l.position.set(x, y, z); boss.add(l); });
-// 얼굴: 빛나는 눈 + 갈라진 입
-const eyeM = new THREE.MeshBasicMaterial({ color: new THREE.Color('#ffef9a').multiplyScalar(3) });
-[-.38, .38].forEach(x => { const e = new THREE.Mesh(new THREE.SphereGeometry(.16, 12, 8), eyeM); e.position.set(x, 3.05, .98); e.scale.set(1.4, .7, .6); boss.add(e); const brow = new THREE.Mesh(new THREE.BoxGeometry(.5, .1, .1), bark); brow.position.set(x, 3.3, 1); brow.rotation.z = x > 0 ? .45 : -.45; boss.add(brow); });
-const mouth = new THREE.Mesh(new THREE.BoxGeometry(.8, .14, .1), new THREE.MeshBasicMaterial({ color: new THREE.Color('#ff9a3c').multiplyScalar(2.2) })); mouth.position.set(0, 2.55, 1.05); boss.add(mouth);
-const eyeLight = new THREE.PointLight('#ffb040', 6, 6, 1.6); eyeLight.position.set(0, 3.1, 1.6); boss.add(eyeLight);
-const aura = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.6, 48), new THREE.MeshBasicMaterial({ color: '#ff7a2a', transparent: true, opacity: .28, blending: THREE.AdditiveBlending, depthWrite: false })); aura.rotation.x = -Math.PI / 2; aura.position.y = .02; boss.add(aura);
-
-// 떠다니는 은행잎
-const leafT = tex(32, 32, (g) => { g.fillStyle = '#ffcf3a'; g.beginPath(); g.moveTo(16, 28); g.lineTo(4, 10); g.quadraticCurveTo(16, 0, 28, 10); g.closePath(); g.fill(); });
-const pts = new THREE.BufferGeometry(), P = [];
-for (let i = 0; i < 160; i++) P.push((Math.random() - .3) * 18, Math.random() * 7, (Math.random() - .5) * 10);
-pts.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
-scene.add(new THREE.Points(pts, new THREE.PointsMaterial({ map: leafT, size: .28, transparent: true, depthWrite: false })));
 
 /* ───────── 전투 데이터 ───────── */
 const BOLT = { blaster: '#ffb84d', mage: '#b48bff', healer: '#7dff9e', support: '#ffd779' };
@@ -116,6 +80,11 @@ function popText(v, cls, html) { const [x, y] = toScreen(v), el = document.creat
 function flash(color, size, pos, dur = .45) { const s = new THREE.Sprite(additive(color)); s.position.copy(pos); s.scale.set(size * .4, size * .4, 1); scene.add(s); tween(dur, k => { const z = size * (.4 + k * .8); s.scale.set(z, z, 1); s.material.opacity = 1 - k; }, () => scene.remove(s)); }
 let shakeT = 0, shakeAmp = 0; const shake = (amp, dur = .3) => { shakeAmp = Math.max(shakeAmp, amp); shakeT = Math.max(shakeT, dur); };
 
+/* ───────── 무대 · 보스 (챕터별) ───────── */
+const cast = o => { o.castShadow = true; o.receiveShadow = true; return o; };
+const ARENA = buildArena(CH, { THREE, scene, tex, cast, hemi, sun, fill, glowT, tween, reveal: () => showReveal() });
+const { boss, arms } = ARENA;
+
 /* ───────── 친구들 ───────── */
 function spriteTex(id, pose, expr, cb) {
   const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); c.width = 240; c.height = 504; c.getContext('2d').drawImage(img, 0, 0, 240, 504); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; cb(t); };
@@ -139,13 +108,13 @@ const alive = () => units.filter(u => !u.dead);
 let buffT = 0;   // 지원 스킬: 팀 공격력 +40%
 
 /* ───────── 보스 상태 ───────── */
-const B = { layer: 0, hp: LAYERS[0], trail: LAYERS[0], slamT: 3, bombT: 6.5, stun: 0, burn: 0, burnT: 0, stagger: 0, taunt: 0, dead: false, flashT: 0 };
+const B = { layer: 0, hp: LAYERS[0], trail: LAYERS[0], slamT: 3, bombT: 6.5, stun: 0, burn: 0, burnT: 0, stagger: 0, taunt: 0, dead: false, flashT: 0, spT: CH > 1 ? 7.5 : 1e9, glareT: 0, blind: 0, vanish: 0, nerf: 0 };
 const bossCenter = new THREE.Vector3(5.2, 2.6, .4);
-const LEAF_COLORS = ['#f2b720', '#ff8a2a', '#ff4a3a'];
 const stunStars = new THREE.Group(); for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(additive('#ffe58a')); s.scale.set(.5, .5, 1); stunStars.add(s); } stunStars.visible = false; stunStars.position.set(5.2, 6.4, -.4); scene.add(stunStars);
 function damageBoss(n, opts = {}) {
   if (B.dead || over) return;
-  const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * rnd(.92, 1.08));
+  if (opts.normal && B.blind > 0) { if (Math.random() < .35) popText(bossCenter.clone().add(new THREE.Vector3(rnd(-1, 1), rnd(0, 1.2), 1)), 'block', 'MISS'); return; }
+  const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * (B.vanish > 0 ? .5 : 1) * rnd(.92, 1.08));
   B.hp -= dmg; B.flashT = .12;
   const at = bossCenter.clone().add(new THREE.Vector3(rnd(-1.2, 1.2), rnd(-.6, 1.4), 1));
   popText(at, crit || opts.big ? 'big' : 'mid', fmt(dmg) + (crit ? '<small>크리티컬!</small>' : ''));
@@ -153,9 +122,8 @@ function damageBoss(n, opts = {}) {
   while (B.hp <= 0 && !B.dead) {
     if (B.layer >= LAYERS.length - 1) { B.hp = 0; B.dead = true; finish(true); break; }
     B.layer++; const carry = -B.hp; B.hp = LAYERS[B.layer] - carry; B.trail = LAYERS[B.layer]; B.stagger = 1.4;
-    leafM.color.set(LEAF_COLORS[B.layer]); leafM.emissive.set(B.layer === 2 ? '#b0200a' : '#b04a00');
-    popText(bossCenter.clone().add(new THREE.Vector3(0, 2.2, 0)), 'info', B.layer === 2 ? '마지막 한 겹! 은행왕이 분노했다' : '한 겹 격파!');
-    flash('#ffd27a', 7, bossCenter, .7); shake(.22, .5);
+    cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.2, 0)), 'info', ARENA.onLayer(B.layer)); $('boss-name').textContent = ARENA.name();
+    flash(ARENA.hitColor, 7, bossCenter, .7); shake(.22, .5);
     const c = $('b-count'); c.classList.add('pop'); setTimeout(() => c.classList.remove('pop'), 250);
   }
 }
@@ -168,7 +136,7 @@ function hurt(u, n, cls = 'taken') {
   u.hp -= left; u.hitT = .18; popText(u.pos.clone().add(new THREE.Vector3(.3, 2.3, 0)), cls, '-' + fmt(left));
   if (u.hp <= 0) { u.hp = 0; u.dead = true; u.spr.material.opacity = .35; u.spr.material.rotation = .5; u.ring.visible = false; if (!alive().length) finish(false); }
 }
-function heal(u, n) { if (u.dead) return; const v = Math.min(u.max - u.hp, Math.round(n)); u.hp += v; popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', '+' + fmt(v)); flash('#7dff9e', 2.4, u.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), .6); }
+function heal(u, n) { if (u.dead) return; if (u.sleep > 0) wakeUnit(u, '깼다!'); const v = Math.min(u.max - u.hp, Math.round(n)); u.hp += v; popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', '+' + fmt(v)); flash('#7dff9e', 2.4, u.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), .6); }
 
 /* ───────── 날아가는 것 ───────── */
 function bolt(from, to, color, dur, done, size = .55, arc = 0) {
@@ -308,7 +276,7 @@ function castSkill(u, big) {
     if (sp.weak) { weakT = Math.max(weakT, sp.weak); popText(bossCenter.clone().add(new THREE.Vector3(0, 1.8, 0)), 'info', '약해졌다!'); }
     if (sp.confuse) { B.miss += sp.confuse; popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '???'); }
   };
-  const run = (sp, done) => VIS[sp.v](u, Object.assign({ sc: s.sc }, sp), i => { if (sp.dmg) damageBoss(sp.dmg * SYNERGY * u.st.lvm * (['blaster', 'mage'].includes(u.st.role) ? CB.magic : 1) * (buffT > 0 ? 1.2 : 1), { big: sp.n === 1 || i === sp.n - 1, crit: sp.crit && Math.random() < .5 ? true : undefined }); }, () => { bossFx(sp); done && done(); });
+  const run = (sp, done) => VIS[sp.v](u, Object.assign({ sc: s.sc }, sp), i => { if (sp.dmg) damageBoss(sp.dmg * SYNERGY * u.st.lvm * (['blaster', 'mage'].includes(u.st.role) ? CB.magic : 1) * (buffT > 0 ? 1.2 : 1) * (B.nerf > 0 ? .7 : 1), { big: sp.n === 1 || i === sp.n - 1, crit: sp.crit && Math.random() < .5 ? true : undefined }); }, () => { bossFx(sp); done && done(); });
   run(s, () => { if (s.after) run(Object.assign({ color: s.color }, s.after), () => { if (big) finisher(s, false); }); else if (big) finisher(s, teamSkill); });
   if (big && teamSkill) tween(.35, null, () => finisher(s, true));
 }
@@ -320,7 +288,7 @@ function startUlt(team) { ultT = 1.7; zoomTeam = team; $('dim').classList.add('o
 function endUlt() { ultT = 0; $('dim').classList.remove('on'); if (queue.length) setTimeout(() => useSkill(queue.shift()), 80); }          // 컷인이 도는 동안 전투가 멈춘다
 const queue = [];
 function useSkill(id, fromAuto) {
-  const u = U(id); if (!u || u.dead || u.gauge < 1 || over || !started) return;
+  const u = U(id); if (!u || u.dead || u.sleep > 0 || u.gauge < 1 || over || !started) return;
   if (fromAuto) { u.gauge = 0; u.castT = .6; castBanner(id); castSkill(u, false); return; }   // 자동: 멈추지 않고 짧은 띠만
   if (cutLock > 0 || ultT > 0) { if (!queue.includes(id)) queue.push(id); return; }
   u.gauge = 0; cutIn(id); cutLock = 1.05;
@@ -348,46 +316,113 @@ $('skills').addEventListener('click', e => { const k = e.target.closest('.sk'); 
 function skillUI() {
   document.querySelectorAll('.sk').forEach(el => {
     const u = U(el.dataset.id), ready = !u.dead && u.gauge >= 1;
-    el.classList.toggle('ready', ready); el.classList.toggle('dead', u.dead);
+    el.classList.toggle('ready', ready && !u.sleep); el.classList.toggle('dead', u.dead); el.classList.toggle('sleep', u.sleep > 0 && !u.dead);
     const cd = el.querySelector('.cd'), ult = el.querySelector('.ult');
     cd.style.display = ready || u.dead ? 'none' : 'grid'; cd.style.setProperty('--p', `${(1 - u.gauge) * 100}%`); cd.textContent = Math.ceil((1 - u.gauge) * u.st.cd);
-    ult.style.display = ready ? 'block' : 'none';
+    ult.style.display = ready && !u.sleep ? 'block' : 'none';
   });
 }
 
-/* ───────── 보스 위험 구역 (은행 폭탄) ───────── */
+/* ───────── 보스 위험 구역 (원 · 줄) + 챕터 특수 공격 ───────── */
 const bombs = [];
-function startBombs() {
-  const targets = alive().sort(() => Math.random() - .5).slice(0, Math.min(2, alive().length));
-  targets.forEach(u => {
-    const at = u.pos.clone(); at.y = .03;
-    const ring = new THREE.Mesh(new THREE.RingGeometry(1.15, 1.3, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color('#ff3a2a').multiplyScalar(1.6), transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false }));
-    const disc = new THREE.Mesh(new THREE.CircleGeometry(1.15, 48), new THREE.MeshBasicMaterial({ color: '#ff2a1a', transparent: true, opacity: .32, blending: THREE.AdditiveBlending, depthWrite: false }));
-    [ring, disc].forEach(m => { m.rotation.x = -Math.PI / 2; m.position.copy(at); scene.add(m); }); disc.scale.set(.01, .01, 1);
-    bombs.push({ at, ring, disc, t: 0, dur: 2.2 });
-  });
-  popText(bossCenter.clone().add(new THREE.Vector3(0, 2.6, 0)), 'info', '은행 폭탄!');
-  arms.forEach(a => tween(.5, k => { a.rotation.z = a.userData.side * (-1.05 - k * .9); }));
+const zoneMat = (c, op) => new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(op > .5 ? 1.6 : 1), transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false });
+// 원: { at, r }   줄: { at, axis: 'x'|'z', w }  — 시간이 차면 안에 있는 친구가 맞는다
+function addZone(z) {
+  const c = z.color || '#ff3a2a', at = z.at.clone(); at.y = .03; let ring, disc;
+  if (z.axis) {
+    const len = 26, [w, h] = z.axis === 'x' ? [len, z.w] : [z.w, len];
+    ring = new THREE.Group(); [-1, 1].forEach(sd => { const e = new THREE.Mesh(new THREE.PlaneGeometry(z.axis === 'x' ? len : .1, z.axis === 'x' ? .1 : len), zoneMat(c, .9)); e.rotation.x = -Math.PI / 2; e.position.set(z.axis === 'x' ? 0 : sd * w / 2, 0, z.axis === 'x' ? sd * h / 2 : 0); ring.add(e); });
+    ring.material = ring.children[0].material; ring.children[1].material = ring.material;
+    disc = new THREE.Mesh(new THREE.PlaneGeometry(w, h), zoneMat(c, .3)); disc.rotation.x = -Math.PI / 2;
+    if (z.axis === 'x') at.x = 0; else at.z = 0;
+  } else {
+    ring = new THREE.Mesh(new THREE.RingGeometry(z.r, z.r + .15, 48), zoneMat(c, .9)); ring.rotation.x = -Math.PI / 2;
+    disc = new THREE.Mesh(new THREE.CircleGeometry(z.r, 48), zoneMat(c, .32)); disc.rotation.x = -Math.PI / 2;
+  }
+  [ring, disc].forEach(m => { m.position.copy(at); scene.add(m); }); disc.scale.set(.01, .01, 1);
+  bombs.push(Object.assign({ dur: 2.2, dmg: 1100 }, z, { at, ring, disc, t: 0 }));
 }
-function cancelBombs() { bombs.splice(0).forEach(b => { scene.remove(b.ring, b.disc); }); arms.forEach(a => { a.rotation.z = a.userData.side * -1.05; }); }
+const zoneHits = (b, u) => b.axis === 'x' ? Math.abs(u.pos.z - b.at.z) < b.w / 2 + .2 : b.axis === 'z' ? Math.abs(u.pos.x - b.at.x) < b.w / 2 + .2 : u.pos.distanceTo(b.at) < b.r + .2;
+function armsUp() { arms.forEach(a => tween(.5, k => { a.rotation.z = a.userData.side * (-1.05 - k * .9); })); }
+const randomTargets = n => alive().sort(() => Math.random() - .5).slice(0, Math.min(n, alive().length));
+const sayBoss = (txt, y = 2.6) => popText(bossCenter.clone().add(new THREE.Vector3(0, y, 0)), 'info', txt);
+const revealed = () => CH === 4 && B.layer === 2;
+function startBombs() {
+  const L = B.layer;
+  if (CH === 2) {   // 레이저 줄: 가로 한 줄 + 세로 한 줄
+    const [a, b] = randomTargets(2);
+    if (a) addZone({ at: a.pos, axis: 'x', w: 1.3, color: '#ff3ad2', dmg: 1000 + L * 150, dur: 2.0 });
+    if (b) addZone({ at: b.pos, axis: 'z', w: 1.5, color: '#2df0ff', dmg: 1000 + L * 150, dur: 2.3 });
+    sayBoss('레이저!');
+  } else if (CH === 3) {   // 유령 손
+    randomTargets(2).forEach(u => addZone({ at: u.pos, r: 1.15, color: '#8a5aff', dmg: 1050 + L * 150 }));
+    sayBoss('유령 손!');
+  } else if (revealed()) {   // 코드 블록 비: 작은 원 여러 개
+    randomTargets(2).forEach(u => addZone({ at: u.pos, r: .9, color: '#5dff8a', dmg: 750, dur: 2 }));
+    for (let i = 0; i < 3; i++) addZone({ at: new THREE.Vector3(rnd(-5.5, 3), 0, rnd(-1.6, 1.4)), r: .9, color: '#5dff8a', dmg: 750, dur: 1.7 + i * .3 });
+    sayBoss('코드 블록 비!');
+  } else if (CH === 4) {
+    randomTargets(2).forEach(u => addZone({ at: u.pos, r: 1.2, color: '#ff8a3a', dmg: 1050 + L * 150 }));
+    sayBoss('벽돌 낙하!');
+  } else {
+    randomTargets(2).forEach(u => addZone({ at: u.pos, r: 1.15, dmg: 1100 + L * 150 }));
+    sayBoss('은행 폭탄!');
+  }
+  armsUp();
+}
+function cancelBombs() {
+  bombs.splice(0).forEach(b => { scene.remove(b.ring, b.disc); }); arms.forEach(a => { a.rotation.z = a.userData.side * -1.05; });
+  if (B.glareT > 0) { B.glareT = 0; ARENA.glare && ARENA.glare(0); sayBoss('눈부심을 막았다!', 1.4); }
+  if (B.vanish > 0) { B.vanish = 0; sayBoss('모습이 드러났다!', 1.4); }
+}
 function stepBombs(dt) {
   for (let i = bombs.length - 1; i >= 0; i--) {
-    const b = bombs[i]; b.t += dt; const k = Math.min(1, b.t / b.dur); b.disc.scale.set(k, k, 1); b.ring.material.opacity = .55 + Math.sin(b.t * 18) * .35;
+    const b = bombs[i]; b.t += dt; const k = Math.min(1, b.t / b.dur);
+    if (b.axis === 'x') b.disc.scale.set(1, k, 1); else if (b.axis === 'z') b.disc.scale.set(k, 1, 1); else b.disc.scale.set(k, k, 1);
+    b.ring.material.opacity = .55 + Math.sin(b.t * 18) * .35;
     if (k >= 1) {
       scene.remove(b.ring, b.disc); bombs.splice(i, 1);
-      flash('#ff8a3c', 5, b.at.clone().add(new THREE.Vector3(0, .8, 0)), .6); flash('#ffe28a', 2.6, b.at.clone().add(new THREE.Vector3(0, .6, 0)));
+      const c = b.color || '#ff8a3c';
+      if (b.axis) { const s = new THREE.Mesh(new THREE.PlaneGeometry(b.axis === 'x' ? 26 : b.w, b.axis === 'x' ? b.w : 26), zoneMat(c, 1)); s.rotation.x = -Math.PI / 2; s.position.copy(b.at); s.position.y = .06; scene.add(s); tween(.4, q => { s.material.opacity = 1 - q; s.scale.set(b.axis === 'z' ? 1 + q : 1, b.axis === 'x' ? 1 + q : 1, 1); }, () => scene.remove(s)); flash(c, 4, bossCenter.clone().add(new THREE.Vector3(0, 1, 1)), .4); }
+      else { flash(c, 5, b.at.clone().add(new THREE.Vector3(0, .8, 0)), .6); flash('#ffe28a', 2.6, b.at.clone().add(new THREE.Vector3(0, .6, 0))); }
+      if (revealed() && !b.axis) { const sp = iconSprite('code', 1.1); sp.position.copy(b.at).add(new THREE.Vector3(0, 6, 0)); scene.add(sp); tween(.25, q => { sp.position.y = b.at.y + 6 * (1 - q) + .5; }, () => scene.remove(sp)); }
       shake(.25, .4);
-      units.forEach(u => { if (!u.dead && u.pos.distanceTo(b.at) < 1.35) hurt(u, (1100 + B.layer * 150) * SM.dmg); });
+      units.forEach(u => { if (!u.dead && zoneHits(b, u)) hurt(u, b.dmg * SM.dmg); });
       if (!bombs.length) arms.forEach(a => tween(.35, k2 => { a.rotation.z = a.userData.side * (-1.95 + k2 * .9); }));
     }
   }
+}
+// 챕터 특수 공격: 보스가 기절하면 끊긴다
+function special() {
+  if (CH === 2) { B.glareT = 1.5; sayBoss('화면이 번쩍이려 한다! 기절로 끊자', 1.4); return; }
+  if (CH === 3) {
+    if ((B.spN = (B.spN || 0) + 1) % 2) { B.vanish = 4.5; sayBoss('사라지기! 받는 피해 절반', 1.4); flash('#8aa0ff', 6, bossCenter, .6); }
+    else { const pool = alive().filter(u => !u.sleep), t = pool.find(u => u.st.role !== 'healer' && Math.random() < .6) || pool[0]; if (t) sleepUnit(t, 4.5); }
+    return;
+  }
+  if (revealed()) { B.nerf = 4; sayBoss('밸런스 패치! 4초 동안 친구 공격력 -30%', 1.4); screenFlash('#5dff8a', .35); flash('#5dff8a', 8, bossCenter, .8); }
+}
+function fireGlare() { ARENA.glare && ARENA.glare(0); B.blind = 3; screenFlash('#ffffff', .95); shake(.15, .3); sayBoss('눈부셔! 3초 동안 평타가 빗나간다', 1.4); }
+function sleepUnit(u, t) {
+  u.sleep = t; u.zzz = u.zzz || iconSprite('zzz', .8); u.zzz.visible = true; scene.add(u.zzz);
+  popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'block', '가위눌림! 회복으로 깨우자');
+}
+function wakeUnit(u, txt) { if (!u.sleep) return; u.sleep = 0; if (u.zzz) u.zzz.visible = false; if (txt) popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', txt); }
+let revealTO = 0;
+function showReveal() {
+  const el = $('reveal'); if (!el) return;
+  el.hidden = false; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  cutLock = Math.max(cutLock, 2.8); clearTimeout(revealTO); revealTO = setTimeout(() => { el.hidden = true; }, 2900);
+  screenFlash('#ffffff', .8); shake(.3, .6);
 }
 
 /* ───────── 자동 스킬 ───────── */
 let auto = false;
 function autoSkills() {
-  const ready = role => units.find(u => !u.dead && u.gauge >= 1 && u.st.role === role);
+  const ready = role => units.find(u => !u.dead && !u.sleep && u.gauge >= 1 && u.st.role === role);
   let u;
+  if (B.glareT > 0 && (u = units.find(x => !x.dead && !x.sleep && x.gauge >= 1 && /stun|sleep/.test(JSON.stringify(skillOf(x.id)))))) return useSkill(u.id, true);
+  if ((u = ready('healer')) && alive().some(x => x.sleep > 0)) return useSkill(u.id, true);
   if (bombs.length && (u = ready('tank'))) return useSkill(u.id, true);
   if (bombs.length && (u = ready('striker'))) return useSkill(u.id, true);
   if ((u = ready('healer')) && alive().some(x => x.hp / x.max < .55)) return useSkill(u.id, true);
@@ -431,10 +466,10 @@ function finish(win) {
   const left = alive().length, stars = win ? (left === 5 ? 3 : left >= 3 ? 2 : 1) : 0;
   const base = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6 } : { know: 5, snack: 3, power: 0 };
   const rw = Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.round(v * SM.reward)]));
-  const g = loadCampus(); let unlocked = false, bondUp = [];
+  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [];
   if (g) {
     Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
-    if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); if (STAGE >= (g.stage || 1) && STAGE < MAX_STAGE) { g.stage = STAGE + 1; unlocked = true; try { localStorage.setItem('yangil.kingdom.stage', STAGE + 1); } catch (e) {} } }
+    if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); const nextCh = CH < CHAPTERS.length ? CH + 1 : 0, had = nextCh && progOf(g, nextCh); if (STAGE >= progOf(g, CH) && STAGE < MAX_STAGE) { setProg(g, CH, STAGE + 1); unlocked = true; saveSel(CH, STAGE + 1); } if (nextCh && !had && STAGE >= CHAP_UNLOCK) { setProg(g, nextCh, 1); chapOpen = nextCh; } }
     saveCampus(g);
   }
   if (win) setTimeout(() => alive().forEach((u, i) => setTimeout(() => sayLine(u, 'win'), i * 260)), 500);
@@ -442,7 +477,7 @@ function finish(win) {
     $('r-sub').textContent = win ? 'STAGE CLEAR' : 'STAGE FAILED';
     $('r-title').textContent = win ? '승리!' : clockT <= 0 ? '시간 초과…' : '패배…';
     $('r-stars').innerHTML = [0, 1, 2].map(i => i < stars ? '★' : '<i>★</i>').join('');
-    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 은행왕을 쓰러뜨렸다 · 남은 친구 ${left}명${unlocked ? `<br><b style="color:#ffd779">스테이지 1-${STAGE + 1} 열림!</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : '은행왕이 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.';
+    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${unlocked ? `<br><b style="color:#ffd779">스테이지 ${CH}-${STAGE + 1} 열림!</b>` : ''}${chapOpen ? `<br><b style="color:#9dffb0">새 챕터 ${chapOpen} 「${CHAPTERS[chapOpen - 1].place}」 열림!</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
     $('r-rw').innerHTML = `<span>📘 +${rw.know}</span><span>🍞 +${rw.snack}</span><span>💪 +${rw.power}</span>`;
     $('result').hidden = false;
   }, win ? 1300 : 800);
@@ -462,7 +497,7 @@ function step(dt) {
   if (introT > 0) { introT -= dt; }
   clockT -= dt; if (clockT <= 0) { clockT = 0; finish(false); }
   // 보스
-  B.flashT = Math.max(0, B.flashT - dt); B.taunt = Math.max(0, B.taunt - dt); buffT = Math.max(0, buffT - dt); weakT = Math.max(0, weakT - dt); hasteT = Math.max(0, hasteT - dt); veilT = Math.max(0, veilT - dt);
+  B.flashT = Math.max(0, B.flashT - dt); B.taunt = Math.max(0, B.taunt - dt); buffT = Math.max(0, buffT - dt); weakT = Math.max(0, weakT - dt); hasteT = Math.max(0, hasteT - dt); veilT = Math.max(0, veilT - dt); B.blind = Math.max(0, B.blind - dt); B.vanish = Math.max(0, B.vanish - dt); B.nerf = Math.max(0, B.nerf - dt);
   if (B.burn > 0) { B.burn -= dt; B.burnT += dt; if (B.burnT >= 1) { B.burnT = 0; damageBoss(150, { crit: false }); } }
   if (B.stun > 0) B.stun -= dt;
   else if (B.stagger > 0) B.stagger -= dt;
@@ -474,6 +509,8 @@ function step(dt) {
       if (tgt) { arms.forEach(a => tween(.32, k => { a.rotation.z = a.userData.side * (-1.05 + Math.sin(k * Math.PI) * .7); a.rotation.x = -.25 + Math.sin(k * Math.PI) * .6; })); tween(.18, null, () => { if (B.miss > 0) { B.miss--; popText(tgt.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), 'block', '빗나감!'); return; } hurt(tgt, (300 + B.layer * 60) * SM.dmg); flash('#ffb070', 2.2, tgt.pos.clone().add(new THREE.Vector3(0, 1.4, 0))); shake(.07); }); }
     }
     if (B.bombT <= 0 && !bombs.length) { B.bombT = rnd(8.5, 10.5); startBombs(); }
+    if (B.glareT > 0) { B.glareT -= dt; ARENA.glare(1 - B.glareT / 1.5); if (B.glareT <= 0) fireGlare(); }
+    else if ((CH !== 4 || revealed()) && (B.spT -= dt * haste) <= 0) { B.spT = rnd(11, 13.5); special(); }
   }
   stepBombs(B.stun > 0 ? 0 : dt);
   // 친구들
@@ -482,6 +519,7 @@ function step(dt) {
     u.hitT = Math.max(0, u.hitT - dt); u.castT = Math.max(0, (u.castT || 0) - dt);
     if (u.shieldT > 0) { u.shieldT -= dt; if (u.shieldT <= 0) u.shield = 0; }
     if (u.hotT > 0) { u.hotT -= dt; u.hotAcc = (u.hotAcc || 0) + dt; if (u.hotAcc >= 1) { u.hotAcc = 0; heal(u, u.hot); } }
+    if (u.sleep > 0) { u.sleep -= dt; if (u.sleep <= 0) wakeUnit(u, '깼다!'); return; }
     if (u.busy) return;
     const toHome = u.home.clone().sub(u.pos); toHome.y = 0;
     if (toHome.length() > .05) { u.pos.add(toHome.clampLength(0, dt * 5)); u.moving = true; return; }
@@ -490,9 +528,9 @@ function step(dt) {
     u.atkT -= dt;
     if (u.atkT <= 0) {
       u.atkT = u.st.rate / (hasteT > 0 ? 1.6 : 1);
-      const atk = u.st.atk * (buffT > 0 ? 1.4 : 1);
-      if (u.st.melee) { u.lunge = .3; tween(.12, null, () => damageBoss(atk)); }
-      else bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk), .45, .6);
+      const atk = u.st.atk * (buffT > 0 ? 1.4 : 1) * (B.nerf > 0 ? .7 : 1);
+      if (u.st.melee) { u.lunge = .3; tween(.12, null, () => damageBoss(atk, { normal: true })); }
+      else bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk, { normal: true }), .45, .6);
     }
   });
   if (auto && cutLock <= 0 && ultT <= 0) autoSkills();
@@ -509,11 +547,7 @@ function frame() {
   }
   const now = performance.now() / 1000;
   // 보스 모습
-  const breathe = Math.sin(now * 1.6) * .03;
-  if (!B.dead) { boss.rotation.y = Math.sin(now * .6) * .05; boss.scale.set(1, 1 + breathe, 1); }
-  leafM.emissiveIntensity = B.flashT > 0 ? 1.4 : .35 + (B.layer === 2 ? Math.sin(now * 6) * .15 : 0);
-  bark.emissive.set(B.flashT > 0 ? '#5a2a10' : '#000000');
-  aura.material.opacity = .22 + Math.sin(now * 3) * .06 + B.layer * .06;
+  ARENA.idle(now, B, real);
   stunStars.visible = B.stun > 0 && !over; stunStars.children.forEach((s, i) => { const a = now * 4 + i * 2.1; s.position.set(Math.cos(a) * .9, Math.sin(now * 8 + i) * .1, Math.sin(a) * .9); });
   // 친구 모습
   units.forEach(u => {
@@ -526,7 +560,8 @@ function frame() {
     u.spr.position.set(u.pos.x + lx, bob, u.pos.z);
     u.spr.material.color.setRGB(1, u.hitT > 0 ? .45 : 1, u.hitT > 0 ? .45 : 1);
     u.ring.position.set(u.pos.x, .02, u.pos.z); u.shadow.position.set(u.pos.x, .015, u.pos.z);
-    u.bubble.position.set(u.pos.x, 1.5, u.pos.z); u.bubble.material.opacity = u.shield > 0 ? .28 + Math.sin(now * 5) * .06 : 0;
+    u.bubble.position.set(u.pos.x, 1.5, u.pos.z); if (u.zzz) { u.zzz.visible = u.sleep > 0 && !u.dead; u.zzz.position.set(u.pos.x + .3, 3 + Math.sin(now * 3) * .15, u.pos.z); }
+    if (u.sleep > 0) u.spr.material.color.setRGB(.7, .65, 1); u.bubble.material.opacity = u.shield > 0 ? .28 + Math.sin(now * 5) * .06 : 0;
     const [x, y] = toScreen(new THREE.Vector3(u.pos.x, 3.5, u.pos.z));
     u.bar.style.left = x + 'px'; u.bar.style.top = y + 'px'; u.bar.style.opacity = u.dead ? 0 : 1;
     u.bar.querySelector('i').style.width = (u.hp / u.max * 100) + '%';
@@ -550,4 +585,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__battle = { B, units, useSkill, start: () => $('go').click(), get over() { return over; }, setAuto: v => { auto = v; }, setSpeed: v => { speed = v; } };
+window.__battle = { B, units, useSkill, hit: n => damageBoss(n, { crit: false }), CH, start: () => $('go').click(), get over() { return over; }, setAuto: v => { auto = v; }, setSpeed: v => { speed = v; } };
