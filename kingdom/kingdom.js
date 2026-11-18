@@ -164,7 +164,8 @@ G.b.forEach(addMesh);
 
 /* ───────── 자원 말풍선 ───────── */
 const iconTex = {};
-function bubbleTex(k) { return iconTex[k] || (iconTex[k] = canvasTex(96, 112, (g) => { g.fillStyle = '#fff'; g.beginPath(); g.arc(48, 46, 42, 0, 7); g.fill(); g.beginPath(); g.moveTo(36, 82); g.lineTo(48, 108); g.lineTo(60, 82); g.fill(); g.strokeStyle = '#ffd23f'; g.lineWidth = 6; g.beginPath(); g.arc(48, 46, 39, 0, 7); g.stroke(); g.font = '46px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(RES[k], 48, 48); })); }
+function bubbleTex(k) { return iconTex[k] || (iconTex[k] = bubbleIcon(canvasTex(96, 112, (g) => { g.fillStyle = '#fff'; g.beginPath(); g.arc(48, 46, 42, 0, 7); g.fill(); g.beginPath(); g.moveTo(36, 82); g.lineTo(48, 108); g.lineTo(60, 82); g.fill(); g.strokeStyle = '#231c17'; g.lineWidth = 5; g.beginPath(); g.arc(48, 46, 40, 0, 7); g.stroke(); }), k)); }
+function bubbleIcon(t, k) { const img = new Image(); img.onload = () => { const g = t.image.getContext('2d'); g.drawImage(img, 22, 20, 52, 52); t.needsUpdate = true; }; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(drawIcon(k, 52).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ')); return t; }
 const bubbles = new Map();
 function syncBubble(b, now) {
   const d = BUILD[b.t]; if (!d.prod) return;
@@ -176,7 +177,7 @@ function syncBubble(b, now) {
 }
 function collect(b) {
   const [k, n] = BUILD[b.t].prod; G.res[k] += n; b.at = Date.now(); save(); hud();
-  const m = meshes.get(b); floatText(`+${n} ${RES[k]}`, new THREE.Vector3(m.position.x, BUILD[b.t].h + 1.4, m.position.z));
+  const m = meshes.get(b); floatText(`+${n}${drawIcon(k, 20)}`, new THREE.Vector3(m.position.x, BUILD[b.t].h + 1.4, m.position.z));
 }
 
 /* ───────── 친구들 (2D SD 그림 스프라이트) ───────── */
@@ -221,7 +222,7 @@ function stepPeople(dt) {
 
 /* ───────── 화면 위 글자 (말풍선 · 획득 표시) ───────── */
 const toScreen = v => { const p = v.clone().project(camera); return [(p.x + 1) / 2 * innerWidth, (1 - p.y) / 2 * innerHeight]; };
-function floatText(text, v) { const [x, y] = toScreen(v), el = document.createElement('div'); el.className = 'float'; el.textContent = text; el.style.left = x + 'px'; el.style.top = y + 'px'; document.body.appendChild(el); setTimeout(() => el.remove(), 1000); }
+function floatText(text, v) { const [x, y] = toScreen(v), el = document.createElement('div'); el.className = 'float'; el.innerHTML = text; el.style.left = x + 'px'; el.style.top = y + 'px'; document.body.appendChild(el); setTimeout(() => el.remove(), 1000); }
 let talk = null;
 function say(p) {
   if (talk) talk.el.remove();
@@ -240,8 +241,8 @@ function hud() {
   document.querySelectorAll('.bcard').forEach(c => c.classList.toggle('off', !canPay(BUILD[c.dataset.t].cost)));
 }
 const canPay = cost => Object.entries(cost || {}).every(([k, n]) => G.res[k] >= n);
-const costText = cost => Object.entries(cost || {}).map(([k, n]) => `${RES[k]}${n}`).join(' ');
-$('cards').innerHTML = ORDER.map(t => `<button class="bcard" data-t="${t}"><span class="ico">${BUILD[t].ico}</span><b>${BUILD[t].name}</b><small>${costText(BUILD[t].cost)}</small>${typeof BUILD_BONUS !== 'undefined' && BUILD_BONUS[t] ? '<small style="color:#b0503a">⚔️ 전투 강화</small>' : ''}</button>`).join('');
+const costText = cost => Object.entries(cost || {}).map(([k, n]) => `${RES_NAME[k]} ${n}`).join(' · ');
+$('cards').innerHTML = ORDER.map(t => `<button class="bcard" data-t="${t}"><span class="bi">${drawIcon(t, 32)}</span><b>${BUILD[t].name}</b><small class="cost">${resText(BUILD[t].cost, 13)}</small>${typeof BUILD_BONUS !== 'undefined' && BUILD_BONUS[t] ? '<span class="tag">전투+</span>' : ''}</button>`).join('');
 let ghost = null;   // 짓기 중인 건물 { b, mesh }
 function startPlace(t) {
   if (!canPay(BUILD[t].cost)) { toast(`${BUILD[t].name}을(를) 지으려면 ${costText(BUILD[t].cost)}이 필요해요`); return; }
@@ -271,7 +272,7 @@ function recruit() {
   const pool = ROSTER.filter(f => !G.friends.includes(f.id));
   if (!pool.length) { toast('모든 친구가 캠퍼스에 모였어요!'); return; }
   const f = pool[Math.floor(Math.random() * pool.length)]; G.friends.push(f.id); const p = addPerson(f.id);
-  toast(`동아리방 완성! ${f.name} 합류 🎉`); setTimeout(() => say(p), 600);
+  toast(`동아리방 완성 · ${f.name} 합류`); setTimeout(() => say(p), 600);
 }
 $('cards').addEventListener('click', e => { const c = e.target.closest('.bcard'); if (c) startPlace(c.dataset.t); });
 $('p-no').onclick = cancelPlace; $('p-ok').onclick = confirmPlace;
@@ -279,7 +280,7 @@ $('p-rot').onclick = () => { if (ghost) { ghost.b.r = (ghost.b.r + 1) % 4; updat
 function showInfo(b) {
   const d = BUILD[b.t], el = $('info');
   const left = d.prod ? Math.max(0, Math.ceil((d.prod[2] * 1000 - (Date.now() - b.at)) / 1000)) : 0;
-  el.innerHTML = `<span style="font-size:26px">${d.ico}</span><span><b>${d.name}</b><small>${d.prod ? `${RES[d.prod[0]]} ${d.prod[1]}개 / ${d.prod[2]}초${left ? ` · ${left}초 뒤 완성` : ' · 지금 모을 수 있어요'}` : d.recruit ? '친구들이 모이는 곳' : '캠퍼스를 꾸며 줘요'}${typeof BUILD_BONUS !== 'undefined' && BUILD_BONUS[b.t] ? `<br>⚔️ 전투 보너스: ${BUILD_BONUS[b.t].text}` : d.deco ? '<br>⚔️ 꾸미기 4개마다 모든 친구 체력 +3%' : ''}</small></span>${d.fixed ? '' : '<button id="i-del">허물기</button>'}`;
+  el.innerHTML = `<span class="bi">${drawIcon(b.t, 32)}</span><span><b>${d.name}</b><small>${d.prod ? `${RES_NAME[d.prod[0]]} ${d.prod[1]}개 / ${d.prod[2]}초${left ? ` · ${left}초 뒤 완성` : ' · 지금 모을 수 있어요'}` : d.recruit ? '친구들이 모이는 곳' : '캠퍼스를 꾸며 줘요'}${typeof BUILD_BONUS !== 'undefined' && BUILD_BONUS[b.t] ? `<br>전투 보너스 · ${BUILD_BONUS[b.t].text}` : d.deco ? '<br>꾸미기 4개마다 모든 친구 체력 +3%' : ''}</small></span>${d.fixed ? '' : '<button id="i-del">허물기</button>'}`;
   el.classList.add('show'); el.dataset.sel = G.b.indexOf(b);
   const del = $('i-del'); if (del) del.onclick = () => { const m = meshes.get(b); world.remove(m); meshes.delete(b); const s = bubbles.get(b); if (s) { world.remove(s); bubbles.delete(b); } G.b.splice(G.b.indexOf(b), 1); Object.entries(d.cost || {}).forEach(([k, n]) => { G.res[k] += Math.floor(n / 2); }); save(); hud(); hideInfo(); toast('허물고 자원 절반을 돌려받았어요'); };
 }

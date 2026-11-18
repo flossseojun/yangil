@@ -28,11 +28,11 @@ function layout(ids) {
 }
 function teamTagCount(s) { const tags = teamTags(team); return Object.keys(tags).some(t => ({ invent: ['chem', 'eng'], code: ['sona'], city: ['zec'], cheer: ['bcast'], sprout: ['seed'], squid: ['squid'], sport: ['sport'] })[s.id].includes(t)); }
 function renderTop() {
-  $('res').innerHTML = `<span>📘 ${fmt(G.res.know || 0)}</span><span>🍞 ${fmt(G.res.snack || 0)}</span><span>💪 ${fmt(G.res.power || 0)}</span>`;
+  $('res').innerHTML = RES_ORDER.map(k => `<span class="rs">${drawIcon(k, 18)}${fmt(G.res[k] || 0)}</span>`).join('');
   const sm = chapMul(ch, stage);
   $('st-n').textContent = ch + '-' + stage; $('st-rec').textContent = `추천 ${fmt(sm.rec)}`;
   $('st-prev').disabled = stage <= 1; $('st-next').disabled = stage >= Math.min(MAX_STAGE, progOf(G, ch));
-  $('chaps').innerHTML = CHAPTERS.map(c => { const open = progOf(G, c.n) > 0; return `<button class="ch${c.n === ch ? ' on' : ''}${open ? '' : ' lock'}" data-ch="${c.n}" ${open ? '' : 'aria-disabled="true"'}><small>CHAPTER ${c.n}</small><b>${open ? c.place : '🔒 ' + c.place}</b><span>${open ? '보스 · ' + c.boss : `${c.n - 1}-${CHAP_UNLOCK} 클리어 시 열림`}</span></button>`; }).join('');
+  $('chaps').innerHTML = CHAPTERS.map(c => { const open = progOf(G, c.n) > 0; return `<button class="ch${c.n === ch ? ' on' : ''}${open ? '' : ' lock'}" data-ch="${c.n}" ${open ? '' : 'aria-disabled="true"'}><small>챕터 ${c.n}</small><b>${open ? '' : drawIcon('lock', 16)}${c.place}</b><span>${open ? '보스 · ' + c.boss : `${c.n - 1}-${CHAP_UNLOCK} 클리어 시 열림`}</span></button>`; }).join('');
 }
 function renderField() {
   const L = layout(team);
@@ -44,7 +44,7 @@ function renderField() {
   const cb = campusBonus(G);
   $('camp').innerHTML = cb.list.length ? '<b>캠퍼스 보너스</b> · ' + cb.list.join(' · ') : '<b>캠퍼스 보너스</b> · 캠퍼스에 과학실 · 체육관 · 도서관 · 매점을 지으면 전투가 강해져요';
   const pw = team.reduce((a, id) => a + powerOf(G, id), 0), rec = chapMul(ch, stage).rec;
-  $('pow').innerHTML = `팀 전투력 ${fmt(pw)}<small style="color:${pw >= rec ? '#7dff9e' : '#ffb4a8'}">추천 ${fmt(rec)}</small>`;
+  $('pow').innerHTML = `팀 전투력 ${fmt(pw)}<small style="color:${pw >= rec ? '#2f8f4e' : '#d0393e'}">추천 ${fmt(rec)}</small>`;
   $('go').disabled = !team.length;
 }
 function renderTabs() {
@@ -57,6 +57,7 @@ function renderList() {
     return `<div class="card ${n >= 0 ? 'on' : team.length >= 5 ? 'full' : ''}" role="button" tabindex="0" data-id="${id}" data-n="${n + 1}" style="--bg:${BG[k.role]}"><span class="lv">Lv.${lvOf(G, id)}</span><img src="${headImg(id)}" alt=""><b>${nameOf(id)}</b><span class="rl">${roleIcon(k.role, 11)}${ROLES[k.role].name}</span><span class="sk">${k.skill}</span><button class="info" data-pf="${id}" aria-label="${nameOf(id)} 프로필">i</button></div>`; }).join('');
   $('hint').textContent = G.friends.length < 5 ? `캠퍼스 친구가 ${G.friends.length}명이라 체험 친구로 채웠어요. 캠퍼스에 동아리방을 지으면 친구가 늘어요.` : `카드를 눌러 넣고 빼요. ⓘ를 누르면 친구 프로필 · 레벨업 · 추억 이야기를 볼 수 있어요.`;
 }
+const backEl = document.getElementById('back'); if (backEl) backEl.insertAdjacentHTML('afterbegin', drawIcon('back', 18));
 function render() { renderTop(); renderField(); renderTabs(); renderList(); }
 function toggle(id) { const i = team.indexOf(id); if (i >= 0) team.splice(i, 1); else if (team.length < 5) team.push(id); save(); render(); }
 function autoPick() {
@@ -87,10 +88,10 @@ function openProfile(id) {
       <p class="desc">${pf.desc}</p>
       <div class="box"><h3>필살기</h3><div class="skn">${k.skill}</div><div class="skd">${skillDesc(id)}</div></div>
       <div class="box"><h3>레벨</h3><div class="lvrow"><b>Lv.${lv}</b><span class="lvbar"><i style="width:${lv / MAX_LV * 100}%"></i></span>
-        ${lv >= MAX_LV ? '<span>최고 레벨!</span>' : G.friends.includes(id) ? `<button class="up" data-up="${id}" ${can ? '' : 'disabled'}>레벨업 📘${cost.know} 🍞${cost.snack} 💪${cost.power}</button>` : '<span style="font-size:12px;color:var(--muted)">캠퍼스 친구가 되면 키울 수 있어요</span>'}</div>
+        ${lv >= MAX_LV ? '<span style="font-family:Jua">최고 레벨</span>' : G.friends.includes(id) ? `<button class="up" data-up="${id}" ${can ? '' : 'disabled'}>레벨업 ${resText(cost, 15)}</button>` : '<span style="font-size:12px;color:var(--muted)">캠퍼스 친구가 되면 키울 수 있어요</span>'}</div>
         <div class="skd" style="margin-top:4px">체력 · 공격 · 스킬 +${Math.round((lvMult(lv) - 1) * 100)}% · 전투력 ${fmt(powerOf(G, id))}</div></div>
-      <div class="box"><h3>친밀도 <span class="hearts">${'♥'.repeat(Math.min(5, bond))}${'♡'.repeat(Math.max(0, 5 - bond))}</span> · 함께 이길 때마다 +1</h3>
-        <ul class="story">${st.map((x, i) => i < open ? `<li><b>추억 ${i + 1} · ${x.title}</b>${x.text}</li>` : `<li class="lock">🔒 추억 ${i + 1} · 친밀도 ${i + 1}에 열려요</li>`).join('') || '<li class="lock">아직 이야기가 없어요</li>'}</ul></div>
+      <div class="box"><h3>친밀도 <span class="hearts">${Array.from({ length: 5 }, (_, i) => drawIcon(i < bond ? 'heart' : 'heartOff', 16)).join('')}</span> · 함께 이길 때마다 +1</h3>
+        <ul class="story">${st.map((x, i) => i < open ? `<li><b>추억 ${i + 1} · ${x.title}</b>${x.text}</li>` : `<li class="lock">${drawIcon('lock', 15)}추억 ${i + 1} · 친밀도 ${i + 1}에 열려요</li>`).join('') || '<li class="lock">아직 이야기가 없어요</li>'}</ul></div>
       <div class="box"><h3>대사</h3><ul class="lines">${(pf.lines || []).slice(0, Math.max(3, Math.min(9, 3 + bond * 2))).map(l => `<li>${l}</li>`).join('')}</ul></div>
       <div class="acts"><button class="btn ${inTeam ? 'sub' : 'go'}" data-toggle="${id}" style="margin-left:0">${inTeam ? '팀에서 빼기' : team.length >= 5 ? '팀이 꽉 찼어요' : '팀에 넣기'}</button></div>
     </div></div>`;

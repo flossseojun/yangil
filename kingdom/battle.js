@@ -372,7 +372,7 @@ function startBombs() {
 }
 function cancelBombs() {
   bombs.splice(0).forEach(b => { scene.remove(b.ring, b.disc); }); arms.forEach(a => { a.rotation.z = a.userData.side * -1.05; });
-  if (B.glareT > 0) { B.glareT = 0; ARENA.glare && ARENA.glare(0); sayBoss('눈부심을 막았다!', 1.4); }
+  if (B.glareT > 0) { B.glareT = 0; ARENA.glare && ARENA.glare(0); sayBoss('막았다!', 1.4); }
   if (B.vanish > 0) { B.vanish = 0; sayBoss('모습이 드러났다!', 1.4); }
 }
 function stepBombs(dt) {
@@ -394,18 +394,18 @@ function stepBombs(dt) {
 }
 // 챕터 특수 공격: 보스가 기절하면 끊긴다
 function special() {
-  if (CH === 2) { B.glareT = 1.5; sayBoss('화면이 번쩍이려 한다! 기절로 끊자', 1.4); return; }
+  if (CH === 2) { B.glareT = 1.5; sayBoss('번쩍 준비…', 1.4); return; }
   if (CH === 3) {
-    if ((B.spN = (B.spN || 0) + 1) % 2) { B.vanish = 4.5; sayBoss('사라지기! 받는 피해 절반', 1.4); flash('#8aa0ff', 6, bossCenter, .6); }
+    if ((B.spN = (B.spN || 0) + 1) % 2) { B.vanish = 4.5; sayBoss('사라졌다…', 1.4); flash('#8aa0ff', 6, bossCenter, .6); }
     else { const pool = alive().filter(u => !u.sleep), t = pool.find(u => u.st.role !== 'healer' && Math.random() < .6) || pool[0]; if (t) sleepUnit(t, 4.5); }
     return;
   }
-  if (revealed()) { B.nerf = 4; sayBoss('밸런스 패치! 4초 동안 친구 공격력 -30%', 1.4); screenFlash('#5dff8a', .35); flash('#5dff8a', 8, bossCenter, .8); }
+  if (revealed()) { B.nerf = 4; sayBoss('밸런스 패치 · 공격 -30%', 1.4); screenFlash('#5dff8a', .35); flash('#5dff8a', 8, bossCenter, .8); }
 }
-function fireGlare() { ARENA.glare && ARENA.glare(0); B.blind = 3; screenFlash('#ffffff', .95); shake(.15, .3); sayBoss('눈부셔! 3초 동안 평타가 빗나간다', 1.4); }
+function fireGlare() { ARENA.glare && ARENA.glare(0); B.blind = 3; screenFlash('#ffffff', .95); shake(.15, .3); sayBoss('눈부셔!', 1.4); }
 function sleepUnit(u, t) {
   u.sleep = t; u.zzz = u.zzz || iconSprite('zzz', .8); u.zzz.visible = true; scene.add(u.zzz);
-  popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'block', '가위눌림! 회복으로 깨우자');
+  popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'block', '가위눌림');
 }
 function wakeUnit(u, txt) { if (!u.sleep) return; u.sleep = 0; if (u.zzz) u.zzz.visible = false; if (txt) popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', txt); }
 let revealTO = 0;
@@ -456,8 +456,8 @@ function speak(id, text) {
     synth.speak(u);
   } catch (e) {}
 }
-$('b-voice').onclick = () => { voiceOn = !voiceOn; $('b-voice').textContent = voiceOn ? '🔊' : '🔇'; try { localStorage.setItem('yangil.kingdom.voice', voiceOn ? '1' : '0'); } catch (e) {} };
-$('b-voice').textContent = voiceOn ? '🔊' : '🔇';
+$('b-voice').onclick = () => { voiceOn = !voiceOn; $('b-voice').innerHTML = drawIcon(voiceOn ? 'sound' : 'mute', 20); try { localStorage.setItem('yangil.kingdom.voice', voiceOn ? '1' : '0'); } catch (e) {} };
+$('b-voice').innerHTML = drawIcon(voiceOn ? 'sound' : 'mute', 20); $('b-pause').innerHTML = drawIcon('pause', 18);
 
 /* ───────── 진행 ───────── */
 let started = false, over = false, paused = false, speed = 1, clockT = TIME_LIMIT, introT = 1.6;
@@ -476,9 +476,9 @@ function finish(win) {
   setTimeout(() => {
     $('r-sub').textContent = win ? 'STAGE CLEAR' : 'STAGE FAILED';
     $('r-title').textContent = win ? '승리!' : clockT <= 0 ? '시간 초과…' : '패배…';
-    $('r-stars').innerHTML = [0, 1, 2].map(i => i < stars ? '★' : '<i>★</i>').join('');
+    $('r-stars').innerHTML = [0, 1, 2].map(i => drawIcon(i < stars ? 'star' : 'starOff', i === 1 ? 46 : 36)).join('');
     $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${unlocked ? `<br><b style="color:#ffd779">스테이지 ${CH}-${STAGE + 1} 열림!</b>` : ''}${chapOpen ? `<br><b style="color:#9dffb0">새 챕터 ${chapOpen} 「${CHAPTERS[chapOpen - 1].place}」 열림!</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
-    $('r-rw').innerHTML = `<span>📘 +${rw.know}</span><span>🍞 +${rw.snack}</span><span>💪 +${rw.power}</span>`;
+    $('r-rw').innerHTML = RES_ORDER.map(k => `<span class="rs">${drawIcon(k, 20)}+${rw[k]}</span>`).join('');
     $('result').hidden = false;
   }, win ? 1300 : 800);
   if (win) { flash('#ffd27a', 10, bossCenter, 1.2); shake(.3, .6); tween(1.2, k => { boss.rotation.z = -k * .35; boss.position.y = -k * .8; }); }
@@ -488,7 +488,7 @@ $('r-retry').onclick = () => location.reload();
 $('r-camp').onclick = () => { location.href = './'; };
 $('b-auto').onclick = () => { auto = !auto; $('b-auto').classList.toggle('on', auto); };
 $('b-speed').onclick = () => { speed = speed === 1 ? 2 : 1; $('b-speed').textContent = '×' + speed; $('b-speed').classList.toggle('on', speed === 2); };
-$('b-pause').onclick = () => { paused = !paused; $('b-pause').textContent = paused ? '▶' : '❚❚'; };
+$('b-pause').onclick = () => { paused = !paused; $('b-pause').innerHTML = drawIcon(paused ? 'play' : 'pause', 18); };
 addEventListener('keydown', e => { const i = '12345'.indexOf(e.key); if (i >= 0) useSkill(SKILL_ORDER[i]); if (e.key === ' ') $('b-pause').click(); });
 
 function step(dt) {

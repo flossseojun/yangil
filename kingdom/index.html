@@ -45,22 +45,64 @@
   .info button { border: 0; background: #f4e3e0; color: #a33; border-radius: 10px; padding: 7px 10px; font-family: inherit; cursor: pointer; }
   .loading { position: fixed; inset: 0; display: grid; place-items: center; background: #bfe3f5; z-index: 20; font-family: Jua, sans-serif; font-size: 22px; color: var(--green); }
   @media (prefers-reduced-motion: reduce) { .float { animation-duration: .01s; } }
+  /* ───── 카툰 + 학교 문구 스킨 ───── */
+  :root { --ink: #231c17; --paper: #fffaf0; --paper2: #f1e7d0; --red: #e5484d; --sub: #4a4038; }
+  .ico { display: block; flex: 0 0 auto; }
+  .res { background: var(--paper); border: 2.5px solid var(--ink); box-shadow: 0 2px 0 var(--ink); padding: 3px 12px 3px 5px; font-size: 17px; font-variant-numeric: tabular-nums; }
+  .res i { display: grid; }
+  .title { background: var(--green); color: #fff; border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); border-radius: 12px; padding: 4px 12px 5px; font-size: 17px; transform: rotate(1.5deg); }
+  .title small { font-size: 11px; opacity: .9; }
+  .side { top: 70px; gap: 10px; }
+  .rbtn { width: 48px; height: 48px; border-radius: 14px; border: 2.5px solid var(--ink); background: var(--paper); box-shadow: 0 3px 0 var(--ink); transition: transform .12s cubic-bezier(.22,1,.36,1), box-shadow .12s; padding: 0; }
+  .rbtn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+  #b-fight { width: 56px; height: 64px; background: var(--yellow); grid-template-rows: auto auto; align-content: center; gap: 0; margin: 6px 0; }
+  #b-fight span { font-family: Jua, sans-serif; font-size: 14px; line-height: 1; color: var(--ink); }
+  .bar { background: none; padding-top: 12px; }
+  .cards { gap: 10px; padding: 4px 4px 6px; }
+  .bcard { position: relative; width: 96px; border: 2.5px solid var(--ink); border-radius: 12px; background: var(--paper); box-shadow: 0 4px 0 var(--ink); padding: 8px 6px 7px; transition: transform .14s cubic-bezier(.22,1,.36,1), box-shadow .14s; }
+  .bcard:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .bcard .bi { display: grid; place-items: center; height: 34px; }
+  .bcard b { font-size: 15px; margin-top: 2px; }
+  .bcard .cost { display: flex; justify-content: center; gap: 6px; margin-top: 2px; font-family: Jua, sans-serif; font-size: 13px; color: var(--ink); }
+  .rs { display: inline-flex; align-items: center; gap: 2px; }
+  .bcard .tag { position: absolute; top: -9px; right: -6px; font-family: Jua, sans-serif; font-size: 12px; color: #fff; background: var(--red); border: 2px solid var(--ink); border-radius: 6px; padding: 0 5px; transform: rotate(6deg); }
+  .bcard.off { opacity: 1; background: #d9d0bd; box-shadow: 0 4px 0 #6a5e50; border-color: #6a5e50; }
+  .bcard.off .bi, .bcard.off b, .bcard.off .cost { opacity: .55; }
+  .bcard.on { background: var(--yellow); border-color: var(--ink); transform: translateY(-4px); box-shadow: 0 7px 0 var(--ink); }
+  .pbtn { border: 2.5px solid var(--ink); box-shadow: 0 4px 0 var(--ink); border-radius: 12px; font-size: 17px; color: var(--ink); }
+  .pbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .pbtn.rot { background: #cfe3ff; color: var(--ink); }
+  .pbtn.no { background: #fff; }
+  .pbtn:disabled { background: var(--paper2); opacity: 1; color: #8a7a64; }
+  .toast { background: var(--paper); color: var(--ink); border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); border-radius: 12px; font-family: Jua, sans-serif; font-size: 16px; padding: 6px 14px; }
+  .bubble { background: var(--paper); border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); border-radius: 14px; color: var(--ink); }
+  .bubble b { color: var(--ink); } .bubble small { color: #7a6d5c; }
+  .bubble::after { bottom: -9px; border-top-color: var(--ink); border-width: 8px; margin-left: -8px; }
+  .float { display: flex; align-items: center; gap: 3px; font-size: 22px; color: #fff; text-shadow: -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 2px 2px 0 var(--ink), 0 3px 0 var(--ink); }
+  .info { background: var(--paper); border: 2.5px solid var(--ink); box-shadow: 0 4px 0 var(--ink); border-radius: 14px; padding: 10px 14px; gap: 12px; }
+  .info .bi { display: grid; place-items: center; width: 48px; height: 48px; background: #fff3c4; border: 2px solid var(--ink); border-radius: 10px; flex: 0 0 auto; }
+  .info small { color: var(--sub); line-height: 1.5; }
+  .info button { background: #fff; color: var(--red); border: 2.5px solid var(--ink); box-shadow: 0 2px 0 var(--ink); font-family: Jua, sans-serif; font-size: 14px; }
+  .loading { font-size: 24px; color: var(--ink); }
+  .cards { padding-top: 12px; }
+  .bcard { width: auto; min-width: 96px; }
+  @media (max-height: 480px) { .side { top: 58px; gap: 6px; } .rbtn { width: 40px; height: 40px; } #b-fight { width: 48px; height: 52px; margin: 2px 0; } .bcard { padding: 5px 6px; } .bcard .bi { height: 28px; } }
 </style>
 </head>
 <body>
 <canvas id="c" aria-label="양일 캠퍼스 3D 화면"></canvas>
 <div class="hud">
-  <span class="res" title="지식"><i>📘</i><span id="r-know">0</span></span>
-  <span class="res" title="간식"><i>🍞</i><span id="r-snack">0</span></span>
-  <span class="res" title="체력"><i>💪</i><span id="r-power">0</span></span>
+  <span class="res" title="지식"><i data-ic="know"></i><span id="r-know">0</span></span>
+  <span class="res" title="간식"><i data-ic="snack"></i><span id="r-snack">0</span></span>
+  <span class="res" title="체력"><i data-ic="power"></i><span id="r-power">0</span></span>
   <span class="title" id="lv">양일 캠퍼스<small>Lv.1 · 친구 0명</small></span>
 </div>
 <div class="side">
-  <button class="rbtn" id="b-rot" aria-label="화면 돌리기">⟳</button>
-  <button class="rbtn" id="b-in" aria-label="가까이">＋</button>
-  <button class="rbtn" id="b-out" aria-label="멀리">－</button>
-  <button class="rbtn" id="b-fight" aria-label="보스 전투">⚔️</button>
-  <button class="rbtn" id="b-back" aria-label="원래 게임으로">🏫</button>
+  <button class="rbtn" id="b-rot" aria-label="화면 돌리기" data-ic="rotate"></button>
+  <button class="rbtn" id="b-in" aria-label="가까이" data-ic="plus"></button>
+  <button class="rbtn" id="b-out" aria-label="멀리" data-ic="minus"></button>
+  <button class="rbtn" id="b-fight" aria-label="보스 전투" data-ic="fight"><span>전투</span></button>
+  <button class="rbtn" id="b-back" aria-label="원래 게임으로" data-ic="school"></button>
 </div>
 <div class="place" id="place"><button class="pbtn rot" id="p-rot">돌리기</button><button class="pbtn no" id="p-no">취소</button><button class="pbtn ok" id="p-ok">여기에 짓기</button></div>
 <div class="info" id="info"></div>
@@ -75,6 +117,8 @@
 <script src="../fullbody.js"></script>
 <script src="roster.js"></script>
 <script src="kits.js"></script>
+<script src="ui.js"></script>
+<script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module" src="kingdom.js"></script>
 </body>
