@@ -15,8 +15,9 @@ if (!team.length) team = DEFAULT_TEAM.filter(id => owned.includes(id));
 let { ch, st: stage } = loadSel(G);
 let tab = 'all';
 const imgCache = {};
-const fullImg = id => imgCache['f' + id] || (imgCache['f' + id] = svgURL(kitSVG(id, 'stand', 'smile')));
-const headImg = id => imgCache['h' + id] || (imgCache['h' + id] = svgURL(kitHeadSVG(id)));
+const shotOf = k => (window.CHIBI_IMG || {})[k];   // 3D 친구 사진이 찍히면 그걸 쓴다
+const fullImg = id => shotOf('f' + id) || imgCache['f' + id] || (imgCache['f' + id] = svgURL(kitSVG(id, 'stand', 'smile')));
+const headImg = id => shotOf('h' + id) || imgCache['h' + id] || (imgCache['h' + id] = svgURL(kitHeadSVG(id)));
 const save = () => { try { localStorage.setItem(TEAM_KEY, JSON.stringify(team)); } catch (e) {} saveSel(ch, stage); };
 const BG = { tank: '#22385a', striker: '#5a2418', blaster: '#6a3a12', mage: '#3a2a66', healer: '#1d5b3a', support: '#5a4a16' };
 const fmt = n => n.toLocaleString('ko-KR');
@@ -37,7 +38,7 @@ function renderTop() {
 function renderField() {
   const L = layout(team);
   $('field').innerHTML = '<span class="row-lab" style="left:10px">뒷줄</span><span class="row-lab" style="right:10px">앞줄 · 보스 쪽 →</span>' +
-    L.map(({ id, p: [x, y] }) => `<div class="slot" data-id="${id}" style="left:${x}%;top:${y - 40}px"><span class="ring" style="--c:${ROLES[kitOf(id).role].color}"></span><img src="${fullImg(id)}" alt="${nameOf(id)}"><div class="nm">${roleIcon(kitOf(id).role, 11)}${nameOf(id)}</div></div>`).join('') +
+    L.map(({ id, p: [x, y] }) => `<div class="slot" data-id="${id}" style="left:${x}%;top:${y - 40}px"><span class="ring" style="--c:${ROLES[kitOf(id).role].color}"></span><img src="${fullImg(id)}" data-f="${id}" alt="${nameOf(id)}"><div class="nm">${roleIcon(kitOf(id).role, 11)}${nameOf(id)}</div></div>`).join('') +
     Array.from({ length: 5 - team.length }, (_, i) => `<div class="slot empty" style="left:${20 + i * 15}%"></div>`).join('');
   const syn = teamSynergy(team);
   $('syn').innerHTML = syn.filter(s => s.on || teamTagCount(s)).map(s => `<span class="${s.on ? 'on' : ''}"><b>${s.name}</b>${s.on ? s.desc : s.need}</span>`).join('') || '<span>같은 동아리 친구를 함께 넣으면 시너지가 켜져요</span>';
@@ -54,7 +55,7 @@ function renderTabs() {
 function renderList() {
   const list = owned.filter(id => tab === 'all' || kitOf(id).role === tab).sort((a, b) => ROLE_ORDER.indexOf(kitOf(a).role) - ROLE_ORDER.indexOf(kitOf(b).role));
   $('list').innerHTML = list.map(id => { const k = kitOf(id), n = team.indexOf(id);
-    return `<div class="card ${n >= 0 ? 'on' : team.length >= 5 ? 'full' : ''}" role="button" tabindex="0" data-id="${id}" data-n="${n + 1}" style="--bg:${BG[k.role]}"><span class="lv">Lv.${lvOf(G, id)}</span><img src="${headImg(id)}" alt=""><b>${nameOf(id)}</b><span class="rl">${roleIcon(k.role, 11)}${ROLES[k.role].name}</span><span class="sk">${k.skill}</span><button class="info" data-pf="${id}" aria-label="${nameOf(id)} 프로필">i</button></div>`; }).join('');
+    return `<div class="card ${n >= 0 ? 'on' : team.length >= 5 ? 'full' : ''}" role="button" tabindex="0" data-id="${id}" data-n="${n + 1}" style="--bg:${BG[k.role]}"><span class="lv">Lv.${lvOf(G, id)}</span><img src="${headImg(id)}" data-h="${id}" alt=""><b>${nameOf(id)}</b><span class="rl">${roleIcon(k.role, 11)}${ROLES[k.role].name}</span><span class="sk">${k.skill}</span><button class="info" data-pf="${id}" aria-label="${nameOf(id)} 프로필">i</button></div>`; }).join('');
   $('hint').textContent = G.friends.length < 5 ? `캠퍼스 친구가 ${G.friends.length}명이라 체험 친구로 채웠어요. 캠퍼스에 동아리방을 지으면 친구가 늘어요.` : `카드를 눌러 넣고 빼요. ⓘ를 누르면 친구 프로필 · 레벨업 · 추억 이야기를 볼 수 있어요.`;
 }
 const backEl = document.getElementById('back'); if (backEl) backEl.insertAdjacentHTML('afterbegin', drawIcon('back', 18));
@@ -81,7 +82,7 @@ function openProfile(id) {
   const inTeam = team.includes(id);
   $('pf').innerHTML = `<div class="pf" role="dialog" aria-modal="true" aria-label="${nameOf(id)} 프로필" style="--bg:${BG[k.role]}">
     <button class="x" data-close aria-label="닫기">×</button>
-    <div class="art"><img src="${fullImg(id)}" alt="${nameOf(id)}"></div>
+    <div class="art"><img src="${fullImg(id)}" data-f="${id}" alt="${nameOf(id)}"><small class="spin">끌어서 돌려 보기</small></div>
     <div>
       <h2>${nameOf(id)}</h2>
       <div class="sub">${roleIcon(k.role, 13)} ${r.name} · ${introOf(id)} · 칭호 「${titleOf(id)}」</div>
@@ -96,14 +97,15 @@ function openProfile(id) {
       <div class="acts"><button class="btn ${inTeam ? 'sub' : 'go'}" data-toggle="${id}" style="margin-left:0">${inTeam ? '팀에서 빼기' : team.length >= 5 ? '팀이 꽉 찼어요' : '팀에 넣기'}</button></div>
     </div></div>`;
   $('pf').hidden = false;
+  if (window.openViewer) try { window.openViewer(id, $('pf').querySelector('.art')); } catch (e) {}
 }
 $('pf').addEventListener('click', e => {
-  if (e.target === $('pf') || e.target.closest('[data-close]')) { $('pf').hidden = true; return; }
+  if (e.target === $('pf') || e.target.closest('[data-close]')) { $('pf').hidden = true; window.closeViewer && window.closeViewer(); return; }
   const up = e.target.closest('[data-up]');
   if (up) { const id = up.dataset.up, lv = lvOf(G, id), cost = upCost(lv); if (Object.entries(cost).every(([x, n]) => (G.res[x] || 0) >= n)) { Object.entries(cost).forEach(([x, n]) => { G.res[x] -= n; }); G.lv[id] = lv + 1; saveCampus(G); render(); openProfile(id); } return; }
   const tg = e.target.closest('[data-toggle]'); if (tg) { toggle(tg.dataset.toggle); openProfile(tg.dataset.toggle); }
 });
-addEventListener('keydown', e => { if (e.key === 'Escape') $('pf').hidden = true; });
+addEventListener('keydown', e => { if (e.key === 'Escape') { $('pf').hidden = true; window.closeViewer && window.closeViewer(); } });
 $('list').addEventListener('click', e => { const i = e.target.closest('[data-pf]'); if (i) { openProfile(i.dataset.pf); return; } const c = e.target.closest('.card'); if (c) toggle(c.dataset.id); });
 $('field').addEventListener('click', e => { const s = e.target.closest('.slot[data-id]'); if (s) openProfile(s.dataset.id); });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });

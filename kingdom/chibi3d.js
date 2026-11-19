@@ -116,7 +116,7 @@ function hair(av, head, v, skinM) {
     if (v.spiky) spikes(9, .3 + v.vol);
   }
   // 머리카락 하이라이트 (윤기 띠)
-  if (style !== 'curly' && style !== 'buzz') { const th = Math.PI * .2, rr = R * (style === 'twoblock' ? 1.09 + v.vol : style === 'short' ? 1.04 + v.vol * .6 : 1.04), geo = new THREE.TorusGeometry(rr * Math.sin(th), .036, 4, 24, Math.PI * .7); geo.rotateZ(Math.PI * .15); const hl = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: shade(hc, .2) })); hl.rotation.x = Math.PI / 2; hl.position.y = rr * Math.cos(th) * (style === 'twoblock' ? 1.08 : 1); head.add(hl); }
+  if (style !== 'curly' && style !== 'buzz') { const th = Math.PI * .26, rr = R * (style === 'twoblock' ? 1.09 + v.vol : style === 'short' ? 1.04 + v.vol * .6 : 1.04), geo = new THREE.TorusGeometry(rr * Math.sin(th), .024, 4, 24, Math.PI * .6); geo.rotateZ(Math.PI * .15); const hl = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: shade(hc, .1) })); hl.rotation.x = Math.PI / 2; hl.position.y = rr * Math.cos(th) * (style === 'twoblock' ? 1.08 : 1); head.add(hl); }
   if (v.ahoge && style !== 'buzz') ahoge();
 }
 
@@ -263,7 +263,7 @@ export function makeChibi(id, opts = {}) {
         st.actT += dt; const k = Math.min(1, st.actT / st.actDur), b = Math.sin(k * Math.PI);
         if (st.act === 'attack') { P.lean = b * .45; P.rx[1] = -2.6 + k * 3.1; P.rx[0] = b * .6; P.leg = [-b * .5, b * .4]; }
         else if (st.act === 'throw') { P.rx[1] = k < .4 ? ease(0, 1.0, k / .4) : ease(1.0, -2.3, (k - .4) / .6); P.lean = b * .2; P.hx = -b * .1; }
-        else if (st.act === 'cast') { P.rz = [-2.6, 2.6]; P.rx = [-.3, -.3]; P.y = .1 + b * .25 + Math.sin(t * 14) * .02; P.hx = -.2; }
+        else if (st.act === 'cast') { P.rz = [-1.9, 2.3]; P.rx = [-.9, -.5]; P.y = .1 + b * .25 + Math.sin(t * 14) * .02; P.hx = -.2; }
         else if (st.act === 'hit') { P.lean = -b * .4; P.hz = b * .25; P.y = 0; P.rz = [-.18 - b * .6, .18 + b * .6]; }
         if (k >= 1) st.act = null;
       }

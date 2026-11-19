@@ -6,6 +6,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildArena } from './bosses.js';
 import { makeChibi } from './chibi3d.js';
+import { shootAll } from './chibishot.js';
 
 /* ───────── 팀 구성 (팀 편성 화면에서 고른 친구) ───────── */
 const DEFAULT_TEAM = ['junyoung', 'jeonggyu', 'yunsu', 'seojun', 'yejun'];
@@ -301,7 +302,7 @@ const CUT = Object.fromEntries(Object.entries(STATS).map(([id, s]) => [id, [s.sk
 function cutIn(id) {
   const role = STATS[id].role, svg = kitHeadSVG(id, { pose: role === 'healer' ? 'hold' : role === 'striker' ? 'cheer' : 'v' });
   const el = $('cutin'), [nm, who, c1] = CUT[id];
-  $('cut-img').src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  $('cut-img').src = CUT_IMG[id] || 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   $('cut-name').textContent = nm; $('cut-who').textContent = who;
   el.style.setProperty('--c1', `linear-gradient(100deg, ${c1}, #0b0912 75%)`);
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
@@ -312,6 +313,11 @@ $('skills').innerHTML = SKILL_ORDER.map(id => {
   const u = U(id), src = svgURL(kitHeadSVG(id));
   return `<div class="sk" data-id="${id}" style="--bg:linear-gradient(160deg, ${u.st.bg}, #0d0b14)"><div class="face"><img src="${src}" alt=""></div><div class="cd"></div><span class="ult">READY</span><b>${u.st.skill}</b></div>`;
 }).join('');
+// 3D 친구 사진: 스킬 카드(상반신) · 컷인(필살기 자세 전신)
+const CUT_IMG = {};
+shootAll(SKILL_ORDER.flatMap(id => [{ id, kind: 'bust', w: 164, h: 164, face: 'normal' }, { id, kind: 'full', w: 320, h: 560, pose: 'cast', face: 'fight', turn: .5 }]), (j, url) => {
+  if (j.kind === 'bust') { const img = document.querySelector(`.sk[data-id="${j.id}"] .face img`); if (img) img.src = url; } else CUT_IMG[j.id] = url;
+});
 $('skills').addEventListener('click', e => { const k = e.target.closest('.sk'); if (k) useSkill(k.dataset.id); });
 function skillUI() {
   document.querySelectorAll('.sk').forEach(el => {

@@ -110,6 +110,12 @@
   .pf .lines { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
   .pf .lines li { font-size: 13px; background: var(--paper); border: 2px solid var(--ink); border-radius: 12px 12px 12px 3px; padding: 3px 9px; }
   .pf .acts { display: flex; gap: 8px; margin-top: 6px; }
+  .pf .art { position: relative; }
+  .pf .art:has(canvas) img { display: none; }
+  .pf .art canvas { display: block; touch-action: none; cursor: grab; }
+  .pf .art .spin { display: none; position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); pointer-events: none; }
+  .pf .art:has(canvas) .spin { display: block; }
+  .slot img, .card img { transition: opacity .2s; }
 </style>
 </head>
 <body>
@@ -140,5 +146,16 @@
 <script src="ui.js"></script>
 <script src="profiles.js"></script>
 <script src="team.js"></script>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+<script type="module">
+import { shootAll, openViewer, closeViewer } from './chibishot.js';
+window.CHIBI_IMG = window.CHIBI_IMG || {}; window.openViewer = openViewer; window.closeViewer = closeViewer;
+// 팀 → 내 친구 순서로, 상반신(카드)과 전신(배치 칸)을 찍어서 바로 바꿔 끼운다
+const ids = [...new Set([...team, ...owned])], jobs = [];
+team.forEach(id => jobs.push({ id, kind: 'full', w: 132, h: 276 }));
+ids.forEach(id => jobs.push({ id, kind: 'bust', w: 128, h: 128 }));
+ids.forEach(id => { if (!team.includes(id)) jobs.push({ id, kind: 'full', w: 132, h: 276 }); });
+shootAll(jobs, (j, url) => { const key = (j.kind === 'bust' ? 'h' : 'f') + j.id; CHIBI_IMG[key] = url; document.querySelectorAll(`img[data-${key[0]}="${j.id}"]`).forEach(img => { img.src = url; }); });
+</script>
 </body>
 </html>
