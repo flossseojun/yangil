@@ -1,6 +1,7 @@
 // 양일 캠퍼스: 3D 학교 부지에 건물을 짓고, 자원을 모으고, 친구들이 돌아다니는 캠퍼스 꾸미기 게임 (1단계 시제품)
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { makeChibi } from './chibi3d.js';
 
 const N = 16;                       // 부지 크기 (N×N 칸)
 const SAVE = 'yangil.kingdom.v1';
@@ -185,15 +186,15 @@ const svgTex = (svg, cb) => { const img = new Image(); img.onload = () => { cons
 const people = [];
 function rosterOf(id) { return ROSTER.find(f => f.id === id) || { id, name: id, role: '' }; }
 function freeCell() { const s = blocked(); for (let k = 0; k < 200; k++) { const x = 1 + Math.floor(Math.random() * (N - 2)), z = 1 + Math.floor(Math.random() * (N - 2)); if (!s.has(x + ',' + z)) return [x + .5, z + .5]; } return [8, 12]; }
+const MAX_SHOWN = 18;   // 휴대폰이 느려지지 않게 캠퍼스에는 최대 18명만 나와 있다 (나머지는 수업 중)
 function addPerson(id) {
-  const look = typeof lookOf === 'function' ? lookOf(id) : { av: {} };
-  const mat = new THREE.SpriteMaterial({ transparent: true, alphaTest: .1 });
-  const spr = new THREE.Sprite(mat); spr.center.set(.5, 0); spr.scale.set(.82, 1.72, 1);
-  const [x, z] = freeCell(); spr.position.set(x, 0, z);
+  const spr = makeChibi(id, { scale: .7, noShadow: true, castShadow: false });
+  const [x, z] = freeCell(); spr.position.set(x, 0, z); spr.rotation.y = Math.random() * 6;
   const shade = new THREE.Mesh(new THREE.CircleGeometry(.24, 16), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: .18 })); shade.rotation.x = -Math.PI / 2; shade.position.y = .01;
-  const p = { id, spr, shade, frames: {}, target: null, wait: Math.random() * 3, step: 0, flip: false };
-  ['stand', 'walk'].forEach(pose => svgTex(avatarFullSVG(look.av, '', { pose, expr: 'smile', jacket: look.jacket }), t => { p.frames[pose] = t; if (!mat.map) { mat.map = t; mat.needsUpdate = true; } }));
-  spr.userData.person = p; world.add(spr, shade); people.push(p); return p;
+  const p = { id, spr, shade, ch: spr.userData.chibi, target: null, wait: Math.random() * 3, step: 0 };
+  spr.userData.person = p; world.add(spr, shade); people.push(p);
+  if (people.length > MAX_SHOWN) { const old = people.find(q => q.id !== 'seojun' && q !== p); world.remove(old.spr, old.shade); people.splice(people.indexOf(old), 1); }
+  return p;
 }
 G.friends.forEach(addPerson);
 function stepPeople(dt) {
@@ -205,17 +206,14 @@ function stepPeople(dt) {
       const d = p.target.clone().sub(o); d.y = 0; const len = d.length();
       if (len < .05) { p.target = null; p.wait = 1.5 + Math.random() * 4; }
       else {
-        const v = d.multiplyScalar(Math.min(1, dt * 1.1 / len)); const nx = o.x + v.x, nz = o.z + v.z;
+        const v = d.multiplyScalar(Math.min(1, dt * .9 / len)); const nx = o.x + v.x, nz = o.z + v.z;
         if (s.has(Math.floor(nx) + ',' + Math.floor(nz))) { p.target = null; p.wait = .3; } else { o.x = nx; o.z = nz; }
         // 화면 기준 왼쪽/오른쪽으로 걸으면 그림을 뒤집는다
-        const screenX = v.x * Math.sin(camAngle) - v.z * Math.cos(camAngle); if (Math.abs(screenX) > 1e-4) p.flip = screenX > 0;
       }
     }
-    p.step += dt; const walking = !!p.target, pose = walking && Math.floor(p.step * 4) % 2 ? 'walk' : 'stand';
-    const tex = p.frames[pose] || p.frames.stand;
-    if (tex && p.spr.material.map !== tex) { p.spr.material.map = tex; p.spr.material.needsUpdate = true; }
-    p.spr.scale.x = (p.flip ? -1 : 1) * .82;
-    p.spr.position.y = walking ? Math.abs(Math.sin(p.step * 8)) * .05 : 0;
+    p.step += dt; const walking = !!p.target;
+    if (walking) { const d = p.target.clone().sub(o); if (d.lengthSq() > 1e-4) { const want = Math.atan2(d.x, d.z); let dr = want - p.spr.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); p.spr.rotation.y += dr * Math.min(1, dt * 8); } }
+    p.ch.set(walking ? 'walk' : 'idle'); p.ch.update(dt);
     p.shade.position.set(o.x, .01, o.z);
   });
 }
@@ -227,7 +225,9 @@ let talk = null;
 function say(p) {
   if (talk) talk.el.remove();
   const f = rosterOf(p.id), el = document.createElement('div'); el.className = 'bubble';
-  el.innerHTML = `<b>${f.name}</b>${LINES[Math.floor(Math.random() * LINES.length)]}<small>${f.role}</small>`;
+  const own = typeof PROFILES !== 'undefined' && PROFILES[p.id] && PROFILES[p.id].lines.length ? PROFILES[p.id].lines : LINES;
+  el.innerHTML = `<b>${f.name}</b>${own[Math.floor(Math.random() * own.length)]}<small>${f.role}</small>`;
+  p.target = null; p.wait = 3.2; p.ch.face('happy', 2); p.ch.habitNow(); const tc = camera.position.clone().sub(p.spr.position); p.spr.rotation.y = Math.atan2(tc.x, tc.z);
   document.body.appendChild(el); talk = { el, p, until: performance.now() + 3200 };
 }
 let toastT = 0;
@@ -295,9 +295,10 @@ canvas.addEventListener('pointerup', e => {
   if (moved > 8) return;
   ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
   if (ghost) { const hit = new THREE.Vector3(); if (ray.ray.intersectPlane(plane, hit)) { const [w, d] = footprint(ghost.b); ghost.b.x = Math.round(hit.x - w / 2); ghost.b.z = Math.round(hit.z - d / 2); updateGhost(); } return; }
-  const sprites = [...bubbles.values(), ...people.map(p => p.spr)];
-  const hs = ray.intersectObjects(sprites, false)[0];
-  if (hs) { if (hs.object.userData.b) collect(hs.object.userData.b); else say(hs.object.userData.person); return; }
+  const hs = ray.intersectObjects([...bubbles.values()], false)[0];
+  if (hs) { collect(hs.object.userData.b); return; }
+  const hp = ray.intersectObjects(people.map(p => p.spr), true)[0];
+  if (hp) { const root = hp.object.userData.chibiRoot; if (root && root.userData.person) { say(root.userData.person); return; } }
   const hb = ray.intersectObjects([...meshes.values()], true)[0];
   if (hb) { let o = hb.object; while (o && !o.userData.b) o = o.parent; if (o) { const b = o.userData.b; if (bubbles.has(b)) collect(b); else showInfo(b); return; } }
   hideInfo();
@@ -310,9 +311,16 @@ $('b-fight').onclick = () => { save(); location.href = 'team.html'; };
 
 /* ───────── 반복 ───────── */
 const clock = new THREE.Clock();
+// 느린 기기 안전장치: 처음 4초 평균이 느리면 친구 수 · 화질을 낮춘다
+const PERF = { t0: performance.now(), n: 0, done: false };
+function perfCheck() {
+  if (PERF.done) return; PERF.n++; const el = performance.now() - PERF.t0;
+  if (el < 4000) return; PERF.done = true; const fps = PERF.n / (el / 1000);
+  if (fps < 28) { renderer.setPixelRatio(1); while (people.length > 10) { const old = people.find(q => q.id !== 'seojun'); world.remove(old.spr, old.shade); people.splice(people.indexOf(old), 1); } }
+}
 function loop() {
   const dt = Math.min(clock.getDelta(), .05), now = Date.now();
-  controls.update(); stepPeople(dt);
+  controls.update(); stepPeople(dt); perfCheck();
   G.b.forEach(b => syncBubble(b, now));
   if (talk) { if (performance.now() > talk.until) { talk.el.remove(); talk = null; } else { const [x, y] = toScreen(talk.p.spr.position.clone().add(new THREE.Vector3(0, 1.9, 0))); talk.el.style.left = x + 'px'; talk.el.style.top = y + 'px'; } }
   renderer.render(scene, camera);
@@ -322,4 +330,4 @@ hud(); loop();
 setInterval(save, 10000);
 $('loading').remove();
 if (!localStorage.getItem(SAVE)) { save(); setTimeout(() => toast('끌어서 둘러보고, 아래에서 건물을 골라 지어 보세요!'), 600); }
-window.__kingdom = { G, BUILD, people, meshes, bubbles, camera, controls };
+window.__kingdom = { G, BUILD, people, meshes, bubbles, camera, controls, renderer };

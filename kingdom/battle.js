@@ -5,6 +5,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildArena } from './bosses.js';
+import { makeChibi } from './chibi3d.js';
 
 /* ───────── 팀 구성 (팀 편성 화면에서 고른 친구) ───────── */
 const DEFAULT_TEAM = ['junyoung', 'jeonggyu', 'yunsu', 'seojun', 'yejun'];
@@ -45,6 +46,7 @@ const hemi = new THREE.HemisphereLight('#ffb98a', '#2a2040', .55); scene.add(hem
 const sun = new THREE.DirectionalLight('#ffb070', 2.2); sun.position.set(-8, 7, -6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 10, bottom: -6, near: 1, far: 40 }); sun.shadow.bias = -.0005; scene.add(sun);
 const fill = new THREE.DirectionalLight('#8fa8ff', .55); fill.position.set(6, 5, 10); scene.add(fill);
+const faceLight = new THREE.DirectionalLight('#fff4e8', .6); faceLight.position.set(-3, 5, 14); scene.add(faceLight);   // 친구 얼굴이 잘 보이게
 
 
 /* ───────── 전투 데이터 ───────── */
@@ -92,10 +94,8 @@ function spriteTex(id, pose, expr, cb) {
 }
 const units = ordered.map(id => {
   const st = STATS[id];
-  const mat = new THREE.SpriteMaterial({ transparent: true, alphaTest: .05 });
-  const spr = new THREE.Sprite(mat); spr.center.set(.5, 0); spr.scale.set(1.6, 3.36, 1);
-  const u = { id, st, hp: st.hp, max: st.hp, home: new THREE.Vector3(st.home[0], 0, st.home[1]), pos: new THREE.Vector3(st.home[0] - 9, 0, st.home[1]), atkT: rnd(0, st.rate), gauge: rnd(.25, .55), shield: 0, shieldT: 0, dead: false, spr, frames: {}, hitT: 0, lunge: 0, step: 0 };
-  ['stand', 'walk', 'wave'].forEach(pose => spriteTex(id, pose, pose === 'wave' ? 'proud' : 'smile', tx => { u.frames[pose] = tx; if (!mat.map) { mat.map = tx; mat.needsUpdate = true; } }));
+  const spr = makeChibi(id, { scale: 1.3, noShadow: true }); spr.position.set(st.home[0] - 9, 0, st.home[1]);
+  const u = { id, st, hp: st.hp, max: st.hp, home: new THREE.Vector3(st.home[0], 0, st.home[1]), pos: new THREE.Vector3(st.home[0] - 9, 0, st.home[1]), atkT: rnd(0, st.rate), gauge: rnd(.25, .55), shield: 0, shieldT: 0, dead: false, spr, ch: spr.userData.chibi, hitT: 0, lunge: 0, step: 0 };
   u.ring = new THREE.Mesh(new THREE.RingGeometry(.42, .6, 32), new THREE.MeshBasicMaterial({ color: st.color, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); u.ring.rotation.x = -Math.PI / 2;
   u.shadow = new THREE.Mesh(new THREE.CircleGeometry(.38, 20), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: .35 })); u.shadow.rotation.x = -Math.PI / 2;
   u.bubble = new THREE.Sprite(additive('#7fb3ff', 0)); u.bubble.scale.set(1.9, 2.6, 1);
@@ -133,10 +133,10 @@ function hurt(u, n, cls = 'taken') {
   let left = Math.round(n * FX.guard * rnd(.92, 1.08));
   if (u.shield > 0) { const used = Math.min(u.shield, left); u.shield -= used; left -= used; if (used) popText(u.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), 'block', '막음 ' + fmt(used)); }
   if (left <= 0) return;
-  u.hp -= left; u.hitT = .18; popText(u.pos.clone().add(new THREE.Vector3(.3, 2.3, 0)), cls, '-' + fmt(left));
-  if (u.hp <= 0) { u.hp = 0; u.dead = true; u.spr.material.opacity = .35; u.spr.material.rotation = .5; u.ring.visible = false; if (!alive().length) finish(false); }
+  u.hp -= left; u.hitT = .18; if (u.hp > 0) u.ch.play('hit'); popText(u.pos.clone().add(new THREE.Vector3(.3, 2.3, 0)), cls, '-' + fmt(left));
+  if (u.hp <= 0) { u.hp = 0; u.dead = true; u.ch.set('down'); u.ring.visible = false; if (!alive().length) finish(false); }
 }
-function heal(u, n) { if (u.dead) return; if (u.sleep > 0) wakeUnit(u, '깼다!'); const v = Math.min(u.max - u.hp, Math.round(n)); u.hp += v; popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', '+' + fmt(v)); flash('#7dff9e', 2.4, u.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), .6); }
+function heal(u, n) { if (u.dead) return; if (u.sleep > 0) wakeUnit(u, '깼다!'); if (n > 0) u.ch.face('happy', .8); const v = Math.min(u.max - u.hp, Math.round(n)); u.hp += v; popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', '+' + fmt(v)); flash('#7dff9e', 2.4, u.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), .6); }
 
 /* ───────── 날아가는 것 ───────── */
 function bolt(from, to, color, dur, done, size = .55, arc = 0) {
@@ -289,10 +289,10 @@ function endUlt() { ultT = 0; $('dim').classList.remove('on'); if (queue.length)
 const queue = [];
 function useSkill(id, fromAuto) {
   const u = U(id); if (!u || u.dead || u.sleep > 0 || u.gauge < 1 || over || !started) return;
-  if (fromAuto) { u.gauge = 0; u.castT = .6; castBanner(id); castSkill(u, false); return; }   // 자동: 멈추지 않고 짧은 띠만
+  if (fromAuto) { u.gauge = 0; u.castT = .6; u.ch.play('cast'); castBanner(id); castSkill(u, false); return; }   // 자동: 멈추지 않고 짧은 띠만
   if (cutLock > 0 || ultT > 0) { if (!queue.includes(id)) queue.push(id); return; }
   u.gauge = 0; cutIn(id); cutLock = 1.05;
-  pendingCast = () => { u.castT = .6; castSkill(u, true); };
+  pendingCast = () => { u.castT = .6; u.ch.play('cast'); castSkill(u, true); };
 }
 let bannerT = 0;
 function castBanner(id) { const el = $('cast'); el.innerHTML = `<b>${STATS[id].skill}</b><small>${STATS[id].who}</small>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(bannerT); bannerT = setTimeout(() => el.classList.remove('show'), 900); }
@@ -404,10 +404,10 @@ function special() {
 }
 function fireGlare() { ARENA.glare && ARENA.glare(0); B.blind = 3; screenFlash('#ffffff', .95); shake(.15, .3); sayBoss('눈부셔!', 1.4); }
 function sleepUnit(u, t) {
-  u.sleep = t; u.zzz = u.zzz || iconSprite('zzz', .8); u.zzz.visible = true; scene.add(u.zzz);
+  u.sleep = t; u.ch.set('sleep'); u.zzz = u.zzz || iconSprite('zzz', .8); u.zzz.visible = true; scene.add(u.zzz);
   popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'block', '가위눌림');
 }
-function wakeUnit(u, txt) { if (!u.sleep) return; u.sleep = 0; if (u.zzz) u.zzz.visible = false; if (txt) popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', txt); }
+function wakeUnit(u, txt) { if (!u.sleep) return; u.sleep = 0; if (!u.dead) u.ch.set('idle'); if (u.zzz) u.zzz.visible = false; if (txt) popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', txt); }
 let revealTO = 0;
 function showReveal() {
   const el = $('reveal'); if (!el) return;
@@ -472,7 +472,7 @@ function finish(win) {
     if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); const nextCh = CH < CHAPTERS.length ? CH + 1 : 0, had = nextCh && progOf(g, nextCh); if (STAGE >= progOf(g, CH) && STAGE < MAX_STAGE) { setProg(g, CH, STAGE + 1); unlocked = true; saveSel(CH, STAGE + 1); } if (nextCh && !had && STAGE >= CHAP_UNLOCK) { setProg(g, nextCh, 1); chapOpen = nextCh; } }
     saveCampus(g);
   }
-  if (win) setTimeout(() => alive().forEach((u, i) => setTimeout(() => sayLine(u, 'win'), i * 260)), 500);
+  if (win) setTimeout(() => alive().forEach((u, i) => { u.ch.set('cheer'); setTimeout(() => sayLine(u, 'win'), i * 260); }), 500);
   setTimeout(() => {
     $('r-sub').textContent = win ? 'STAGE CLEAR' : 'STAGE FAILED';
     $('r-title').textContent = win ? '승리!' : clockT <= 0 ? '시간 초과…' : '패배…';
@@ -529,8 +529,8 @@ function step(dt) {
     if (u.atkT <= 0) {
       u.atkT = u.st.rate / (hasteT > 0 ? 1.6 : 1);
       const atk = u.st.atk * (buffT > 0 ? 1.4 : 1) * (B.nerf > 0 ? .7 : 1);
-      if (u.st.melee) { u.lunge = .3; tween(.12, null, () => damageBoss(atk, { normal: true })); }
-      else bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk, { normal: true }), .45, .6);
+      if (u.st.melee) { u.lunge = .3; u.ch.play('attack'); tween(.12, null, () => damageBoss(atk, { normal: true })); }
+      else { u.ch.play('throw'); } if (!u.st.melee) bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk, { normal: true }), .45, .6);
     }
   });
   if (auto && cutLock <= 0 && ultT <= 0) autoSkills();
@@ -554,14 +554,13 @@ function frame() {
     if (u.lunge > 0) u.lunge = Math.max(0, u.lunge - real * speed * (paused ? 0 : 1));
     const lx = u.lunge > 0 ? Math.sin((u.lunge / .3) * Math.PI) * .7 : 0;
     u.step += real;
-    const pose = u.castT > 0 ? 'wave' : u.moving && Math.floor(u.step * 6) % 2 ? 'walk' : 'stand';
-    const tx = u.frames[pose] || u.frames.stand; if (tx && u.spr.material.map !== tx) { u.spr.material.map = tx; u.spr.material.needsUpdate = true; }
-    const bob = u.dead ? 0 : u.moving ? Math.abs(Math.sin(u.step * 10)) * .08 : Math.sin(u.step * 2.4 + u.home.x) * .02;
-    u.spr.position.set(u.pos.x + lx, bob, u.pos.z);
-    u.spr.material.color.setRGB(1, u.hitT > 0 ? .45 : 1, u.hitT > 0 ? .45 : 1);
+    if (!u.dead && !u.sleep && !over) u.ch.set(u.moving ? 'walk' : 'idle');
+    u.ch.update(paused ? 0 : real * (cutLock > 0 || ultT > 0 ? 1 : speed));
+    u.spr.position.set(u.pos.x + lx, u.pos.y > 0 ? u.pos.y : 0, u.pos.z);
+    u.spr.rotation.y = u.dead ? .1 : u.moving ? Math.PI / 2 : .45;
     u.ring.position.set(u.pos.x, .02, u.pos.z); u.shadow.position.set(u.pos.x, .015, u.pos.z);
     u.bubble.position.set(u.pos.x, 1.5, u.pos.z); if (u.zzz) { u.zzz.visible = u.sleep > 0 && !u.dead; u.zzz.position.set(u.pos.x + .3, 3 + Math.sin(now * 3) * .15, u.pos.z); }
-    if (u.sleep > 0) u.spr.material.color.setRGB(.7, .65, 1); u.bubble.material.opacity = u.shield > 0 ? .28 + Math.sin(now * 5) * .06 : 0;
+    u.bubble.material.opacity = u.shield > 0 ? .28 + Math.sin(now * 5) * .06 : 0;
     const [x, y] = toScreen(new THREE.Vector3(u.pos.x, 3.5, u.pos.z));
     u.bar.style.left = x + 'px'; u.bar.style.top = y + 'px'; u.bar.style.opacity = u.dead ? 0 : 1;
     u.bar.querySelector('i').style.width = (u.hp / u.max * 100) + '%';

@@ -14,7 +14,7 @@
   .row figure { margin: 0; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 10px; box-shadow: 0 3px 0 var(--ink); text-align: center; padding: 2px 4px 4px; }
   .row img { display: block; width: 52px; height: 108px; }
   .row figcaption { font-family: Jua, sans-serif; font-size: 12px; }
-  .btns { position: fixed; top: 12px; right: 12px; display: flex; gap: 8px; }
+  .btns { position: fixed; top: 60px; left: 12px; right: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
   .btns button { font-family: Jua, sans-serif; font-size: 15px; background: var(--paper); border: 2.5px solid var(--ink); box-shadow: 0 3px 0 var(--ink); border-radius: 10px; padding: 6px 12px; cursor: pointer; }
   .btns button.on { background: #ffd23f; }
 </style>
@@ -22,7 +22,7 @@
 <body>
 <canvas id="c"></canvas>
 <div class="tag">3D 친구 시안 · 아래는 지금 그림</div>
-<div class="btns"><button data-m="idle" class="on">가만히</button><button data-m="walk">걷기</button><button data-m="cast">필살기</button></div>
+<div class="btns"><button data-m="idle" class="on">가만히</button><button data-m="habit">버릇</button><button data-m="walk">걷기</button><button data-m="attack">공격</button><button data-m="throw">던지기</button><button data-m="cast">필살기</button><button data-m="hit">맞기</button><button data-m="down">쓰러짐</button><button data-m="cheer">환호</button></div>
 <div class="row" id="row"></div>
 <script src="../avatar.js"></script>
 <script src="../avatar2.js"></script>
@@ -48,10 +48,10 @@ const floor = new THREE.Mesh(new THREE.CircleGeometry(14, 48), new THREE.MeshToo
 const kids = IDS.map((id, i) => { const k = makeChibi(id); k.position.set((i - (IDS.length - 1) / 2) * 1.55, 0, 0); k.rotation.y = (i - (IDS.length - 1) / 2) * -.06; scene.add(k); return k; });
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); cam.aspect = w / h; const span = IDS.length * 1.55 + 1; const d = Math.max(9, span / 2 / Math.tan(15 * Math.PI / 180) / cam.aspect * 1.05); cam.position.set(0, 3.2, d); cam.lookAt(0, 1.25, 0); cam.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
-document.querySelectorAll('.btns button').forEach(b => b.onclick = () => { document.querySelectorAll('.btns button').forEach(x => x.classList.toggle('on', x === b)); kids.forEach(k => k.userData.chibi.set(b.dataset.m)); });
+document.querySelectorAll('.btns button').forEach(b => b.onclick = () => { document.querySelectorAll('.btns button').forEach(x => x.classList.toggle('on', x === b)); kids.forEach(k => { const c = k.userData.chibi; if (b.dataset.m === 'habit') c.habitNow(); else c.set(b.dataset.m); }); });
 let spin = 0; const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => { const dt = Math.min(clock.getDelta(), .05); kids.forEach(k => k.userData.chibi.update(dt)); renderer.render(scene, cam); });
-window.__proto = { kids, set: m => kids.forEach(k => k.userData.chibi.set(m)), turn: a => kids.forEach(k => { k.rotation.y = a; }) };
+window.__proto = { kids, set: m => kids.forEach(k => { const c = k.userData.chibi; if (m === 'habit') c.habitNow(); else c.set(m); }), turn: a => kids.forEach(k => { k.rotation.y = a; }) };
 </script>
 </body>
 </html>
