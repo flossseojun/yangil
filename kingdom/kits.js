@@ -249,7 +249,7 @@ const BUILD_BONUS = {
   library: { name: '도서관', text: '스킬 충전 +6%', key: 'charge', v: .06 },
   store: { name: '매점', text: '회복량 +10%', key: 'heal', v: .10 },
 };
-const DECO_TYPES = ['ginkgo', 'bench', 'flower', 'lamp', 'vending', 'fountain', 'planter'];
+const DECO_TYPES = ['ginkgo', 'bench', 'flower', 'lamp', 'vending', 'fountain', 'planter', 'snowman', 'cherry', 'flags', 'parasol', 'booth', 'banner', 'xmas'];
 function campusBonus(g) {
   const b = { magic: 1, front: 1, charge: 1, heal: 1, mood: 1, list: [] }, cnt = {};
   ((g && g.b) || []).forEach(x => { cnt[x.t] = (cnt[x.t] || 0) + 1; });
@@ -265,7 +265,21 @@ function campusBonus(g) {
 // 스테이지: 갈수록 은행왕이 강해진다
 const MAX_STAGE = 10;
 const stageMul = st => ({ hp: 1 + (st - 1) * .4, dmg: 1 + (st - 1) * .18, reward: 1 + (st - 1) * .35, rec: Math.round((4200 + (st - 1) * 900) / 10) * 10 });
-function powerOf(g, id) { const r = ROLES[kitOf(id).role], m = lvMult(lvOf(g, id)); return Math.round((r.hp / 4 + r.atk * 4) * m); }
+// 문구 장비 (친구마다 1칸) · 각성 (Lv.10에서 한 번)
+const STATIONERY = {
+  pencil:   { name: '연필',      atk: .06, cost: { know: 60, snack: 30 }, desc: '공격 +6%' },
+  pcase:    { name: '필통',      hp: .08, cost: { know: 50, snack: 40 }, desc: '체력 +8%' },
+  marker:   { name: '형광펜',    atk: .12, cost: { know: 150, snack: 60, power: 20 }, desc: '공격 +12%' },
+  gymsuit:  { name: '체육복',    hp: .15, cost: { snack: 120, power: 40 }, desc: '체력 +15%' },
+  earphone: { name: '이어폰',    charge: .12, cost: { know: 140, power: 40 }, desc: '스킬 충전 +12%' },
+  goldpen:  { name: '금색 볼펜', hp: .1, atk: .1, cost: { know: 300, snack: 150, power: 80 }, desc: '체력 · 공격 +10%' },
+};
+const GEAR_ORDER = ['pencil', 'pcase', 'marker', 'gymsuit', 'earphone', 'goldpen'];
+const AWAKE_COST = { know: 400, snack: 250, power: 150 };
+const awakeOf = (g, id) => !!((g && g.awake) || {})[id];
+const gearOf = (g, id) => STATIONERY[((g && g.gear) || {})[id]] || null;
+function boostOf(g, id) { const a = awakeOf(g, id) ? 1.1 : 1, q = gearOf(g, id) || {}; return { hp: a * (1 + (q.hp || 0)), atk: a * (1 + (q.atk || 0)), skill: awakeOf(g, id) ? 1.3 : 1, charge: 1 + (q.charge || 0) }; }
+function powerOf(g, id) { const r = ROLES[kitOf(id).role], m = lvMult(lvOf(g, id)), b = boostOf(g, id); return Math.round((r.hp / 4 * b.hp + r.atk * 4 * b.atk) * m * (b.skill > 1 ? 1.05 : 1) * b.charge); }
 // 챕터: 각 챕터 1-5를 깨면 다음 챕터가 열린다
 const CHAPTERS = [
   { n: 1, place: '은행나무길', boss: '은행왕', desc: '은행 폭탄을 조심!' },

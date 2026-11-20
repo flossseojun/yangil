@@ -193,7 +193,7 @@
   .bar.closed ~ .info, .bar.closed ~ .place { bottom: 70px; }
   .osm { position: fixed; right: max(6px, env(safe-area-inset-right)); bottom: 2px; z-index: 4; font-size: 9px; color: #4a4038; background: rgba(255,250,240,.75); padding: 1px 5px; border-radius: 4px; text-decoration: none; }
   /* ── 처음 안내 · 수첩 · 명소 ── */
-  .tut { position: fixed; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 58px); transform: translateX(-50%); width: min(400px, calc(100vw - 130px)); z-index: 12; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 0 4px 0 var(--ink); padding: 8px 12px; display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+  .tut { position: fixed; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 92px); transform: translateX(-50%); width: min(400px, calc(100vw - 130px)); z-index: 12; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 0 4px 0 var(--ink); padding: 8px 12px; display: flex; align-items: center; gap: 8px; pointer-events: auto; }
   .tut[hidden], .tut-arrow[hidden] { display: none; }
   .tut p { margin: 0; flex: 1; font-size: 14px; line-height: 1.5; } .tut p b { font-family: Jua, sans-serif; font-weight: 400; color: #c0392b; } .tut p b.n { color: var(--ink); background: var(--yellow); border: 2px solid var(--ink); border-radius: 8px; padding: 0 5px; margin-right: 2px; } .tut p small { color: var(--sub); }
   .tut button { flex: 0 0 auto; background: #fff; border: 2px solid var(--ink); border-radius: 10px; font-family: Jua, sans-serif; font-size: 12px; padding: 4px 8px; color: var(--sub); cursor: pointer; }
@@ -317,6 +317,29 @@
   .sm-mini.g { background: linear-gradient(160deg, #fffbe8, #ffe58a); box-shadow: 0 0 16px #ffd23f; border-color: #c98a00; }
   @media (max-height: 560px) { .sm-card { height: 300px; margin-top: -150px; } .sm-front img { width: 110px; height: 130px; } .sm-front > b { font-size: 22px; } }
   @media (prefers-reduced-motion: reduce) { .sm-rays, .summon.drop .sm-cap, .gm-glass i { animation: none; } }
+  .fr-gear { grid-column: span 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; } .fr-gear small { color: var(--sub); font-size: 12px; } .fr-own { display: flex; flex-wrap: wrap; gap: 4px; flex-basis: 100%; }
+  .mini { display: inline-flex; align-items: center; gap: 2px; background: #fff; border: 2px solid var(--ink); border-radius: 8px; font-family: Jua, sans-serif; font-size: 12px; padding: 2px 6px; cursor: pointer; color: var(--ink); }
+  .fr-aw { grid-column: span 2; display: flex; align-items: center; gap: 8px; } .fr-aw small { font-size: 12px; color: var(--sub); } .claim.aw { background: linear-gradient(90deg, #ffd23f, #ff9ad5, #9ad5ff); display: flex; flex-direction: column; align-items: center; } .claim.aw small { display: flex; gap: 3px; color: var(--ink); }
+  .fr-c.awake { box-shadow: 0 0 0 3px #ffd23f, 0 0 16px #ff9ad5; background: linear-gradient(160deg, #fff, #fff6e0); }
+  .aw-tag { font-size: 11px; color: #fff; background: linear-gradient(90deg, #ff6b8b, #c86bff); border-radius: 6px; padding: 1px 5px; vertical-align: middle; }
+  .fr-m b .ico { vertical-align: middle; }
+  .fr-c.shop { cursor: default; border-left-color: var(--yellow); } .gi-big { width: 52px; height: 52px; display: grid; place-items: center; background: #fff3c4; border: 2px solid var(--ink); border-radius: 10px; flex: 0 0 auto; }
+  /* ── 학교 행사 ── */
+  .evchip { position: fixed; z-index: 5; left: max(10px, env(safe-area-inset-left)); top: calc(max(10px, env(safe-area-inset-top)) + 44px); display: flex; align-items: center; gap: 5px; background: var(--paper); border: 2.5px solid var(--ink); border-left: 8px solid var(--ec); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 3px 10px 3px 6px; font-family: Jua, sans-serif; color: var(--ink); cursor: pointer; }
+  .evchip b { font-weight: 400; font-size: 14px; } .evchip small { font-size: 12px; color: #fff; background: var(--ec); border-radius: 6px; padding: 0 5px; } .evchip .badge { position: absolute; top: -8px; right: -8px; }
+  .ev-sheet .sh-top b { color: var(--ink); } .ev-hero { display: flex; gap: 10px; align-items: center; background: #fff; border: 2.5px solid var(--ink); border-top: 8px solid var(--ec); border-radius: 12px; padding: 8px 10px; }
+  .ev-ic { width: 70px; height: 70px; flex: 0 0 auto; display: grid; place-items: center; background: #fff3c4; border: 2px solid var(--ink); border-radius: 12px; }
+  .ev-hero p { margin: 0 0 4px; font-size: 14px; } .ev-hero small { font-size: 12px; color: var(--sub); line-height: 1.5; } .ev-hero small b { color: #c0392b; font-family: Jua, sans-serif; font-weight: 400; }
+  .ev-bar { position: relative; height: 16px; margin: 26px 18px 44px; background: #f1e7d0; border: 2.5px solid var(--ink); border-radius: 8px; } .ev-bar > i { display: block; height: 100%; background: var(--ec); border-radius: 5px; max-width: 100%; }
+  .ev-step { position: absolute; top: -10px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; color: var(--ink); }
+  .ev-step b { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #fff; border: 2.5px solid var(--ink); font-family: Jua, sans-serif; font-weight: 400; font-size: 12px; }
+  .ev-step span { display: flex; align-items: center; gap: 2px; font-size: 10px; white-space: nowrap; flex-direction: column; } .ev-step span .rs { font-size: 10px; }
+  .ev-step.on b { background: var(--yellow); animation: evp 1s ease-in-out infinite alternate; } .ev-step.got b { background: #6cd39a; animation: none; } .ev-step:disabled { cursor: default; } @keyframes evp { to { transform: scale(1.12); } }
+  .evfx { position: fixed; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; } .evfx i { position: absolute; top: -20px; width: 8px; height: 8px; border-radius: 50%; background: #fff; opacity: .9; animation: evfall linear infinite; box-shadow: 0 0 4px rgba(255,255,255,.8); }
+  .evfx.petal i { width: 9px; height: 6px; background: #ffc0d6; border-radius: 60% 0; box-shadow: none; } @keyframes evfall { to { transform: translate(40px, 105vh) rotate(360deg); } }
+  @media (max-height: 480px) { .evchip { top: calc(max(6px, env(safe-area-inset-top)) + 36px); padding: 1px 8px 1px 4px; } .evchip b { font-size: 12px; } }
+  @media (prefers-reduced-motion: reduce) { .evfx { display: none; } }
+  .bcard.ev .tag { background: #c86bff; }
 </style>
 </head>
 <body>
@@ -346,20 +369,20 @@
 <a class="osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">지도 © OpenStreetMap</a>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
 
-<script src="../avatar.js?v=1795186788"></script>
-<script src="../avatar2.js?v=1795186788"></script>
-<script src="../avatar3.js?v=1795186788"></script>
-<script src="../scene.js?v=1795186788"></script>
-<script src="../fullbody.js?v=1795186788"></script>
-<script src="roster.js?v=1795186788"></script>
-<script src="yangpyeong.js?v=1795186788"></script>
-<script src="kits.js?v=1795186788"></script>
-<script src="profiles.js?v=1795186788"></script>
-<script src="ui.js?v=1795186788"></script>
-<script src="audio.js?v=1795186788"></script>
+<script src="../avatar.js?v=1795187561"></script>
+<script src="../avatar2.js?v=1795187561"></script>
+<script src="../avatar3.js?v=1795187561"></script>
+<script src="../scene.js?v=1795187561"></script>
+<script src="../fullbody.js?v=1795187561"></script>
+<script src="roster.js?v=1795187561"></script>
+<script src="yangpyeong.js?v=1795187561"></script>
+<script src="kits.js?v=1795187561"></script>
+<script src="profiles.js?v=1795187561"></script>
+<script src="ui.js?v=1795187561"></script>
+<script src="audio.js?v=1795187561"></script>
 <script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
-<script type="module" src="kingdom.js?v=1795186788"></script>
-<script type="module" src="notebook.js?v=1795186788"></script>
+<script type="module" src="kingdom.js?v=1795187561"></script>
+<script type="module" src="notebook.js?v=1795187561"></script>
 </body>
 </html>

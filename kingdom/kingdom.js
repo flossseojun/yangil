@@ -59,6 +59,14 @@ const DECO = {
   lamp:     { name: '가로등', size: [1, 1], cost: { know: 4, snack: 2 } },
   vending:  { name: '자판기', size: [1, 1], cost: { know: 6, snack: 4 } },
   fountain: { name: '분수', size: [2, 2], cost: { know: 20, snack: 15 } },
+  // 학교 행사 한정 (notebook.js 행사에서 열린다)
+  snowman: { name: '눈사람', size: [1, 1], cost: { snack: 6 }, event: true },
+  cherry:  { name: '벚꽃나무', size: [1, 1], cost: { snack: 6 }, event: true },
+  flags:   { name: '만국기', size: [2, 1], cost: { know: 6, snack: 6 }, event: true },
+  parasol: { name: '파라솔', size: [1, 1], cost: { snack: 6 }, event: true },
+  booth:   { name: '축제 부스', size: [2, 2], cost: { know: 12, snack: 12 }, event: true },
+  banner:  { name: '응원 현수막', size: [2, 1], cost: { know: 6, snack: 6 }, event: true },
+  xmas:    { name: '크리스마스 트리', size: [1, 1], cost: { know: 6, snack: 8 }, event: true },
 };
 const DECO_ORDER = ['ginkgo', 'bench', 'flower', 'planter', 'lamp', 'vending', 'fountain'];
 const LINES = ['오늘 캠퍼스 분위기 좋다!', '매점 가자!', '은행나무길 걷는 거 좋아.', '오늘도 양일고 파이팅!', '나 여기서 낮잠 자도 돼?', '캠퍼스 점점 멋있어진다.'];
@@ -458,6 +466,13 @@ function makeDeco(t) {
   else if (t === 'lamp') { add(new THREE.CylinderGeometry(.04, .06, 1.6, 6), '#3a3f4a', 0, .8, 0); add(new THREE.SphereGeometry(.16, 10, 8), '#ffe8a0', 0, 1.65, 0); }
   else if (t === 'vending') { add(new THREE.BoxGeometry(.6, 1, .45), '#e5484d', 0, .5, 0); const w = new THREE.Mesh(new THREE.PlaneGeometry(.4, .5), new THREE.MeshBasicMaterial({ map: canvasTex(40, 50, c => { c.fillStyle = '#dff1f7'; c.fillRect(0, 0, 40, 50); ['#5b8def', '#ffd23f', '#6cd39a', '#ff9a3c'].forEach((col, i) => { c.fillStyle = col; c.fillRect(4 + (i % 2) * 18, 6 + Math.floor(i / 2) * 20, 12, 14); }); }) })); w.position.set(0, .62, .23); g.add(w); }
   else if (t === 'fountain') { add(new THREE.CylinderGeometry(.9, .95, .3, 20), '#d9d2c2', 0, .15, 0); const water = new THREE.Mesh(new THREE.CylinderGeometry(.8, .8, .05, 20), toon('#7fc4e8')); water.position.y = .3; g.add(water); add(new THREE.CylinderGeometry(.12, .16, .7, 10), '#d9d2c2', 0, .5, 0); add(new THREE.SphereGeometry(.18, 10, 8), '#9fd8f0', 0, .95, 0, 0); }
+  else if (t === 'snowman') { add(new THREE.SphereGeometry(.3, 14, 10), '#ffffff', 0, .3, 0); add(new THREE.SphereGeometry(.21, 14, 10), '#ffffff', 0, .74, 0); add(new THREE.ConeGeometry(.04, .2, 8), '#ff8a3c', 0, .76, .26).rotation.x = Math.PI / 2; add(new THREE.CylinderGeometry(.14, .14, .2, 12), '#231c17', 0, 1.02, 0); add(new THREE.CylinderGeometry(.2, .2, .03, 12), '#231c17', 0, .93, 0); add(new THREE.TorusGeometry(.16, .04, 6, 14), '#e5484d', 0, .56, 0, 0).rotation.x = Math.PI / 2; }
+  else if (t === 'cherry') { add(new THREE.CylinderGeometry(.07, .1, .8, 7), '#7a4a2a', 0, .4, 0); [[0, 1, 0, .42], [-.25, .85, .12, .3], [.26, .88, -.1, .32], [.05, 1.25, .05, .28]].forEach(([x, y, z, r]) => add(new THREE.IcosahedronGeometry(r, 1), '#ffb7cf', x, y, z)); }
+  else if (t === 'flags') { [-.9, .9].forEach(x => add(new THREE.CylinderGeometry(.03, .04, 1.4, 6), '#6b7078', x, .7, 0, 0)); add(new THREE.BoxGeometry(1.8, .015, .015), '#444', 0, 1.3, 0, 0); ['#e5484d', '#ffd23f', '#5b8def', '#2f8f6b', '#c86bff', '#ff9a3c', '#ffffff'].forEach((c, i) => { const f = add(new THREE.ConeGeometry(.08, .2, 3), c, -.75 + i * .25, 1.19, 0, .04); f.rotation.x = Math.PI; }); }
+  else if (t === 'parasol') { add(new THREE.CylinderGeometry(.025, .025, 1.3, 6), '#ddd', 0, .65, 0, 0); add(new THREE.ConeGeometry(.6, .3, 8), '#e5484d', 0, 1.35, 0); add(new THREE.ConeGeometry(.3, .16, 8), '#ffffff', 0, 1.47, 0, 0); add(new THREE.CylinderGeometry(.3, .3, .05, 14), '#fffaf0', 0, .5, 0); add(new THREE.CylinderGeometry(.04, .04, .5, 6), '#ddd', 0, .25, 0, 0); }
+  else if (t === 'booth') { [[-.8, -.8], [.8, -.8], [-.8, .8], [.8, .8]].forEach(([x, z]) => add(new THREE.CylinderGeometry(.04, .04, 1.3, 6), '#ffffff', x, .65, z, 0)); const roof = add(new THREE.ConeGeometry(1.25, .55, 4), '#e5484d', 0, 1.55, 0); roof.rotation.y = Math.PI / 4; add(new THREE.BoxGeometry(1.5, .5, .4), '#ffd23f', 0, .25, .55); add(new THREE.BoxGeometry(1.5, .06, .5), '#fffaf0', 0, .53, .55); }
+  else if (t === 'banner') { [-.9, .9].forEach(x => add(new THREE.CylinderGeometry(.03, .04, 1.4, 6), '#8a5a34', x, .7, 0, 0)); const tx = canvasTex(256, 64, (g2, w, h) => { g2.fillStyle = '#fffaf0'; g2.fillRect(0, 0, w, h); g2.strokeStyle = '#e5484d'; g2.lineWidth = 8; g2.strokeRect(4, 4, w - 8, h - 8); g2.fillStyle = '#e5484d'; g2.font = '38px Jua, sans-serif'; g2.textAlign = 'center'; g2.fillText('양일고 파이팅!', w / 2, 46); }); const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.75, .44), new THREE.MeshBasicMaterial({ map: tx, side: THREE.DoubleSide })); pl.position.set(0, 1.1, 0); g.add(pl); }
+  else if (t === 'xmas') { add(new THREE.CylinderGeometry(.06, .08, .25, 6), '#7a4a2a', 0, .12, 0); [[.45, .5, .45], [.36, .45, .8], [.25, .4, 1.1]].forEach(([r, h, y]) => add(new THREE.ConeGeometry(r, h, 10), '#2f8f4e', 0, y, 0)); add(new THREE.OctahedronGeometry(.1), '#ffd23f', 0, 1.38, 0); ['#e5484d', '#ffd23f', '#5b8def', '#ffffff', '#e5484d'].forEach((c, i) => { const a = i * 1.3; add(new THREE.SphereGeometry(.045, 6, 5), c, Math.cos(a) * (.3 - i * .03), .45 + i * .16, Math.sin(a) * (.3 - i * .03), 0); }); }
   bake(g); return g;
 }
 const footprint = b => { const [sx, sz] = DECO[b.t].size; return b.r % 2 ? [sz, sx] : [sx, sz]; };
@@ -632,7 +647,10 @@ function hud() {
   document.querySelectorAll('.bcard').forEach(c => c.classList.toggle('off', !canPay(DECO[c.dataset.t].cost)));
   refreshReqBadge();
 }
-$('cards').innerHTML = `<button class="cards-lab" id="deco-tog" aria-expanded="true">꾸미기<i>▾</i></button>` + DECO_ORDER.map(t => `<button class="bcard" data-t="${t}"><span class="bi">${drawIcon(t, 32)}</span><b>${DECO[t].name}</b><small class="cost">${resText(DECO[t].cost, 13)}</small></button>`).join('');
+$('cards').innerHTML = `<button class="cards-lab" id="deco-tog" aria-expanded="true">꾸미기<i>▾</i></button>` + DECO_ORDER.filter(t => !DECO[t].event).map(t => `<button class="bcard" data-t="${t}"><span class="bi">${drawIcon(t, 32)}</span><b>${DECO[t].name}</b><small class="cost">${resText(DECO[t].cost, 13)}</small></button>`).join('');
+// 행사에서 받은 한정 꾸미기 카드 (받으면 꾸미기 줄 끝에 붙는다)
+function syncEventCards() { const have = new Set([...document.querySelectorAll('.bcard')].map(c => c.dataset.t)); Object.keys(DECO).filter(t => DECO[t].event && (G.decoUnlock || {})[t] && !have.has(t)).forEach(t => $('cards').insertAdjacentHTML('beforeend', `<button class="bcard ev" data-t="${t}"><span class="tag">행사</span><span class="bi">${drawIcon(t, 32)}</span><b>${DECO[t].name}</b><small class="cost">${resText(DECO[t].cost, 13)}</small></button>`)); document.querySelectorAll('.bcard').forEach(c => c.classList.toggle('off', !canPay(DECO[c.dataset.t].cost))); }
+syncEventCards();
 
 /* ───────── 꾸미기 놓기 ───────── */
 let ghost = null;
@@ -909,4 +927,4 @@ if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };

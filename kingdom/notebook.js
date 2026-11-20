@@ -55,7 +55,7 @@ function stepTut() {
   if (G.tut == null) G.tut = 0;
   if (G.tut >= TUT.length) return;
   const s = TUT[G.tut];
-  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
+  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, #ev, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
   if (tutStarted !== G.tut) { tutStarted = G.tut; s.start && s.start(); tutEl.querySelector('p').innerHTML = `<b class="n">${G.tut + 1}/${TUT.length}</b> ${s.text}`; }
   tutEl.hidden = false;
   if (s.done()) { nextTut(); return; }
@@ -324,49 +324,67 @@ K.HOOK.tap.push(ray => {
     });
   }
 }
-/* ───────── 7. 친구들: 캠퍼스 친구를 눌러 강화한다 ───────── */
-G.lv = G.lv || {};
+/* ───────── 7. 친구들: 캠퍼스 친구를 눌러 강화 · 장비 · 각성 ───────── */
+G.lv = G.lv || {}; G.items = G.items || {}; G.gear = G.gear || {}; G.awake = G.awake || {};
 const fr = document.createElement('div'); fr.className = 'modal'; fr.id = 'fr'; fr.hidden = true; document.body.appendChild(fr);
-let frRole = 'all', frOpen = null;
+let frRole = 'all', frOpen = null, frTab = 'list';
 const fmt = n => n.toLocaleString('ko-KR');
-const statOf = (id, lv) => { const r = ROLES[kitOf(id).role], m = lvMult(lv); return { hp: Math.round(r.hp * m), atk: Math.round(r.atk * m) }; };
+const statOf = (id, lv) => { const r = ROLES[kitOf(id).role], m = lvMult(lv), b = boostOf(G, id); return { hp: Math.round(r.hp * m * b.hp), atk: Math.round(r.atk * m * b.atk) }; };
 function frBlock(id) { const lv = lvOf(G, id); if (lv >= MAX_LV) return '최고 레벨'; return canPay(upCost(lv)) ? '' : '자원 부족'; }
-function openFR() {
+const gearIcon = (t, n = 16) => drawIcon(t, n);
+function frList() {
   const list = G.friends.filter(id => frRole === 'all' || kitOf(id).role === frRole)
     .sort((a, b) => lvOf(G, b) - lvOf(G, a) || ROLE_ORDER.indexOf(kitOf(a).role) - ROLE_ORDER.indexOf(kitOf(b).role));
-  const total = G.friends.reduce((a, id) => a + powerOf(G, id), 0);
   const roles = [['all', `전체 ${G.friends.length}`]].concat(ROLE_ORDER.filter(r => G.friends.some(id => kitOf(id).role === r)).map(r => [r, ROLES[r].name]));
   const body = list.map(id => {
-    const f = K.rosterOf(id), k = kitOf(id), r = ROLES[k.role], lv = lvOf(G, id), why = frBlock(id), open = frOpen === id;
+    const f = K.rosterOf(id), k = kitOf(id), r = ROLES[k.role], lv = lvOf(G, id), why = frBlock(id), open = frOpen === id, aw = awakeOf(G, id), gq = G.gear[id];
     const now = statOf(id, lv), nx = statOf(id, Math.min(MAX_LV, lv + 1));
+    const owned = GEAR_ORDER.filter(t => (G.items[t] || 0) > 0);
     const det = open ? `<div class="fr-det">
         <div><b>체력</b> ${fmt(now.hp)}${lv < MAX_LV ? ` → <em>${fmt(nx.hp)}</em>` : ''}</div>
         <div><b>공격</b> ${fmt(now.atk)}${lv < MAX_LV ? ` → <em>${fmt(nx.atk)}</em>` : ''}</div>
-        <div><b>스킬</b> ${k.skill} · ${r.desc}</div>
-        <div><b>친밀도</b> ${hearts(Math.min(5, (G.bond || {})[id] || 0))}</div></div>` : '';
-    return `<div class="fr-c${open ? ' on' : ''}" data-fr="${id}" style="--rc:${r.color}">
+        <div><b>스킬</b> ${k.skill} · ${r.desc}${aw ? ' · <em>각성 +30%</em>' : ''}</div>
+        <div><b>친밀도</b> ${hearts(Math.min(5, (G.bond || {})[id] || 0))}</div>
+        <div class="fr-gear"><b>장비</b>${gq ? `${gearIcon(gq)} ${STATIONERY[gq].name} <small>${STATIONERY[gq].desc}</small> <button class="mini" data-unequip="${id}">빼기</button>` : '<small>없음</small>'}
+          ${owned.length ? `<span class="fr-own">${owned.map(t => `<button class="mini" data-equip="${id}" data-t="${t}">${gearIcon(t)}${STATIONERY[t].name} ×${G.items[t]}</button>`).join('')}</span>` : `<small>· 문구점에서 살 수 있어요</small>`}</div>
+        ${lv >= MAX_LV && !aw ? `<div class="fr-aw"><button class="claim aw" data-awake="${id}" ${canPay(AWAKE_COST) ? '' : 'disabled'}>각성하기 <small>${resText(AWAKE_COST, 11)}</small></button><small>체력 · 공격 +10%, 스킬 +30%</small></div>` : ''}</div>` : '';
+    return `<div class="fr-c${open ? ' on' : ''}${aw ? ' awake' : ''}" data-fr="${id}" style="--rc:${r.color}">
       <img src="${faceSVG(id)}" alt="">
-      <div class="fr-m"><b>${f.name}</b><small>${roleIcon(k.role, 12)} ${r.name} · 전투력 ${fmt(powerOf(G, id))}</small>
+      <div class="fr-m"><b>${f.name}${aw ? ' <span class="aw-tag">각성</span>' : ''}${gq ? ` ${gearIcon(gq)}` : ''}</b><small>${roleIcon(k.role, 12)} ${r.name} · 전투력 ${fmt(powerOf(G, id))}</small>
         <div class="fr-lv"><span>Lv.${lv}</span><i><u style="width:${lv / MAX_LV * 100}%"></u></i><span>${MAX_LV}</span></div></div>
-      <button class="claim" data-frup="${id}" ${why ? 'disabled' : ''}>${lv >= MAX_LV ? '최고' : `강화<small>${resText(upCost(lv), 11)}</small>`}</button>${det}</div>`;
+      <button class="claim" data-frup="${id}" ${why ? 'disabled' : ''}>${lv >= MAX_LV ? (aw ? '각성 완료' : '최고') : `강화<small>${resText(upCost(lv), 11)}</small>`}</button>${det}</div>`;
   }).join('');
+  return `<div class="nbtabs fr-tabs">${roles.map(([k, n]) => `<button class="${frRole === k ? 'on' : ''}" data-role="${k}">${k === 'all' ? '' : roleIcon(k, 12)}${n}</button>`).join('')}</div><div class="fr-list">${body}</div>`;
+}
+function frShop() {
+  const worn = t => Object.values(G.gear).filter(x => x === t).length;
+  return `<p class="fr-sum"><small>장비는 친구마다 하나씩 낄 수 있어요. 친구를 눌러 펼친 뒤 끼우세요. 빼면 다시 가방으로 돌아와요.</small></p><div class="fr-list">${GEAR_ORDER.map(t => { const g = STATIONERY[t];
+    return `<div class="fr-c shop"><span class="gi-big">${gearIcon(t, 36)}</span><div class="fr-m"><b>${g.name}</b><small>${g.desc} · 가방 ${G.items[t] || 0}개 · 끼운 친구 ${worn(t)}명</small></div><button class="claim" data-buy="${t}" ${canPay(g.cost) ? '' : 'disabled'}>사기<small>${resText(g.cost, 11)}</small></button></div>`; }).join('')}</div>`;
+}
+function openFR() {
+  const total = G.friends.reduce((a, id) => a + powerOf(G, id), 0);
   fr.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="친구들"><div class="sh-top"><b>친구들</b><span class="nbres">${resText(G.res, 14)}</span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
-    <p class="fr-sum">캠퍼스 친구 ${G.friends.length}명 · 모두의 전투력 <b>${fmt(total)}</b><br><small>강화할 때마다 체력 · 공격 · 스킬이 8%씩 세져요. 친구를 누르면 자세히 보여요.</small></p>
-    <div class="nbtabs fr-tabs">${roles.map(([k, n]) => `<button class="${frRole === k ? 'on' : ''}" data-role="${k}">${k === 'all' ? '' : roleIcon(k, 12)}${n}</button>`).join('')}</div>
-    <div class="fr-list">${body}</div></div>`;
+    <div class="nbtabs"><button class="${frTab === 'list' ? 'on' : ''}" data-frtab="list">친구 강화</button><button class="${frTab === 'shop' ? 'on' : ''}" data-frtab="shop">문구점</button></div>
+    <p class="fr-sum">캠퍼스 친구 ${G.friends.length}명 · 모두의 전투력 <b>${fmt(total)}</b>${frTab === 'list' ? '<br><small>강화할 때마다 체력 · 공격 · 스킬이 8%씩 세져요. Lv.10이 되면 각성할 수 있어요. 친구를 누르면 자세히 보여요.</small>' : ''}</p>
+    ${frTab === 'list' ? frList() : frShop()}</div>`;
   fr.hidden = false;
 }
 fr.addEventListener('click', e => {
   if (e.target === fr || e.target.closest('[data-close]')) { fr.hidden = true; return; }
   const keep = fr.querySelector('.sheet') ? fr.querySelector('.sheet').scrollTop : 0, redraw = () => { openFR(); fr.querySelector('.sheet').scrollTop = keep; };
+  const tb = e.target.closest('[data-frtab]'); if (tb) { KS.fx('click'); frTab = tb.dataset.frtab; openFR(); return; }
   const rb = e.target.closest('[data-role]'); if (rb) { KS.fx('click'); frRole = rb.dataset.role; frOpen = null; openFR(); return; }
+  const buy = e.target.closest('[data-buy]'); if (buy) { if (buy.disabled) return; const g = STATIONERY[buy.dataset.buy]; if (!canPay(g.cost)) return; Object.entries(g.cost).forEach(([k, n]) => { G.res[k] -= n; }); G.items[buy.dataset.buy] = (G.items[buy.dataset.buy] || 0) + 1; K.save(); K.hud(); KS.fx('coin'); K.toast(`${g.name}을(를) 샀어요`); redraw(); return; }
+  const eq = e.target.closest('[data-equip]'); if (eq) { const id = eq.dataset.equip, t = eq.dataset.t; if (!(G.items[t] > 0)) return; if (G.gear[id]) G.items[G.gear[id]] = (G.items[G.gear[id]] || 0) + 1; G.items[t]--; G.gear[id] = t; K.save(); KS.fx('build'); redraw(); return; }
+  const un = e.target.closest('[data-unequip]'); if (un) { const id = un.dataset.unequip, t = G.gear[id]; if (t) { G.items[t] = (G.items[t] || 0) + 1; delete G.gear[id]; K.save(); KS.fx('click'); } redraw(); return; }
+  const aw = e.target.closest('[data-awake]'); if (aw) { if (aw.disabled) return; const id = aw.dataset.awake; if (lvOf(G, id) < MAX_LV || awakeOf(G, id) || !canPay(AWAKE_COST)) return; Object.entries(AWAKE_COST).forEach(([k, n]) => { G.res[k] -= n; }); G.awake[id] = 1; G.stat.awake = (G.stat.awake || 0) + 1; K.save(); K.hud(); KS.fx('fanfare'); K.toast(`${K.rosterOf(id).name} 각성!`); const p = K.people.find(q => q.id === id); if (p) K.sayText(p, '뭔가 깨어난 느낌이야…!'); redraw(); return; }
   const ub = e.target.closest('[data-frup]');
   if (ub) {
     if (ub.disabled) return; const id = ub.dataset.frup, lv = lvOf(G, id), cost = upCost(lv);
     if (lv >= MAX_LV || !canPay(cost)) return;
     Object.entries(cost).forEach(([k, n]) => { G.res[k] -= n; }); G.lv[id] = lv + 1; G.stat.lvup = (G.stat.lvup || 0) + 1;
     K.save(); K.hud(); refreshBadge(); KS.fx('levelup'); K.toast(`${K.rosterOf(id).name} Lv.${lv + 1}!`);
-    const p = K.people.find(q => q.id === id); if (p) K.sayText(p, lv + 1 >= MAX_LV ? '최고 레벨! 이제 누구든 덤벼!' : '나 더 강해진 것 같아!');
+    const p = K.people.find(q => q.id === id); if (p) K.sayText(p, lv + 1 >= MAX_LV ? '최고 레벨! 이제 각성할 수 있대!' : '나 더 강해진 것 같아!');
     frOpen = id; redraw(); return;
   }
   const c = e.target.closest('[data-fr]'); if (c) { KS.fx('pop'); frOpen = frOpen === c.dataset.fr ? null : c.dataset.fr; redraw(); }
@@ -424,23 +442,33 @@ const leftList = () => ROSTER.filter(f => !G.friends.includes(f.id));
 const roomOf = () => Math.max(0, Math.min(K.recruitCap(), ROSTER.length) - G.friends.length);
 const multiN = () => Math.min(5, roomOf(), leftList().length);
 const costN = n => { const c = { know: 0, snack: 0, power: 0 }, f0 = G.friends.length; for (let i = 0; i < n; i++) { const m = f0 + i; c.know += 18 + m * 4; c.snack += 10 + m * 2; c.power += 4 + m; } if (n >= 5) Object.keys(c).forEach(k => { c[k] = Math.round(c[k] * .9); }); return c; };
-const gaBlock = () => { if (!leftList().length) return '모든 친구가 모였어요'; if (!roomOf()) return `동아리실 Lv.${K.lvOfFac('club') + 1}이 필요해요`; return G.freePull || G.ticket ? '' : canPay(K.recruitCost()) ? '' : '자원이 모자라요'; };
+// 친구를 다 모으면 '응원 뽑기': 캠퍼스 친구 한 명이 레벨업한다
+const CHEER_COST = { know: 120, snack: 80, power: 30 };
+const cheerMode = () => !leftList().length;
+const cheerPool = () => G.friends.filter(id => lvOf(G, id) < MAX_LV);
+const gaBlock = () => { if (cheerMode()) return !cheerPool().length ? '모두 최고 레벨이에요' : G.ticket || canPay(CHEER_COST) ? '' : '자원이 모자라요'; if (!roomOf()) return `동아리실 Lv.${K.lvOfFac('club') + 1}이 필요해요`; return G.freePull || G.ticket ? '' : canPay(K.recruitCost()) ? '' : '자원이 모자라요'; };
 function openGacha() {
   const left = leftList(), why = gaBlock(), free = G.freePull > 0, mn = multiN();
   const byRole = ROLE_ORDER.map(r => [r, left.filter(f => kitOf(f.id).role === r).length]).filter(x => x[1]);
-  const one = why || (free ? '무료로 뽑기!' : G.ticket ? `뽑기권으로 뽑기 <span>${drawIcon('star', 14)}×1</span>` : `1번 뽑기 <span>${resText(K.recruitCost(), 13)}</span>`);
+  const one = why || (cheerMode() ? (G.ticket ? `응원 뽑기 <span>${drawIcon('star', 14)}×1</span>` : `응원 뽑기 <span>${resText(CHEER_COST, 13)}</span>`) : free ? '무료로 뽑기!' : G.ticket ? `뽑기권으로 뽑기 <span>${drawIcon('star', 14)}×1</span>` : `1번 뽑기 <span>${resText(K.recruitCost(), 13)}</span>`);
   ga.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="친구 뽑기"><div class="sh-top"><b>친구 뽑기</b><span class="nbres">${resText(G.res, 14)}<span class="rs">${drawIcon('star', 14)}${G.ticket}</span></span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
     <p class="fr-sum">동아리실 Lv.${K.lvOfFac('club')} · 친구 <b>${G.friends.length}</b> / ${Math.min(K.recruitCap(), ROSTER.length)}명까지 · 뽑기권 <b>${G.ticket}</b>장<br><small><b class="gold-t">반짝 캡슐</b>이 나오면 친구가 Lv.2로 오고 보너스 자원도 받아요. 뽑기권은 출석 · 오늘의 미션에서 받아요.</small></p>
     <div class="ga-stage">${gaLast ? joinCard(gaLast.id, gaLast.gold ? '반짝 등장!' : '방금 뽑은 친구', gaLast.line) : `<div class="ga-machine"><div class="gm-glass">${[0, 1, 2, 3, 4, 5, 6].map(i => `<i style="--i:${i}"></i>`).join('')}</div><div class="gm-body"><span>양일 뽑기</span><b></b></div></div>`}</div>
     <div class="ga-btns"><button class="claim ga-go" data-pull="1" ${why ? 'disabled' : ''}>${one}</button>
-      ${mn >= 2 && !why ? `<button class="claim ga-go multi" data-pull="${mn}" ${canPay(costN(mn)) ? '' : 'disabled'}>${mn}번 뽑기${mn >= 5 ? ' <em>10% 할인</em>' : ''} <span>${resText(costN(mn), 12)}</span></button>` : ''}</div>
-    <h3 class="ga-h">못 만난 친구 ${left.length}명</h3>
+      ${mn >= 2 && !why && !cheerMode() ? `<button class="claim ga-go multi" data-pull="${mn}" ${canPay(costN(mn)) ? '' : 'disabled'}>${mn}번 뽑기${mn >= 5 ? ' <em>10% 할인</em>' : ''} <span>${resText(costN(mn), 12)}</span></button>` : ''}</div>
+    <h3 class="ga-h">${cheerMode() ? '친구를 모두 모았어요! 이제 <b class="gold-t">응원 뽑기</b>로 친구가 레벨업해요' : `못 만난 친구 ${left.length}명`}</h3>
     <div class="ga-roles">${byRole.map(([r, n]) => `<span style="--rc:${ROLES[r].color}">${roleIcon(r, 13)} ${ROLES[r].name} ${n}</span>`).join('') || '<span>모두 만났어요!</span>'}</div>
     <div class="dex ga-dex">${left.map(() => '<div class="dx no"><i>?</i><span>???</span></div>').join('')}</div></div>`;
   ga.hidden = false;
 }
 function doPull(n) {
   if (gaBlock()) return;
+  if (cheerMode()) {   // 응원 뽑기
+    if (G.ticket > 0) G.ticket--; else { if (!canPay(CHEER_COST)) return; Object.entries(CHEER_COST).forEach(([k, v]) => { G.res[k] -= v; }); }
+    const pool = cheerPool(), id = pool[Math.floor(Math.random() * pool.length)], from = lvOf(G, id), gold = Math.random() < .12, to = Math.min(MAX_LV, from + (gold ? 2 : 1));
+    G.lv[id] = to; G.stat.pulls = (G.stat.pulls || 0) + 1; K.save(); K.hud(); refreshBadge();
+    gaLast = { id, cheer: true, gold, from, to, line: '응원 고마워! 더 열심히 할게!' }; summon([gaLast]); return;
+  }
   if (n === 1) { if (G.freePull > 0) G.freePull--; else if (G.ticket > 0) G.ticket--; else { const c = K.recruitCost(); if (!canPay(c)) return; Object.entries(c).forEach(([k, v]) => { G.res[k] -= v; }); } }
   else { n = Math.min(n, multiN()); const c = costN(n); if (n < 2 || !canPay(c)) return; Object.entries(c).forEach(([k, v]) => { G.res[k] -= v; }); }
   const firstEver = !G.stat.pulls, out = [];
@@ -505,7 +533,7 @@ function openCap() {
     if (!SQ || SQ.phase !== 'crack') return; SQ.phase = 'open'; sm.classList.add('open'); KS.fx('break'); setTimeout(() => KS.fx('reveal'), 120);
     const b = smq('.sm-cap').getBoundingClientRect(); burst(b.left + b.width / 2, b.top + b.height / 2, r.gold, ROLES[kitOf(r.id).role].color);
     const f = K.rosterOf(r.id), k = kitOf(r.id), role = ROLES[k.role];
-    smq('.sm-front').innerHTML = `${r.gold ? '<span class="sm-badge">반짝 등장!</span>' : ''}<img src="${fullShot(r.id)}" alt=""><b>${f.name}</b><span class="sm-role">${roleIcon(k.role, 15)} ${role.name} · ${k.skill}</span><p>“${r.line || '잘 부탁해!'}”</p>${r.gold ? `<div class="sm-bonus">Lv.2로 합류 · 보너스 ${resText(r.bonus, 13)}</div>` : ''}`;
+    smq('.sm-front').innerHTML = `${r.gold ? `<span class="sm-badge">${r.cheer ? '반짝 응원!' : '반짝 등장!'}</span>` : ''}<img src="${fullShot(r.id)}" alt=""><b>${f.name}</b><span class="sm-role">${roleIcon(k.role, 15)} ${role.name} · ${k.skill}</span><p>“${r.line || '잘 부탁해!'}”</p>${r.cheer ? `<div class="sm-bonus">응원 성공! Lv.${r.from} → Lv.${r.to}</div>` : r.gold ? `<div class="sm-bonus">Lv.2로 합류 · 보너스 ${resText(r.bonus, 13)}</div>` : ''}`;
     setTimeout(() => { if (!SQ) return; SQ.phase = 'card'; sm.classList.add('card'); KS.fx(r.gold ? 'fanfare' : 'levelup'); smq('.sm-tip').textContent = SQ.i < SQ.list.length - 1 ? '눌러서 다음' : ''; if (SQ.i === SQ.list.length - 1) endButtons(); }, 650);
   }, r.gold ? 1100 : 750);
 }
@@ -548,5 +576,135 @@ syncGacha();
 if (K.lvOfFac('club') && G.gachaTold == null && G.friends.length > 5) G.gachaTold = 1;   // 이미 동아리실이 있던 친구는 짧게 알려 준다
 if (G.gachaTold === 1 && !G.gachaSeen && K.lvOfFac('club')) setTimeout(() => K.toast('동아리실 친구 모집이 별 버튼(뽑기)으로 바뀌었어요!'), 2500);
 
+/* ───────── 9. 낮과 밤: 실제 시간에 맞춰 하늘이 바뀌고, 밤에는 불이 켜진다 ───────── */
+const SKY = [   // [시, 하늘, 반구빛, 햇빛 세기, 햇빛 색, 밤 정도]
+  [0, '#141a33', .38, .15, '#9fb4ff', 1], [5, '#1d2448', .42, .18, '#9fb4ff', 1], [6.2, '#f2b49a', .9, .9, '#ffc59a', .45], [7.5, '#bfe3f5', 1.15, 1.7, '#fff3d6', 0],
+  [16.5, '#bfe3f5', 1.15, 1.7, '#fff3d6', 0], [18, '#f0956a', .95, 1.05, '#ffb27a', .35], [19.4, '#232a52', .5, .25, '#9fb4ff', .9], [24, '#141a33', .38, .15, '#9fb4ff', 1],
+];
+let hourOverride = null; { const q = new URLSearchParams(location.search).get('hour'); if (q != null && !isNaN(+q)) hourOverride = +q; }
+const hourNow = () => { if (hourOverride != null) return hourOverride; const d = new Date(); return d.getHours() + d.getMinutes() / 60; };
+const hemi = K.scene.children.find(o => o.isHemisphereLight), cA = new THREE.Color(), cB = new THREE.Color();
+const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,240,190,1)'); gr.addColorStop(.35, 'rgba(255,214,110,.85)'); gr.addColorStop(1, 'rgba(255,200,90,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const winMat = new THREE.PointsMaterial({ color: '#ffd36b', size: 3.2, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false });
+const lampMat = new THREE.PointsMaterial({ map: glowTex, size: 34, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+let townWin = null, campWin = null, lampPts = null, nightN = 0;
+// 무너진 건물 문턱값: kingdom.js와 같은 방법으로 다시 계산한다 (재건된 건물만 불이 켜지게)
+const TOWN_B = (() => {
+  const M = typeof YP_MAP !== 'undefined' ? YP_MAP : null; if (!M) return [];
+  const LM = M.P.filter(p => K.LANDMARK[p[0]]).map(p => [p[2], p[3], K.LANDMARK[p[0]][0]]);
+  let sd = 11; const rnd2 = () => (sd = (sd * 9301 + 49297) % 233280) / 233280, out = [];
+  M.B.forEach(([lv, f]) => { if (f.length < 6) return; let cx = 0, cz = 0; for (let k = 0; k < f.length; k += 2) { cx += f[k]; cz += f[k + 1]; } cx /= f.length / 2; cz /= f.length / 2;
+    const d = Math.hypot(cx - 12, cz - 6); let t = Math.min(.97, .03 + .92 * Math.pow(Math.min(1, d / 300), .8) + rnd2() * .05); LM.forEach(([x, z, th]) => { if (Math.hypot(cx - x, cz - z) < 16) t = Math.min(t, th - .005); });
+    out.push({ f, cx, cz, h: Math.max(.6, lv * .66), lv, thr: t }); });
+  return out;
+})();
+let winR = -1, winSig = '';
+function buildLights() {
+  const r = K.restore();
+  if (Math.abs(r - winR) > .005) {
+    winR = r; if (townWin) K.scene.remove(townWin);
+    const pos = [];
+    TOWN_B.forEach((b, i) => { if (r < b.thr) return; const floors = Math.min(4, Math.max(1, b.lv)), f = b.f, n = f.length / 2;
+      for (let e = 0; e < Math.min(n - 1, 4); e++) { const ax = f[e * 2], az = f[e * 2 + 1], bx = f[e * 2 + 2], bz = f[e * 2 + 3]; let mx = (ax + bx) / 2, mz = (az + bz) / 2; const ox = mx - b.cx, oz = mz - b.cz, ol = Math.hypot(ox, oz) || 1; mx += ox / ol * .08; mz += oz / ol * .08;
+        for (let fl = 0; fl < floors; fl++) if ((i * 7 + e * 3 + fl * 5) % 3) pos.push(mx, -.4 + .35 + fl * .66, mz); } });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); townWin = new THREE.Points(g, winMat); townWin.frustumCulled = false; K.scene.add(townWin);
+  }
+  const sig = K.FAC_ORDER.map(t => K.lvOfFac(t)).join('') + '|' + G.b.filter(b => b.t === 'lamp').map(b => b.x + ',' + b.z).join(';');
+  if (sig !== winSig) {
+    winSig = sig; if (campWin) K.scene.remove(campWin); if (lampPts) K.scene.remove(lampPts);
+    const pos = [];
+    K.FAC_ORDER.forEach(t => { const d = K.FAC[t], m = K.meshes.get(t); if (!K.lvOfFac(t) || !K.facOpen(t) || d.ground || !m) return; const [x0, z0] = d.at, [w, dd] = d.size, top = Math.min(4, (m.userData.h || 2) - .5);
+      for (let y = .7; y < top; y += .75) { for (let x = x0 + .5; x < x0 + w; x += .9) { pos.push(x, y, z0 + dd + .04); pos.push(x, y, z0 - .04); } for (let z = z0 + .5; z < z0 + dd; z += .9) { pos.push(x0 + w + .04, y, z); pos.push(x0 - .04, y, z); } } });
+    let g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); campWin = new THREE.Points(g, winMat); campWin.frustumCulled = false; K.scene.add(campWin);
+    const lp = []; G.b.filter(b => b.t === 'lamp').forEach(b => lp.push(b.x + .5, 1.65, b.z + .5));
+    [[10.4, N0 - .2], [13.6, N0 - .2]].forEach(([x, z]) => lp.push(x, 1.8, z));   // 정문 기둥
+    g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3)); lampPts = new THREE.Points(g, lampMat); lampPts.frustumCulled = false; K.scene.add(lampPts);
+  }
+}
+const N0 = 24;
+function applySky() {
+  const h = ((hourNow() % 24) + 24) % 24; let i = 0; while (i < SKY.length - 2 && SKY[i + 1][0] <= h) i++;
+  const a = SKY[i], b = SKY[i + 1], k = (h - a[0]) / ((b[0] - a[0]) || 1), lerp = (x, y) => x + (y - x) * k;
+  K.scene.background.copy(cA.set(a[1]).lerp(cB.set(b[1]), k));
+  nightN = lerp(a[5], b[5]);
+  if (hemi) { hemi.intensity = lerp(a[2], b[2]); hemi.color.copy(cA.set('#fff7e0').lerp(cB.set('#8fa0d8'), nightN)); }
+  K.sun.intensity = lerp(a[3], b[3]); K.sun.color.copy(cA.set(a[4]).lerp(cB.set(b[4]), k));
+  winMat.opacity = Math.max(0, Math.min(1, (nightN - .25) * 1.6)); lampMat.opacity = winMat.opacity * .95;
+  document.body.classList.toggle('night', nightN > .5);
+}
+let skyT = 99, lightT = 99;
+K.HOOK.tick.push(dt => { if ((skyT += dt) > 20) { skyT = 0; applySky(); } if ((lightT += dt) > 3) { lightT = 0; buildLights(); } });
+buildLights(); applySky();
+const setHour = h => { hourOverride = h; applySky(); };
+
+/* ───────── 10. 학교 행사: 달마다 바뀌는 행사 미션 · 포인트 · 한정 꾸미기 ───────── */
+const EVENTS = [
+  { months: [1, 2], id: 'winter', name: '겨울방학 눈 축제', deco: 'snowman', color: '#5b8def', desc: '눈 쌓인 캠퍼스에서 친구들과 눈싸움!', fx: 'snow' },
+  { months: [3, 4], id: 'spring', name: '새 학기 벚꽃 주간', deco: 'cherry', color: '#ff8fb3', desc: '새 교실, 새 친구, 꽃잎 날리는 은행나무길', fx: 'petal' },
+  { months: [5, 6], id: 'sports', name: '양일 체육대회', deco: 'flags', color: '#2f8f6b', desc: '반 대항 계주와 줄다리기! 운동장이 들썩여요' },
+  { months: [7, 8], id: 'summer', name: '여름방학 물놀이', deco: 'parasol', color: '#3fb6e6', desc: '수영장과 남한강에서 시원하게 놀아요' },
+  { months: [9, 10], id: 'festival', name: '양일 축제', deco: 'booth', color: '#c86bff', desc: '부스 열고 공연하는 우리 학교 축제' },
+  { months: [11], id: 'exam', name: '수능 응원', deco: 'banner', color: '#e5484d', desc: '선배들 수능 대박을 다 같이 응원해요' },
+  { months: [12], id: 'xmas', name: '크리스마스 캠퍼스', deco: 'xmas', color: '#2f8f4e', desc: '트리 불빛 반짝이는 겨울 캠퍼스', fx: 'snow' },
+];
+const EV_M = {
+  col:   { n: 40, text: '자원 말풍선 40번 모으기', cur: () => G.stat.col || 0 },
+  talk:  { n: 15, text: '친구와 15번 이야기하기', cur: () => G.stat.talk || 0 },
+  up:    { n: 5, text: '시설 5번 복구 · 레벨업', cur: () => G.stat.up || 0 },
+  win:   { n: 5, text: '전투 5번 이기기', cur: () => G.wins || 0 },
+  reqs:  { n: 5, text: '친구 의뢰 5개 들어주기', cur: () => G.stat.reqs || 0 },
+  gift:  { n: 5, text: '친구 선물 5번 받기', cur: () => G.stat.gift || 0 },
+  pulls: { n: 3, text: '친구 뽑기 3번 하기', cur: () => G.stat.pulls || 0 },
+  lvup:  { n: 5, text: '친구 5번 강화하기', cur: () => G.stat.lvup || 0 },
+};
+const EV_STEPS = [[20, { know: 80, snack: 60 }], [40, { ticket: 1 }], [60, { know: 150, snack: 100, power: 50 }], [80, { ticket: 2 }], [100, { deco: 1 }]];
+G.decoUnlock = G.decoUnlock || {};
+function curEvent() {
+  const d = new Date(), m = d.getMonth() + 1, E = EVENTS.find(e => e.months.includes(m)), last = E.months[E.months.length - 1];
+  const end = new Date(d.getFullYear(), last, 1), left = Math.max(0, Math.ceil((end - d) / 864e5));
+  return { E, key: d.getFullYear() + '-' + E.id, left };
+}
+function evState() {
+  const { E, key } = curEvent();
+  if (!G.ev || G.ev.key !== key) {
+    let h = 0; for (const c of key) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    const ks = Object.keys(EV_M).sort((a, b) => ((h >> (a.length + b.charCodeAt(0) % 5)) & 1) - .5 || a.localeCompare(b)).slice(0, 5);
+    G.ev = { key, ms: ks, base: Object.fromEntries(ks.map(k => [k, EV_M[k].cur()])), got: {}, rw: {} }; K.save();
+  }
+  return { E, S: G.ev };
+}
+const evProg = (S, k) => Math.min(EV_M[k].n, EV_M[k].cur() - (S.base[k] || 0));
+const evPts = S => Object.keys(S.got).length * 20;
+const evRwText = (r, E) => r.deco ? `${drawIcon(E.deco, 16)} ${K.DECO[E.deco].name}` : r.ticket ? `${drawIcon('star', 14)} 뽑기권 ${r.ticket}` : `${drawIcon('know', 13)} 자원 묶음`;
+function evCount() { const { S } = evState(); return S.ms.filter(k => !S.got[k] && evProg(S, k) >= EV_M[k].n).length + EV_STEPS.filter(([p]) => evPts(S) >= p && !S.rw[p]).length; }
+const ev = document.createElement('div'); ev.className = 'modal'; ev.id = 'ev'; ev.hidden = true; document.body.appendChild(ev);
+function openEV() {
+  const { E, S } = evState(), { left } = curEvent(), pts = evPts(S);
+  ev.innerHTML = `<div class="sheet nbs ev-sheet" role="dialog" aria-label="${E.name}" style="--ec:${E.color}"><div class="sh-top"><b>${E.name}</b><small>${left ? `${left}일 남음` : '오늘 마지막 날!'}</small><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
+    <div class="ev-hero"><span class="ev-ic">${drawIcon(E.deco, 54)}</span><div><p>${E.desc}</p><small>미션을 하면 행사 포인트를 받아요. <b>100점</b>을 모으면 한정 꾸미기 <b>${K.DECO[E.deco].name}</b>을(를) 받아요!</small></div></div>
+    <div class="ev-bar"><i style="width:${pts}%"></i>${EV_STEPS.map(([p, r]) => `<button class="ev-step${pts >= p ? ' on' : ''}${S.rw[p] ? ' got' : ''}" style="left:${p}%" data-evrw="${p}" ${pts >= p && !S.rw[p] ? '' : 'disabled'}><b>${p}</b><span>${evRwText(r, E)}</span></button>`).join('')}</div>
+    <h3 class="ga-h">행사 포인트 <b>${pts}</b> / 100</h3>
+    ${S.ms.map(k => { const p = evProg(S, k), ok = p >= EV_M[k].n; return `<div class="req${ok && !S.got[k] ? ' done' : ''}"><div class="rq"><b>${EV_M[k].text}</b>${bar(p, EV_M[k].n)}<div class="rw">행사 포인트 +20</div></div><button class="claim" data-evm="${k}" ${ok && !S.got[k] ? '' : 'disabled'}>${S.got[k] ? '받음' : '받기'}</button></div>`; }).join('')}
+    ${G.decoUnlock[E.deco] ? `<p class="sv">${K.DECO[E.deco].name}은(는) 아래 꾸미기 줄 끝에 있어요.</p>` : ''}</div>`;
+  ev.hidden = false;
+}
+ev.addEventListener('click', e => {
+  if (e.target === ev || e.target.closest('[data-close]')) { ev.hidden = true; return; }
+  const { E, S } = evState(), b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.evm) { const k = b.dataset.evm; if (S.got[k] || evProg(S, k) < EV_M[k].n) return; S.got[k] = 1; KS.fx('coin'); K.save(); openEV(); return; }
+  if (b.dataset.evrw) { const p = +b.dataset.evrw, r = (EV_STEPS.find(x => x[0] === p) || [])[1]; if (!r || S.rw[p] || evPts(S) < p) return; S.rw[p] = 1;
+    if (r.deco) { G.decoUnlock[E.deco] = 1; K.syncEventCards(); K.toast(`한정 꾸미기 · ${K.DECO[E.deco].name}을(를) 받았어요!`); KS.fx('fanfare'); }
+    else if (r.ticket) { G.ticket = (G.ticket || 0) + r.ticket; K.toast(`뽑기권 ${r.ticket}장!`); KS.fx('fanfare'); }
+    else { give(r); KS.fx('coin'); }
+    K.save(); openEV(); }
+});
+// 행사 띠 (자원 아래)
+const evChip = document.createElement('button'); evChip.className = 'evchip'; document.body.appendChild(evChip);
+function syncEV() { const { E } = evState(), { left } = curEvent(), n = evCount(); evChip.style.setProperty('--ec', E.color); evChip.innerHTML = `${drawIcon(E.deco, 18)}<b>${E.name}</b><small>D-${left}</small>${n ? `<i class="badge">${n}</i>` : ''}`; }
+evChip.onclick = () => { KS.fx('click'); openEV(); };
+let evT = 0; K.HOOK.tick.push(dt => { if ((evT += dt) > 2) { evT = 0; syncEV(); } }); syncEV();
+// 행사 날씨: 눈 · 꽃잎
+{ const fx = curEvent().E.fx; if (fx) { const box = document.createElement('div'); box.className = 'evfx ' + fx; box.innerHTML = Array.from({ length: 22 }, (_, i) => `<i style="left:${(i * 4.6 + (i % 3) * 7) % 100}%;animation-delay:${-(i * .83) % 9}s;animation-duration:${7 + (i % 5) * 1.3}s"></i>`).join(''); document.body.appendChild(box); } }
+
 K.save();
-Object.assign(K, { openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });
+Object.assign(K, { openEV, evState, setHour, openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });
