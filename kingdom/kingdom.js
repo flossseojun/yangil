@@ -24,7 +24,27 @@ const FAC = {
   field:   { name: '운동장', at: [1, 13], size: [9, 10], prod: ['power', 4, 20], w: [.6, .6, .3], ground: true, desc: '체육 시간과 점심시간의 운동장' },
   gym:     { name: '다목적관', at: [15, 13], size: [8, 6], prod: ['power', 6, 25], w: [1, .7, .5], wall: '#e8e2f5', roof: '#6c4fd1', arch: true, desc: '체육관 겸 강당. 큰 LED 스크린이 있어요' },
 };
-const FAC_ORDER = ['main', 'store', 'field', 'lab', 'library', 'club', 'cafe', 'gym'];
+// 넓힐 수 있는 구역의 시설
+Object.assign(FAC, {
+  comp:       { zone: 'east', name: '컴퓨터실', at: [25, 2], size: [5, 4], prod: ['know', 8, 30], w: [1.1, .5, .3], wall: '#e3ecf7', roof: '#3a4a6a', desc: '소나 부원들이 코딩하고 게임을 만드는 곳' },
+  broadcast:  { zone: 'east', name: '방송실', at: [31, 2], size: [4, 4], prod: ['power', 5, 20], w: [.8, .6, .4], wall: '#fbe9e9', roof: '#b8323a', desc: '아침마다 방송이 흘러나오는 곳' },
+  health:     { zone: 'east', name: '보건실', at: [25, 9], size: [4, 3], prod: ['snack', 5, 20], w: [.8, .7, .3], wall: '#f4fbf6', roof: '#3fa26a', desc: '메디하트가 지키는 보건실' },
+  farm:       { zone: 'back', name: '텃밭', at: [2, -10], size: [7, 6], prod: ['snack', 6, 25], w: [.6, .8, .3], ground: true, desc: '시드핸즈가 가꾸는 학교 텃밭' },
+  greenhouse: { zone: 'back', name: '온실', at: [11, -10], size: [4, 4], prod: ['know', 6, 30], w: [.9, .6, .3], wall: '#d8f0e2', roof: '#8fd0a8', desc: '사계절 초록인 유리 온실' },
+  pavilion:   { zone: 'back', name: '정자', at: [18, -9], size: [3, 3], prod: ['power', 4, 20], w: [.7, .5, .4], desc: '뒷동산 산책로 끝 쉼터' },
+  dorm:       { zone: 'west', name: '기숙사', at: [-11, 2], size: [6, 5], prod: ['snack', 8, 35], w: [1, .8, .5], wall: '#efe6f5', roof: '#6a4a8a', desc: '밤에도 불이 꺼지지 않는 기숙사' },
+  pool:       { zone: 'west', name: '수영장', at: [-11, 10], size: [8, 6], prod: ['power', 8, 30], w: [.9, .7, .6], ground: true, desc: '여름엔 제일 인기 많은 곳' },
+  hall:       { zone: 'west', name: '강당', at: [-11, 18], size: [8, 5], prod: ['know', 10, 40], w: [1.1, .7, .6], wall: '#f3ead6', roof: '#2b4a3c', arch: true, desc: '입학식 · 졸업식 · 축제가 열리는 곳' },
+});
+const FAC_ORDER = ['main', 'store', 'field', 'lab', 'library', 'club', 'cafe', 'gym', 'comp', 'broadcast', 'health', 'farm', 'greenhouse', 'pavilion', 'dorm', 'pool', 'hall'];
+// 구역: 재건 정도 · 보스 진행 · 자원으로 연다
+const ZONES = {
+  core: { name: '본교', x0: 0, z0: 0, x1: 24, z1: 24 },
+  east: { name: '별관 구역', x0: 24, z0: 0, x1: 36, z1: 24, need: { restore: .12 }, cost: { know: 120, snack: 80, power: 20 } },
+  back: { name: '뒷동산', x0: 0, z0: -12, x1: 24, z1: 0, need: { restore: .22, ch: 2 }, cost: { know: 220, snack: 160, power: 60 } },
+  west: { name: '기숙사 구역', x0: -12, z0: 0, x1: 0, z1: 24, need: { restore: .36, ch: 3 }, cost: { know: 360, snack: 260, power: 120 } },
+};
+const ZONE_ORDER = ['core', 'east', 'back', 'west'];
 const MAX_LV = 5;
 const upCostOf = (t, L) => { const [a, b, c] = FAC[t].w, k = Math.pow(L, 1.7); return { know: Math.round(14 * k * a), snack: Math.round(9 * k * b), power: Math.round(6 * Math.pow(Math.max(0, L - 1), 1.7) * c) }; };
 const PATH_X = [11, 12];                                      // 은행나무길 (정문 → 본관)
@@ -60,8 +80,13 @@ function migrate(g) {
 }
 function load() { try { const g = JSON.parse(localStorage.getItem(SAVE)); if (g && g.res) return migrate(g); } catch (e) {} return fresh(); }
 function save() { try { localStorage.setItem(SAVE, JSON.stringify(G)); } catch (e) {} }
-G = load(); G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
+G = load(); G.zones = G.zones || {}; G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
+const zoneOpen = z => !z || z === 'core' || !!G.zones[z];
+const facOpen = t => zoneOpen(FAC[t].zone);
 const lvOfFac = t => G.fac[t] || 0;
+const inZone = (x, z) => ZONE_ORDER.find(k => { const Z = ZONES[k]; return x >= Z.x0 && x < Z.x1 && z >= Z.z0 && z < Z.z1; });
+const allowedCell = (x, z) => { const k = inZone(x, z); return !!k && zoneOpen(k); };
+const interior = (x, z) => allowedCell(x, z) && allowedCell(x - 1, z) && allowedCell(x + 1, z) && allowedCell(x, z - 1) && allowedCell(x, z + 1);
 const campusLv = () => FAC_ORDER.reduce((a, t) => a + lvOfFac(t), 0);
 const restore = () => campusLv() / (FAC_ORDER.length * MAX_LV);   // 재건 정도 0~1
 const bump = (k, n = 1) => { G.stat[k] = (G.stat[k] || 0) + n; };
@@ -88,7 +113,7 @@ controls.target.set(N / 2, 0, N / 2 + 1);
 function placeCamera() { const t = controls.target; camera.position.set(t.x + Math.cos(camAngle) * camDist, camH, t.z + Math.sin(camAngle) * camDist); camera.lookAt(t); controls.update(); }
 function resize() { const w = innerWidth, h = innerHeight, a = w / h, view = a < 1 ? 15 : 11.5; camera.left = -view * a; camera.right = view * a; camera.top = view; camera.bottom = -view; camera.updateProjectionMatrix(); renderer.setSize(w, h, false); }
 addEventListener('resize', resize); resize(); camera.zoom = innerWidth / innerHeight < 1 ? 1.15 : 1.05; camera.updateProjectionMatrix(); placeCamera();
-controls.addEventListener('change', () => { const t = controls.target, cx = THREE.MathUtils.clamp(t.x, -2, N + 2), cz = THREE.MathUtils.clamp(t.z, -2, N + 4); if (cx !== t.x || cz !== t.z) { const dx = cx - t.x, dz = cz - t.z; t.x = cx; t.z = cz; camera.position.x += dx; camera.position.z += dz; } });
+controls.addEventListener('change', () => { const t = controls.target, cx = THREE.MathUtils.clamp(t.x, -12, N + 12), cz = THREE.MathUtils.clamp(t.z, -12, N + 4); if (cx !== t.x || cz !== t.z) { const dx = cx - t.x, dz = cz - t.z; t.x = cx; t.z = cz; camera.position.x += dx; camera.position.z += dz; } });
 
 scene.add(new THREE.HemisphereLight('#fff7e0', '#7fa86a', 1.15));
 const sun = new THREE.DirectionalLight('#fff3d6', 1.7);
@@ -139,18 +164,17 @@ const outside = new THREE.Group(); scene.add(outside);
   // 동네 집 · 아파트
   const winT = canvasTex(64, 128, (g, w, h) => { g.fillStyle = '#eee6d6'; g.fillRect(0, 0, w, h); for (let y = 6; y < h; y += 16) for (let x = 6; x < w; x += 20) { g.fillStyle = Math.random() < .3 ? '#ffe8a0' : '#9cc6dd'; g.fillRect(x, y, 10, 9); } });
   const house = (x, z, w, d, h, roof) => { const b = mesh(new THREE.BoxGeometry(w, h, d), [toon('#eee6d6'), toon('#eee6d6'), toon('#d8cfbe'), toon('#d8cfbe'), new THREE.MeshToonMaterial({ map: winT, gradientMap: gradMap() }), new THREE.MeshToonMaterial({ map: winT, gradientMap: gradMap() })], x, h / 2 - .4, z); outside.add(b); if (roof) { const r = mesh(new THREE.ConeGeometry(Math.max(w, d) * .75, 1, 4), toon(roof), x, h - .4 + .5, z); r.rotation.y = Math.PI / 4; r.scale.z = d / w; outside.add(r); } };
-  [[-7, -2, 4, 4, 9], [-7, 6, 4, 4, 12], [-8, 14, 4, 4, 8], [2, -10, 4, 4, 11], [9, -11, 5, 4, 13], [17, -10, 4, 4, 10], [25, -9, 4, 4, 12]].forEach(a => house(...a));
-  [[-2, -5, 3, 3, 2.4, '#c9643c'], [4, -5, 3, 3, 2.2, '#3f7fb8'], [10, -5.5, 4, 3, 2.6, '#2f8f6b'], [17, -5, 3, 3, 2.3, '#c9643c'], [23, -5.5, 3, 3, 2.5, '#8a5a34'], [-5, 20, 3, 3, 2.4, '#e0573b'], [-4, N + 7, 3, 3, 1.8, '#e0573b'], [3, N + 7, 4, 3, 1.8, '#3f7fb8'], [N + 5, 2, 3, 3, 1.8, '#2f8f6b'], [N + 5, 8, 3, 3, 1.8, '#8a5a34']].forEach(a => house(...a));
+  [[-19, -6, 4, 4, 9], [-19, 4, 4, 4, 12], [-20, 14, 4, 4, 8], [-6, -19, 4, 4, 11], [4, -20, 5, 4, 13], [14, -19, 4, 4, 10], [24, -20, 4, 4, 12], [34, -18, 4, 4, 9]].forEach(a => house(...a));
+  [[-2, -16, 3, 3, 2.4, '#c9643c'], [10, -16, 4, 3, 2.6, '#2f8f6b'], [20, -16, 3, 3, 2.3, '#c9643c'], [-16, 20, 3, 3, 2.4, '#e0573b'], [-4, N + 7, 3, 3, 1.8, '#e0573b'], [3, N + 7, 4, 3, 1.8, '#3f7fb8'], [N + 16, 2, 3, 3, 1.8, '#2f8f6b'], [N + 16, 10, 3, 3, 1.8, '#8a5a34']].forEach(a => house(...a));
   // 바깥 나무
   const leaf = toon('#5fae4e'), leaf2 = toon('#4c9a40'), trunk = toon('#7a5233');
-  for (let i = 0; i < 46; i++) { const a = i / 46 * Math.PI * 2, r = 19 + (i % 3) * 2.2, x = N / 2 + Math.cos(a) * r * 1.02, z = N / 2 + Math.sin(a) * r; if (z > N && z < N + 5) continue; if (x > -3 && x < N + 3 && z > -3 && z < N + 1) continue; const t = new THREE.Group(); t.add(mesh(new THREE.CylinderGeometry(.15, .2, 1, 6), trunk, 0, .1, 0)); const s = .9 + (i % 4) * .2; t.add(mesh(new THREE.IcosahedronGeometry(s, 0), i % 2 ? leaf : leaf2, 0, 1.2 + s * .4, 0)); t.position.set(x, -.4, z); outside.add(t); }
+  for (let i = 0; i < 64; i++) { const a = i / 64 * Math.PI * 2, r = 30 + (i % 3) * 2.5, x = N / 2 + Math.cos(a) * r * 1.1, z = N / 2 - 4 + Math.sin(a) * r; if (z > N && z < N + 5) continue; if (x > -15 && x < N + 15 && z > -15 && z < N + 1) continue; const t = new THREE.Group(); t.add(mesh(new THREE.CylinderGeometry(.15, .2, 1, 6), trunk, 0, .1, 0)); const s = .9 + (i % 4) * .2; t.add(mesh(new THREE.IcosahedronGeometry(s, 0), i % 2 ? leaf : leaf2, 0, 1.2 + s * .4, 0)); t.position.set(x, -.4, z); outside.add(t); }
   bake(outside);
 }
 // 담장 · 산울타리 · 정문
 const fixed = new THREE.Group(); scene.add(fixed);
 {
   const fence = toon('#e7e1d2'), hedge = toon('#4f9a45');
-  [[N / 2, .1, N, .25], [.1, N / 2, .25, N], [N - .1, N / 2, .25, N], [5.3, N - .1, 10.6, .25], [18.7, N - .1, 10.6, .25]].forEach(([x, z, w, d]) => { fixed.add(mesh(new THREE.BoxGeometry(w, .5, d), fence, x, .25, z, .04)); });
   [[5.3, N - .55, 10, .55], [18.7, N - .55, 10, .55]].forEach(([x, z, w, d]) => fixed.add(mesh(new THREE.BoxGeometry(w, .55, d), hedge, x, .28, z)));
   [[10.4], [13.6]].forEach(([x]) => fixed.add(mesh(new THREE.BoxGeometry(.5, 1.6, .5), toon('#d9d2c2'), x, .8, N - .2, .04)));
   // 국기 게양대 · 자전거 거치대 · 본관 앞 화단 · 표지석
@@ -177,7 +201,7 @@ function bareTree(x, z, s = 1) {
 }
 let decayKey = '';
 function refreshDecay(force) {
-  const alive = treesAlive(), signOk = lvOfFac('main') >= 1, weeds = Math.round(80 * (1 - restore()) * (1 - restore())), key = [alive, signOk, weeds].join();
+  const alive = treesAlive(), signOk = lvOfFac('main') >= 1, weeds = Math.round(80 * (1 - restore()) * (1 - restore())), key = [alive, signOk, weeds, Object.keys(G.zones).join('')].join();
   if (key === decayKey && !force) return; decayKey = key;
   decay.clear();
   for (let z = 8; z < N - 1; z += 2) [10.5, 13.5].forEach(x => decay.add(alive ? ginkgoTree(x, z, .95 + ((z * 7 + x) % 3) * .08) : bareTree(x, z, .95)));
@@ -185,7 +209,7 @@ function refreshDecay(force) {
   const sm = new THREE.MeshToonMaterial({ map: signT, gradientMap: gradMap() }), side = toon(signOk ? '#2b4a3c' : '#5a5a52');
   const sign = mesh(new THREE.BoxGeometry(3.6, .55, .14), [side, side, side, side, sm, sm], 12, signOk ? 1.7 : 1.5, N - .2, .03); if (!signOk) sign.rotation.z = -.12; decay.add(sign);
   let sd = 7; const R = () => (sd = (sd * 9301 + 49297) % 233280) / 233280, wm = toon('#5f9a3e'), wm2 = toon('#7ab04a');
-  for (let i = 0, n = 0; n < weeds && i < 600; i++) { const x = 1 + R() * (N - 2), z = 1 + R() * (N - 2), c = Math.floor(x) + ',' + Math.floor(z); if (FAC_CELLS.has(c) || isPath(Math.floor(x), Math.floor(z))) continue; n++; const tuft = new THREE.Group(); for (let k = 0; k < 3; k++) { const b = mesh(new THREE.ConeGeometry(.06, .25 + R() * .2, 4), k % 2 ? wm : wm2, (R() - .5) * .2, .12, (R() - .5) * .2); b.rotation.z = (R() - .5) * .6; tuft.add(b); } tuft.position.set(x, 0, z); decay.add(tuft); }
+  for (let i = 0, n = 0; n < weeds && i < 900; i++) { const x = -11 + R() * 46, z = -11 + R() * 34, c = Math.floor(x) + ',' + Math.floor(z); if (!interior(Math.floor(x), Math.floor(z)) || FAC_CELLS.has(c) || isPath(Math.floor(x), Math.floor(z))) continue; n++; const tuft = new THREE.Group(); for (let k = 0; k < 3; k++) { const b = mesh(new THREE.ConeGeometry(.06, .25 + R() * .2, 4), k % 2 ? wm : wm2, (R() - .5) * .2, .12, (R() - .5) * .2); b.rotation.z = (R() - .5) * .6; tuft.add(b); } tuft.position.set(x, 0, z); decay.add(tuft); }
   bake(decay);
   if (typeof leafPts !== 'undefined') leafPts.visible = alive;
 }
@@ -299,6 +323,15 @@ function extrasFor(t, d, lv, g) {
     if (lv >= 4) [-W / 2 + .3, W / 2 - .3].forEach(x => add(new THREE.BoxGeometry(.3, .2, .2), '#ffe8a0', x, H - .3, D / 2 + .1));
   }
 }
+function extrasMore(t, d, lv, g) {
+  const [sx, sz] = d.size, W = sx - .5, D = sz - .6, H = g.userData.h, add = (geo, c, x, y, z, line = .05) => { const m = mesh(geo, toon(c), x, y, z, line); g.add(m); return m; };
+  if (t === 'comp') { add(new THREE.CylinderGeometry(.03, .03, 1.2, 6), '#9aa2aa', W / 2 - .4, H + .6, -D / 4, 0); add(new THREE.SphereGeometry(.35, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), '#e8eef5', -W / 4, H + .05, 0).rotation.x = -.6; if (lv >= 2) { const sc = new THREE.Mesh(new THREE.PlaneGeometry(1.2, .55), new THREE.MeshBasicMaterial({ map: canvasTex(160, 72, c => { c.fillStyle = '#0b2a16'; c.fillRect(0, 0, 160, 72); c.fillStyle = '#5dff8a'; c.font = '26px monospace'; c.fillText('</> 소나', 12, 46); }) })); sc.position.set(W / 4, 1.35, D / 2 + .02); g.add(sc); } }
+  if (t === 'broadcast') { add(new THREE.CylinderGeometry(.04, .06, 2.4, 6), '#c9ccd2', 0, H + 1.2, -D / 4, 0); add(new THREE.SphereGeometry(.1, 8, 6), '#e5484d', 0, H + 2.45, -D / 4); [-1, 1].forEach(s2 => { const h = add(new THREE.ConeGeometry(.2, .4, 10, 1, true), '#e8eef5', s2 * .3, H + 1.6, -D / 4 + .1); h.rotation.x = Math.PI / 2; h.rotation.z = s2 * .4; }); if (lv >= 3) add(new THREE.BoxGeometry(.6, .4, .05), '#e5484d', -W / 3, 1.3, D / 2 + .03); }
+  if (t === 'health') { const cr = toon('#e5484d'); [[.5, .14], [.14, .5]].forEach(([w, h]) => g.add(mesh(new THREE.BoxGeometry(w, h, .05), cr, W / 3, H - .4, D / 2 + .04, .06))); if (lv >= 3) add(new THREE.BoxGeometry(.8, .5, .5), '#ffffff', -W / 2 - .3, .35, D / 4); }
+  if (t === 'greenhouse') { const glass = toon('#bfe8d0', { transparent: true, opacity: .55 }); const roof = mesh(new THREE.CylinderGeometry(D / 2, D / 2, W, 16, 1, false, -Math.PI / 2, Math.PI), glass, 0, H, 0, .02); roof.rotation.z = Math.PI / 2; roof.scale.y = .6; g.add(roof); for (let i = 0; i < 3; i++) add(new THREE.IcosahedronGeometry(.3, 0), '#5fae4e', -W / 3 + i * W / 3, H + .2, 0, 0); }
+  if (t === 'dorm') { const fl = Math.round((H - .25) / .8); for (let f = 1; f < fl; f++) for (let i = 0; i < 3; i++) add(new THREE.BoxGeometry(.9, .06, .35), '#c9b8d8', -W / 3 + i * W / 3, .25 + f * .8, D / 2 + .17, .03); if (lv >= 3) add(new THREE.BoxGeometry(.05, .5, .9), '#ffd23f', W / 2 + .03, H * .6, 0); }
+  if (t === 'hall') { if (lv >= 2) { const b = add(new THREE.BoxGeometry(2.6, .45, .06), '#e5484d', 0, H * .55, D / 2 + .05, .04); } if (lv >= 4) [-W / 2 + .3, W / 2 - .3].forEach(x => add(new THREE.ConeGeometry(.2, .5, 4), '#ffd23f', x, H + .3, D / 2 - .3)); }
+}
 function fieldModel(d, lv) {
   const [sx, sz] = d.size, g = new THREE.Group();
   const T = canvasTex(sx * 48, sz * 48, (c, w, h) => {
@@ -320,14 +353,49 @@ function fieldModel(d, lv) {
   const ball = mesh(new THREE.SphereGeometry(.16, 12, 8), toon('#ffffff'), 0, .2, 1, .1); g.add(ball); animated.push({ kind: 'ball', obj: ball, t: 0 });
   g.userData.h = 1.2; return g;
 }
+function farmModel(d, lv) {
+  const [sx, sz] = d.size, g = new THREE.Group(), add = (geo, c, x, y, z, line = .05) => { const m = mesh(geo, toon(c), x, y, z, line); g.add(m); return m; };
+  add(new THREE.BoxGeometry(sx - .2, .05, sz - .2), '#a5d27a', 0, .03, 0, 0);
+  const rows = Math.min(5, 1 + lv), crops = ['#6bc36b', '#e5484d', '#ffd23f', '#8a5ad8', '#ff9a3c'];
+  for (let r = 0; r < rows; r++) { const z = -sz / 2 + 1 + r * (sz - 2) / Math.max(1, 4); add(new THREE.BoxGeometry(sx - 1.6, .2, .6), '#7a5233', 0, .1, z, .03); for (let i = 0; i < 6; i++) { const x = -sx / 2 + 1.2 + i * (sx - 2.4) / 5; add(new THREE.SphereGeometry(.17, 8, 6), '#4f9a45', x, .32, z); if (r % 2 === 0 || lv >= 3) add(new THREE.SphereGeometry(.08, 6, 5), crops[(r + i) % crops.length], x + .08, .45, z + .05, .1); } }
+  for (let i = 0; i <= 8; i++) { const x = -sx / 2 + .2 + i * (sx - .4) / 8; add(new THREE.BoxGeometry(.06, .45, .06), '#b07a45', x, .22, sz / 2 - .2, 0); }
+  add(new THREE.BoxGeometry(sx - .4, .05, .04), '#b07a45', 0, .38, sz / 2 - .2, 0);
+  if (lv >= 3) { add(new THREE.CylinderGeometry(.04, .04, 1.4, 6), '#8a6440', sx / 2 - 1, .7, -sz / 2 + .8, 0); add(new THREE.BoxGeometry(.9, .06, .06), '#8a6440', sx / 2 - 1, 1.1, -sz / 2 + .8, 0); add(new THREE.SphereGeometry(.18, 8, 6), '#f2d0a8', sx / 2 - 1, 1.5, -sz / 2 + .8); add(new THREE.ConeGeometry(.3, .25, 8), '#e9c46a', sx / 2 - 1, 1.72, -sz / 2 + .8); }
+  if (lv >= 4) add(new THREE.CylinderGeometry(.4, .4, .9, 12), '#5b8def', -sx / 2 + .7, .45, -sz / 2 + .7, .04);
+  g.userData.h = 1.4; return g;
+}
+function poolModel(d, lv) {
+  const [sx, sz] = d.size, g = new THREE.Group(), add = (geo, c, x, y, z, line = .05) => { const m = mesh(geo, toon(c), x, y, z, line); g.add(m); return m; };
+  add(new THREE.BoxGeometry(sx - .2, .12, sz - .2), '#e8eef5', 0, .06, 0, .02);
+  const water = new THREE.Mesh(new THREE.BoxGeometry(sx - 1.6, .06, sz - 1.8), new THREE.MeshToonMaterial({ color: '#4fb8e8', gradientMap: gradMap() })); water.position.y = .1; g.add(water);
+  if (lv >= 2) for (let i = 1; i < 4; i++) add(new THREE.BoxGeometry(sx - 1.6, .04, .05), i % 2 ? '#e5484d' : '#ffffff', 0, .15, -(sz - 1.8) / 2 + i * (sz - 1.8) / 4, 0);
+  [-1, 1].forEach(s2 => { add(new THREE.TorusGeometry(.15, .025, 4, 10, Math.PI), '#c9ccd2', s2 * (sx / 2 - 1), .3, -(sz - 1.8) / 2, 0); });
+  if (lv >= 3) [-1.6, 0, 1.6].forEach((x, i) => { add(new THREE.BoxGeometry(.5, .08, 1), ['#ffd23f', '#ff6b8b', '#5b8def'][i], x, .2, sz / 2 - .45); });
+  if (lv >= 4) { add(new THREE.BoxGeometry(.4, .05, 1.2), '#5b8def', sx / 2 - 1.2, .45, 0, .04); add(new THREE.BoxGeometry(.4, .4, .3), '#c9ccd2', sx / 2 - 1.2, .25, .5, 0); }
+  g.userData.h = 1; return g;
+}
+function pavilionModel(d, lv) {
+  const g = new THREE.Group(), add = (geo, c, x, y, z, line = .05) => { const m = mesh(geo, toon(c), x, y, z, line); g.add(m); return m; };
+  add(new THREE.CylinderGeometry(1.25, 1.35, .3, 6), '#c9b48a', 0, .15, 0);
+  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; add(new THREE.CylinderGeometry(.07, .08, 1.4, 6), '#a5402a', Math.cos(a) * 1.05, 1, Math.sin(a) * 1.05); }
+  add(new THREE.ConeGeometry(1.7, .9, 6), lv >= 3 ? '#2f8f6b' : '#3a5a4a', 0, 2.1, 0);
+  add(new THREE.SphereGeometry(.12, 8, 6), '#ffd23f', 0, 2.6, 0);
+  if (lv >= 2) [[-.5, 0], [.5, 0]].forEach(([x]) => add(new THREE.BoxGeometry(.6, .1, .3), '#b07a45', x, .5, .5));
+  if (lv >= 3) for (let i = 0; i < 4; i++) add(new THREE.CylinderGeometry(.18, .2, .06, 8), '#c9c2b4', 0, .03, 1.6 + i * .5, 0);
+  if (lv >= 4) [-1, 1].forEach(sx => { add(new THREE.BoxGeometry(.18, .5, .18), '#c9c2b4', sx * .9, .25, 1.7); add(new THREE.BoxGeometry(.14, .14, .14), '#ffe8a0', sx * .9, .55, 1.7, .1); });
+  g.userData.h = 2.6; return g;
+}
 function makeFacility(t) {
   const d = FAC[t], lv = lvOfFac(t);
   let g;
   if (!lv) g = construction(d);
+  else if (t === 'farm') g = farmModel(d, lv);
+  else if (t === 'pool') g = poolModel(d, lv);
+  else if (t === 'pavilion') g = pavilionModel(d, lv);
   else if (d.ground) g = fieldModel(d, lv);
   else {
-    const floors = t === 'main' ? 2 + Math.ceil(lv / 2) : t === 'gym' ? 2 + (lv >= 4 ? 1 : 0) : 1 + Math.floor((lv - 1) / 2) + (t === 'library' || t === 'cafe' ? 1 : 0);
-    g = building(d, lv, floors); extrasFor(t, d, lv, g);
+    const floors = t === 'main' || t === 'dorm' ? 2 + Math.ceil(lv / 2) : t === 'gym' || t === 'hall' ? 2 + (lv >= 4 ? 1 : 0) : t === 'greenhouse' ? 1 : 1 + Math.floor((lv - 1) / 2) + (t === 'library' || t === 'cafe' ? 1 : 0);
+    g = building(d, lv, floors); extrasFor(t, d, lv, g); extrasMore(t, d, lv, g);
   }
   bake(g, new Set(animated.filter(a => a.obj && isChild(a.obj, g)).map(a => a.obj)));
   const [sx, sz] = d.size; g.position.set(d.at[0] + sx / 2, 0, d.at[1] + sz / 2); g.userData.fac = t;
@@ -352,7 +420,7 @@ const FAC_CELLS = new Set(); FAC_ORDER.forEach(t => { const d = FAC[t]; for (let
 const FIELD_CELLS = new Set(); { const d = FAC.field; for (let i = 0; i < d.size[0]; i++) for (let j = 0; j < d.size[1]; j++) FIELD_CELLS.add((d.at[0] + i) + ',' + (d.at[1] + j)); }
 const TREE_CELLS = new Set(); for (let z = 8; z < N - 1; z += 2) [10, 13].forEach(x => TREE_CELLS.add(x + ',' + z));
 function decoBlocked(skip) { const s = new Set([...FAC_CELLS, ...TREE_CELLS]); G.b.forEach(b => { if (b !== skip) cellsOf(b).forEach(c => s.add(c)); }); return s; }
-function fits(b) { const [w, d] = footprint(b); if (b.x < 1 || b.z < 1 || b.x + w > N - 1 || b.z + d > N - 1) return false; const s = decoBlocked(b); return cellsOf(b).every(c => { const [x, z] = c.split(',').map(Number); return !s.has(c) && !isPath(x, z) && !(z >= N - 3 && x >= 9 && x <= 14); }); }
+function fits(b) { const s = decoBlocked(b); return cellsOf(b).every(c => { const [x, z] = c.split(',').map(Number); return interior(x, z) && !s.has(c) && !isPath(x, z) && !(z >= N - 3 && x >= 9 && x <= 14); }); }
 // 친구가 걸을 수 없는 칸 (건물 · 꾸미기, 운동장은 걸을 수 있음)
 function walkBlocked() { const s = new Set([...FAC_CELLS].filter(c => !FIELD_CELLS.has(c) || !lvOfFac('field'))); G.b.forEach(b => cellsOf(b).forEach(c => s.add(c))); TREE_CELLS.forEach(c => s.add(c)); return s; }
 
@@ -361,7 +429,41 @@ const meshes = new Map();   // key: 시설 id 또는 꾸미기 객체
 function addFac(t) { const m = makeFacility(t); world.add(m); meshes.set(t, m); return m; }
 function setDecoPos(b, m) { const [w, d] = footprint(b); m.position.set(b.x + w / 2, 0, b.z + d / 2); m.rotation.y = -b.r * Math.PI / 2; }
 function addDeco(b) { const m = makeDeco(b.t); setDecoPos(b, m); m.userData.b = b; world.add(m); meshes.set(b, m); return m; }
-FAC_ORDER.forEach(addFac);
+FAC_ORDER.forEach(t => { if (facOpen(t)) addFac(t); });
+
+/* ───────── 구역: 열린 곳은 잔디 · 담장, 잠긴 곳은 숲 · 자물쇠 ───────── */
+const zoneG = {};
+const plainGrass = (w, h) => canvasTex(w * 32, h * 32, (g, W, H) => { for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) { g.fillStyle = (i + j) % 2 ? '#93d271' : '#8bcb69'; g.fillRect(i * 32, j * 32, 32, 32); } for (let k = 0; k < w * h * 3; k++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.1)' : 'rgba(40,90,30,.12)'; g.fillRect(Math.random() * W, Math.random() * H, 2, 3); } });
+const lockTex = name => canvasTex(240, 120, (g, w, h) => { g.fillStyle = '#fffaf0'; g.beginPath(); g.roundRect(6, 6, w - 12, 82, 16); g.fill(); g.lineWidth = 6; g.strokeStyle = INK; g.stroke(); g.beginPath(); g.moveTo(w / 2 - 14, 88); g.lineTo(w / 2, 112); g.lineTo(w / 2 + 14, 88); g.closePath(); g.fillStyle = '#fffaf0'; g.fill(); g.stroke(); g.fillStyle = '#ffd23f'; g.fillRect(24, 38, 30, 26); g.lineWidth = 4; g.strokeRect(24, 38, 30, 26); g.beginPath(); g.arc(39, 38, 10, Math.PI, 0); g.stroke(); g.fillStyle = INK; g.font = '30px Jua, sans-serif'; g.textAlign = 'left'; g.fillText(name, 66, 48); g.font = '20px Jua, sans-serif'; g.fillStyle = '#e5484d'; g.fillText('눌러서 넓히기', 66, 74); });
+function buildZone(k) {
+  if (zoneG[k]) scene.remove(zoneG[k]);
+  if (k === 'core') return;
+  const Z = ZONES[k], w = Z.x1 - Z.x0, h = Z.z1 - Z.z0, g = new THREE.Group(); g.userData.zone = k;
+  const open = zoneOpen(k);
+  const top = open ? new THREE.MeshToonMaterial({ map: plainGrass(w, h), gradientMap: gradMap() }) : toon('#6f9a55');
+  const gr = new THREE.Mesh(new THREE.BoxGeometry(w, .4, h), [toon('#b9895a'), toon('#b9895a'), top, toon('#8a6440'), toon('#b9895a'), toon('#b9895a')]); gr.position.set(Z.x0 + w / 2, -.2, Z.z0 + h / 2); gr.receiveShadow = true; g.add(gr);
+  if (!open) {
+    const forest = new THREE.Group(); let sd = k.length * 97 + 13; const R = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
+    const l1 = toon('#4f9a45'), l2 = toon('#3f8a3a'), l3 = toon('#62ad4e'), tr = toon('#6a4a30');
+    for (let x = Z.x0 + .8; x < Z.x1; x += 1.6) for (let z = Z.z0 + .8; z < Z.z1; z += 1.6) { if (R() < .25) continue; const sc = .6 + R() * .6, t = new THREE.Group(); t.add(mesh(new THREE.CylinderGeometry(.1, .14, .6, 5), tr, 0, .3, 0)); t.add(mesh(new THREE.IcosahedronGeometry(.7 * sc, 0), [l1, l2, l3][Math.floor(R() * 3)], 0, .7 + .5 * sc, 0, .04)); t.position.set(x + (R() - .5) * .8, 0, z + (R() - .5) * .8); forest.add(t); }
+    bake(forest); g.add(forest); g.userData.forest = forest;
+    const lk = new THREE.Sprite(new THREE.SpriteMaterial({ map: lockTex(Z.name), depthTest: false })); lk.scale.set(4.8, 2.4, 1); lk.renderOrder = 12; lk.position.set(Z.x0 + w / 2, 3.8, Z.z0 + h / 2); lk.userData.zone = k; g.add(lk); g.userData.lock = lk;
+  }
+  scene.add(g); zoneG[k] = g;
+}
+ZONE_ORDER.forEach(buildZone);
+// 담장: 열린 구역의 바깥 테두리만 (정문 자리는 비운다)
+const fenceG = new THREE.Group(); scene.add(fenceG);
+function buildFence() {
+  fenceG.clear(); const fm = toon('#e7e1d2'), segs = [];
+  ZONE_ORDER.filter(zoneOpen).forEach(k => { const Z = ZONES[k];
+    for (let x = Z.x0; x < Z.x1; x++) { if (!allowedCell(x, Z.z0 - 1)) segs.push(['h', x, Z.z0]); if (!allowedCell(x, Z.z1) && !(Z.z1 === N && x >= 10 && x <= 13)) segs.push(['h', x, Z.z1]); }
+    for (let z = Z.z0; z < Z.z1; z++) { if (!allowedCell(Z.x0 - 1, z)) segs.push(['v', Z.x0, z]); if (!allowedCell(Z.x1, z)) segs.push(['v', Z.x1, z]); }
+  });
+  segs.forEach(([o, a, b]) => fenceG.add(mesh(new THREE.BoxGeometry(o === 'h' ? 1.02 : .25, .5, o === 'h' ? .25 : 1.02), fm, o === 'h' ? a + .5 : a, .25, o === 'h' ? b : b + .5)));
+  bake(fenceG);
+}
+buildFence();
 G.b = G.b.filter(b => DECO[b.t] && fits(b)); G.b.forEach(addDeco);
 
 /* ───────── 움직이는 것들 (연기 · 공 · 깃발 · 은행잎) ───────── */
@@ -392,7 +494,7 @@ function bubbleIcon(t, k) { const img = new Image(); img.onload = () => { const 
 const bubbles = new Map();
 const prodOf = t => { const d = FAC[t]; return d.prod ? [d.prod[0], d.prod[1] * lvOfFac(t), d.prod[2]] : null; };
 function syncBubble(t, now) {
-  const p = prodOf(t); if (!p || !lvOfFac(t)) return;
+  const p = prodOf(t); if (!p || !lvOfFac(t) || !facOpen(t)) return;
   if (!G.facAt[t]) G.facAt[t] = now;
   const ready = now - G.facAt[t] >= p[2] * 1000;
   let s = bubbles.get(t);
@@ -409,8 +511,8 @@ function collect(t) {
 /* ───────── 친구들 ───────── */
 const people = [];
 function rosterOf(id) { return ROSTER.find(f => f.id === id) || { id, name: id, role: '' }; }
-const SPOTS = () => { const s = [[12, 9], [12, 14], [12, 19], [9, 6.5], [15, 6.5], [16.5, 11], [3, 12], [21, 12], [17, 20.5], [6, 21], [19, 21.5]]; if (lvOfFac('field')) for (let i = 0; i < 4; i++) s.push([2.5 + Math.random() * 6, 14.5 + Math.random() * 7]); return s; };
-function freeCell() { const s = walkBlocked(); for (let k = 0; k < 60; k++) { const sp = SPOTS(), [x, z] = Math.random() < .6 ? sp[Math.floor(Math.random() * sp.length)] : [1 + Math.random() * (N - 2), 1 + Math.random() * (N - 2)]; if (!s.has(Math.floor(x) + ',' + Math.floor(z))) return [x + (Math.random() - .5) * .6, z + (Math.random() - .5) * .6]; } return [12.5, 12]; }
+const SPOTS = () => { const s = [[12, 9], [12, 14], [12, 19], [9, 6.5], [15, 6.5], [16.5, 11], [3, 12], [21, 12], [17, 20.5], [6, 21], [19, 21.5]]; if (zoneOpen('east')) s.push([30, 9], [27, 15], [32, 19]); if (zoneOpen('back')) s.push([9, -3], [16, -4], [20, -2]); if (zoneOpen('west')) s.push([-4, 8], [-3, 16], [-6, 22]); if (lvOfFac('field')) for (let i = 0; i < 4; i++) s.push([2.5 + Math.random() * 6, 14.5 + Math.random() * 7]); return s; };
+function freeCell() { const s = walkBlocked(); for (let k = 0; k < 60; k++) { const sp = SPOTS(), [x, z] = Math.random() < .6 ? sp[Math.floor(Math.random() * sp.length)] : [-11 + Math.random() * 46, -11 + Math.random() * 34]; if (!s.has(Math.floor(x) + ',' + Math.floor(z)) && interior(Math.floor(x), Math.floor(z))) return [x + (Math.random() - .5) * .6, z + (Math.random() - .5) * .6]; } return [12.5, 12]; }
 const MAX_SHOWN = 18;   // 휴대폰이 느려지지 않게 캠퍼스에는 최대 18명만 나와 있다 (나머지는 수업 중)
 function addPerson(id) {
   const spr = makeChibi(id, { scale: .78, noShadow: true, castShadow: false, lookUp: .5 });
@@ -431,7 +533,7 @@ function stepPeople(dt) {
     else {
       const d = p.target.clone().sub(o); d.y = 0; const len = d.length();
       if (len < .05) { p.target = null; p.wait = 2 + Math.random() * 5; }
-      else { const v = d.multiplyScalar(Math.min(1, dt * .9 / len)); const nx = o.x + v.x, nz = o.z + v.z; if (s.has(Math.floor(nx) + ',' + Math.floor(nz))) { p.target = null; p.wait = .3; } else { o.x = nx; o.z = nz; } }
+      else { const v = d.multiplyScalar(Math.min(1, dt * .9 / len)); const nx = o.x + v.x, nz = o.z + v.z; if (s.has(Math.floor(nx) + ',' + Math.floor(nz)) || !allowedCell(Math.floor(nx), Math.floor(nz))) { p.target = null; p.wait = .3; } else { o.x = nx; o.z = nz; } }
     }
     const walking = !!p.target;
     let want = null;
@@ -515,6 +617,7 @@ function pop(m) { m.scale.setScalar(.01); tween(.45, k => { const e = 1 + Math.s
 /* ───────── 시설 정보 · 레벨업 ───────── */
 function upgradeBlock(t) {
   const lv = lvOfFac(t), next = lv + 1;
+  if (!facOpen(t)) return { ok: false, why: '구역 잠김' };
   if (lv >= MAX_LV) return { ok: false, why: '최고 레벨' };
   if (t !== 'main' && next > lvOfFac('main')) return { ok: false, why: `본관 Lv.${next} 필요` };
   if (t === 'main' && next > 1) { const others = FAC_ORDER.filter(x => x !== 'main' && lvOfFac(x) >= lv).length; if (others < 2) return { ok: false, why: `다른 시설 2곳을 Lv.${lv}로` }; }
@@ -559,6 +662,38 @@ function showDeco(b) {
   $('i-del').onclick = () => { const m = meshes.get(b); world.remove(m); meshes.delete(b); G.b.splice(G.b.indexOf(b), 1); Object.entries(d.cost).forEach(([k, n]) => { G.res[k] += Math.floor(n / 2); }); save(); hud(); hideInfo(); toast('치우고 절반을 돌려받았어요'); };
 }
 function hideInfo() { $('info').classList.remove('show'); }
+/* ───────── 구역 넓히기 ───────── */
+function zoneCheck(k) {
+  const Z = ZONES[k], n = Z.need || {}, list = [];
+  if (n.restore) list.push({ ok: restore() >= n.restore - 1e-9, text: `양일고 재건 ${Math.round(n.restore * 100)}% (지금 ${Math.round(restore() * 100)}%)` });
+  if (n.ch) list.push({ ok: typeof progOf === 'function' && progOf(G, n.ch) > 0, text: `전투 챕터 ${n.ch} 열기 (${n.ch - 1}-5 클리어)` });
+  return { list, ready: list.every(x => x.ok), pay: canPay(Z.cost) };
+}
+function showZone(k) {
+  const Z = ZONES[k], c = zoneCheck(k), el = $('info'), facs = FAC_ORDER.filter(t => FAC[t].zone === k).map(t => FAC[t].name).join(' · ');
+  el.innerHTML = `<span class="bi">${drawIcon('lock', 32)}</span><span class="txt"><b>${Z.name} 넓히기</b><small>숲을 정리하고 담장을 넓혀요 · 새 시설: ${facs}</small><small>${c.list.map(x => `${x.ok ? '✔' : '✖'} ${x.text}`).join('<br>')}</small></span>
+    <span class="acts"><button id="i-zone" class="up" ${c.ready && c.pay ? '' : 'disabled'}>넓히기<small>${resText(Z.cost, 12)}</small></button></span>`;
+  el.classList.add('show');
+  $('i-zone').onclick = () => unlockZone(k);
+}
+function unlockZone(k) {
+  const Z = ZONES[k], c = zoneCheck(k); if (!c.ready || !c.pay) return;
+  Object.entries(Z.cost).forEach(([r, n]) => { G.res[r] -= n; });
+  G.zones[k] = 1; save(); hideInfo(); KS.fx('build');
+  const old = zoneG[k], forest = old && old.userData.forest, lk = old && old.userData.lock;
+  if (lk) lk.visible = false;
+  const cx = (Z.x0 + Z.x1) / 2, cz = (Z.z0 + Z.z1) / 2, t0 = controls.target.clone();
+  tween(.8, q => { const e = 1 - Math.pow(1 - q, 3); controls.target.set(t0.x + (cx - t0.x) * e, 0, t0.z + (cz - t0.z) * e); placeCamera(); });
+  if (forest) tween(.9, q => { forest.scale.set(1, Math.max(.01, 1 - q), 1); forest.position.y = -q * .3; }, after); else after();
+  function after() {
+    buildZone(k); buildFence();
+    FAC_ORDER.filter(t => FAC[t].zone === k).forEach(t => pop(addFac(t)));
+    refreshDecay(true); hud(); KS.fx('fanfare');
+    const facs = FAC_ORDER.filter(t => FAC[t].zone === k).map(t => `<b>${FAC[t].name}</b>`).join(' · ');
+    setTimeout(() => showStory([{ t: `양일고가 넓어졌다! · ${Z.name}`, p: `숲을 걷어 내자 오래된 건물들이 모습을 드러냈다.<br>${facs}<br>무너진 곳을 눌러 다시 세워 보자.`, art: 'go', btn: '좋아!' }]), 400);
+  }
+}
+
 function recruit() {
   setTimeout(() => KS.fx('fanfare'), 300);
   const pool = ROSTER.filter(f => !G.friends.includes(f.id));
@@ -576,7 +711,7 @@ function makeReq() {
   if (G.req.some(r => r.kind === kind)) kind = REQ_KINDS.find(k => !G.req.some(r => r.kind === k)) || kind;
   const r = { who, kind, at: Date.now() };
   if (kind.startsWith('col_')) { r.n = 10 + L * 5; r.base = G.stat[kind] || 0; }
-  else if (kind === 'up') { const cand = FAC_ORDER.filter(t => upgradeBlock(t).why !== '최고 레벨' && (t === 'main' || lvOfFac(t) < lvOfFac('main'))); r.t = cand[Math.floor(Math.random() * cand.length)] || 'main'; r.n = lvOfFac(r.t) + 1; }
+  else if (kind === 'up') { const cand = FAC_ORDER.filter(t => facOpen(t) && upgradeBlock(t).why !== '최고 레벨' && (t === 'main' || lvOfFac(t) < lvOfFac('main'))); r.t = cand[Math.floor(Math.random() * cand.length)] || 'main'; r.n = lvOfFac(r.t) + 1; }
   else if (kind === 'talk') { r.n = 3; r.base = G.stat.talk || 0; }
   else if (kind === 'deco') { r.n = 2; r.base = G.stat.deco || 0; }
   else if (kind === 'win') { r.n = 1; r.base = G.wins || 0; }
@@ -629,10 +764,15 @@ canvas.addEventListener('pointerup', e => {
   if (gs) { const p = people.find(q => q.gift === gs.object); if (p) { takeGift(p); return; } }
   const hs = ray.intersectObjects([...bubbles.values()], false)[0];
   if (hs) { collect(hs.object.userData.fac); return; }
+  const locks = ZONE_ORDER.filter(k => !zoneOpen(k) && zoneG[k] && zoneG[k].userData.lock).map(k => zoneG[k].userData.lock);
+  const hl = ray.intersectObjects(locks, false)[0];
+  if (hl) { KS.fx('click'); showZone(hl.object.userData.zone); return; }
   const hp = ray.intersectObjects(people.map(p => p.spr), true)[0];
   if (hp) { const root = hp.object.userData.chibiRoot; if (root && root.userData.person) { const p = root.userData.person; if (p.gift) takeGift(p); else say(p); return; } }
   const hb = ray.intersectObjects([...meshes.values()], true)[0];
   if (hb) { let o = hb.object; while (o && !o.userData.fac && !o.userData.b) o = o.parent; if (o) { KS.fx('click'); if (o.userData.fac) { const t = o.userData.fac; if (bubbles.has(t)) collect(t); else showFac(t); } else showDeco(o.userData.b); return; } }
+  const hz = ray.intersectObjects(ZONE_ORDER.filter(k => !zoneOpen(k) && zoneG[k]).map(k => zoneG[k]), true)[0];
+  if (hz) { let o = hz.object; while (o && !o.userData.zone) o = o.parent; if (o) { KS.fx('click'); showZone(o.userData.zone); return; } }
   hideInfo();
 });
 $('b-rot').onclick = () => { camAngle += Math.PI / 2; placeCamera(); };
@@ -714,4 +854,4 @@ if (!G.story.intro) { G.story.intro = 1; save(); setTimeout(() => showStory(stor
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { G, FAC, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
