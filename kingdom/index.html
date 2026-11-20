@@ -191,6 +191,7 @@
   .bar.closed .cards-lab { pointer-events: auto; writing-mode: horizontal-tb; padding: 6px 12px; }
   .bar.closed .cards-lab i { transform: rotate(180deg); }
   .bar.closed ~ .info, .bar.closed ~ .place { bottom: 70px; }
+  .osm { position: fixed; right: max(6px, env(safe-area-inset-right)); bottom: 2px; z-index: 4; font-size: 9px; color: #4a4038; background: rgba(255,250,240,.75); padding: 1px 5px; border-radius: 4px; text-decoration: none; }
 </style>
 </head>
 <body>
@@ -217,6 +218,7 @@
 <div class="story" id="story" hidden></div>
 <div class="bar"><div class="cards" id="cards"></div></div>
 <div class="toast" id="toast"></div>
+<a class="osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">지도 © OpenStreetMap</a>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
 
 <script src="../avatar.js?v=1795180930"></script>
