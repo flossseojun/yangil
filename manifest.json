@@ -1,0 +1,16 @@
+{
+  "name": "나는 이번생은 양일고다!",
+  "short_name": "양일고다",
+  "description": "무작위 능력치로 입학해 졸업까지, 병맛 사건과 다양한 엔딩이 있는 학교생활 시뮬레이션",
+  "lang": "ko",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#eef3ee",
+  "theme_color": "#eef3ee",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
