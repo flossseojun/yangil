@@ -37,6 +37,7 @@ const ICON_PATHS = {
   lamp: '<path d="M12 9v12M8 21h8" stroke-width="2.4"/><circle cx="12" cy="6" r="3.5" fill="#ffe8a0"/>',
   vending: '<rect x="6" y="2.5" width="12" height="19" rx="1.5" fill="#e5484d"/><rect x="8.5" y="5" width="7" height="8" fill="#dff1f7"/><path d="M9 17h6"/>',
   fountain: '<path d="M3 17h18l-1.5 4h-15z" fill="#d9d2c2"/><path d="M12 17V9" stroke-width="2.4"/><path d="M12 9c-3 0-5 3-5 6M12 9c3 0 5 3 5 6" stroke="#5b8def"/><circle cx="12" cy="7" r="2" fill="#9fd8f0"/>',
+  note: '<rect x="5" y="3" width="14" height="18" rx="2" fill="#2b4a3c"/><rect x="7.5" y="5.5" width="9" height="5" rx="1" fill="#fffaf0"/><path d="M5 7h-1.5M5 12h-1.5M5 17h-1.5" stroke-width="2"/><path d="M15 21v-4l1.5 1 1.5-1v4" fill="#ffd23f"/>',
   clipboard: '<rect x="5" y="4" width="14" height="17" rx="2" fill="#fffaf0"/><rect x="9" y="2.5" width="6" height="3.5" rx="1" fill="#ffd23f"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/>',
   expand: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" stroke-width="2.6"/>',
   shrink: '<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" stroke-width="2.6"/>',
