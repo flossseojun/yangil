@@ -79,7 +79,7 @@ function migrate(g) {
   return g;
 }
 function load() { try { const g = JSON.parse(localStorage.getItem(SAVE)); if (g && g.res) return migrate(g); } catch (e) {} return fresh(); }
-function save() { try { localStorage.setItem(SAVE, JSON.stringify(G)); } catch (e) {} }
+function save() { if (window.__noSave) return; try { localStorage.setItem(SAVE, JSON.stringify(G)); } catch (e) {} }
 G = load(); G.zones = G.zones || {}; G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
 const zoneOpen = z => !z || z === 'core' || !!G.zones[z];
 const facOpen = t => zoneOpen(FAC[t].zone);
@@ -90,6 +90,7 @@ const interior = (x, z) => allowedCell(x, z) && allowedCell(x - 1, z) && allowed
 const campusLv = () => FAC_ORDER.reduce((a, t) => a + lvOfFac(t), 0);
 const restore = () => campusLv() / (FAC_ORDER.length * MAX_LV);   // 재건 정도 0~1
 const bump = (k, n = 1) => { G.stat[k] = (G.stat[k] || 0) + n; };
+const HOOK = { tick: [], tap: [] };   // notebook.js 같은 덧붙이는 모듈이 쓰는 고리
 
 /* ───────── 장면 ───────── */
 const canvas = $('c');
@@ -206,7 +207,7 @@ let townBase = null;
     const big = kind === 'station' || kind === 'market' || kind === 'river';
     const draw = (g, w, h) => { const ruined = LANDMARK[kind] && restore() < LANDMARK[kind][0] - 1e-9, name2 = ruined ? '무너진 ' + name : name; g.clearRect(0, 0, w, h); g.font = `${big ? 40 : 30}px Jua, sans-serif`; const tw = Math.min(w - 16, g.measureText(name2).width + 40); g.fillStyle = ruined ? '#c9c2b4' : kind === 'river' ? '#dff1fb' : kind === 'station' ? '#ffd23f' : kind === 'market' ? '#ffb4a0' : '#fffaf0'; g.beginPath(); g.roundRect((w - tw) / 2, 8, tw, 64, 14); g.fill(); g.lineWidth = 5; g.strokeStyle = INK; g.stroke(); g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name2, w / 2, 42); g.beginPath(); g.moveTo(w / 2 - 10, 72); g.lineTo(w / 2, 90); g.lineTo(w / 2 + 10, 72); g.closePath(); g.fillStyle = INK; g.fill(); };
     const t = canvasTex(360, 96, draw); t.userData = { draw };
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); sp.renderOrder = 13; sp.position.set(x, kind === 'river' ? 1 : 6, z); sp.userData.base = big ? 1.35 : 1; sp.userData.lm = !!LANDMARK[kind]; outside.add(sp); mapLabels.push(sp);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); sp.renderOrder = 13; sp.position.set(x, kind === 'river' ? 1 : 6, z); sp.userData.base = big ? 1.35 : 1; sp.userData.lm = !!LANDMARK[kind]; sp.userData.kind = kind; sp.userData.name = name; outside.add(sp); mapLabels.push(sp);
   });
 }
 // 이름표는 멀리 볼수록 크게 (화면에서 비슷한 크기로)
@@ -549,7 +550,7 @@ function syncBubble(t, now) {
 }
 function collect(t) {
   const p = prodOf(t); if (!p) return; KS.fx('coin');
-  G.res[p[0]] += p[1]; G.facAt[t] = Date.now(); bump('col_' + p[0], p[1]); save(); hud();
+  G.res[p[0]] += p[1]; G.facAt[t] = Date.now(); bump('col_' + p[0], p[1]); bump('col'); save(); hud();
   const m = meshes.get(t); floatText(`+${p[1]}${drawIcon(p[0], 20)}`, new THREE.Vector3(m.position.x, (m.userData.h || 2) + 1.2, m.position.z));
 }
 
@@ -697,7 +698,7 @@ function showFac(t) {
 function doUpgrade(t) {
   const up = upgradeBlock(t); if (!up.ok) { toast(up.why); return; }
   Object.entries(up.cost).forEach(([k, n]) => { G.res[k] -= n; });
-  G.fac[t] = lvOfFac(t) + 1; if (!G.facAt[t]) G.facAt[t] = Date.now();
+  G.fac[t] = lvOfFac(t) + 1; if (!G.facAt[t]) G.facAt[t] = Date.now(); bump('up');
   const old = meshes.get(t); world.remove(old); const s = bubbles.get(t); if (s) { world.remove(s); bubbles.delete(t); }
   animated.splice(0, animated.length, ...animated.filter(a => a.g !== old && (!a.obj || !isChild(a.obj, old))));
   const m = addFac(t); pop(m); KS.fx(G.fac[t] === 1 ? 'build' : 'levelup');
@@ -749,7 +750,7 @@ function recruit() {
   setTimeout(() => KS.fx('fanfare'), 300);
   const pool = ROSTER.filter(f => !G.friends.includes(f.id));
   if (!pool.length) { toast('모든 친구가 캠퍼스에 모였어요!'); return; }
-  const f = pool[Math.floor(Math.random() * pool.length)]; G.friends.push(f.id); const p = addPerson(f.id);
+  const f = pool[Math.floor(Math.random() * pool.length)]; G.friends.push(f.id); bump('recruit'); const p = addPerson(f.id);
   p.spr.position.set(FAC.club.at[0] + 2, 0, FAC.club.at[1] + 4.3);
   toast(`동아리실 모집 · ${f.name} 합류`); setTimeout(() => say(p), 600);
 }
@@ -824,6 +825,7 @@ canvas.addEventListener('pointerup', e => {
   if (hb) { let o = hb.object; while (o && !o.userData.fac && !o.userData.b) o = o.parent; if (o) { KS.fx('click'); if (o.userData.fac) { const t = o.userData.fac; if (bubbles.has(t)) collect(t); else showFac(t); } else showDeco(o.userData.b); return; } }
   const hz = ray.intersectObjects(ZONE_ORDER.filter(k => !zoneOpen(k) && zoneG[k]).map(k => zoneG[k]), true)[0];
   if (hz) { let o = hz.object; while (o && !o.userData.zone) o = o.parent; if (o) { KS.fx('click'); showZone(o.userData.zone); return; } }
+  if (HOOK.tap.some(f => f(ray))) return;
   hideInfo();
 });
 $('b-rot').onclick = () => { camAngle += Math.PI / 2; placeCamera(); };
@@ -846,7 +848,7 @@ function loop() {
   const dt = Math.min(clock.getDelta(), .05), now = Date.now(), t = performance.now() / 1000;
   controls.update(); stepLabels(); stepPeople(dt); stepGifts(dt); perfCheck(); stepAnimated(dt, t); stepLeaves(dt, t); stepSky(dt, t);
   for (let i = tweens.length - 1; i >= 0; i--) { const w = tweens[i]; w.t += dt; const k = Math.min(1, w.t / w.dur); w.f(k); if (k >= 1) { tweens.splice(i, 1); w.done && w.done(); } }
-  FAC_ORDER.forEach(f => syncBubble(f, now));
+  FAC_ORDER.forEach(f => syncBubble(f, now)); HOOK.tick.forEach(f => f(dt, t));
   if (talk) { if (performance.now() > talk.until) { talk.el.remove(); talk = null; } else { const [x, y] = toScreen(talk.p.spr.position.clone().add(new THREE.Vector3(0, 2.1, 0))); talk.el.style.left = x + 'px'; talk.el.style.top = y + 'px'; } }
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
@@ -905,4 +907,4 @@ if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };

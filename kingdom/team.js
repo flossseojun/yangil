@@ -30,10 +30,10 @@ function layout(ids) {
 function teamTagCount(s) { const tags = teamTags(team); return Object.keys(tags).some(t => ({ invent: ['chem', 'eng'], code: ['sona'], city: ['zec'], cheer: ['bcast'], sprout: ['seed'], squid: ['squid'], sport: ['sport'] })[s.id].includes(t)); }
 function renderTop() {
   $('res').innerHTML = RES_ORDER.map(k => `<span class="rs">${drawIcon(k, 18)}${fmt(G.res[k] || 0)}</span>`).join('');
-  const sm = chapMul(ch, stage);
-  $('st-n').textContent = ch + '-' + stage; $('st-rec').textContent = `추천 ${fmt(sm.rec)}`;
-  $('st-prev').disabled = stage <= 1; $('st-next').disabled = stage >= Math.min(MAX_STAGE, progOf(G, ch));
-  $('chaps').innerHTML = CHAPTERS.map(c => { const open = progOf(G, c.n) > 0; return `<button class="ch${c.n === ch ? ' on' : ''}${open ? '' : ' lock'}" data-ch="${c.n}" ${open ? '' : 'aria-disabled="true"'}><small>챕터 ${c.n}</small><b>${open ? '' : drawIcon('lock', 16)}${c.place}</b><span>${open ? '보스 · ' + c.boss : `${c.n - 1}-${CHAP_UNLOCK} 클리어 시 열림`}</span></button>`; }).join('');
+  const sm = stageMulOf(ch, stage), sn = starsOf(G, ch, stage);
+  $('st-n').innerHTML = stageName(ch, stage) + `<span class="st-stars">${[0, 1, 2].map(i => drawIcon(i < sn ? 'star' : 'starOff', 12)).join('')}</span>`; $('st-rec').textContent = `추천 ${fmt(sm.rec)}`;
+  $('st-prev').disabled = stage <= 1; $('st-next').disabled = stage >= Math.min(maxStageOf(ch), progOf(G, ch));
+  $('chaps').innerHTML = CHAPTERS.map(c => { const open = progOf(G, c.n) > 0; return `<button class="ch${c.tower ? ' tower' : ''}${c.n === ch ? ' on' : ''}${open ? '' : ' lock'}" data-ch="${c.n}" ${open ? '' : 'aria-disabled="true"'}><small>챕터 ${c.n}</small><b>${open ? '' : drawIcon('lock', 16)}${c.place}</b><span>${open ? '보스 · ' + c.boss : `${c.n - 1}-${CHAP_UNLOCK} 클리어 시 열림`}</span></button>`; }).join('');
 }
 function renderField() {
   const L = layout(team);
@@ -44,7 +44,7 @@ function renderField() {
   $('syn').innerHTML = syn.filter(s => s.on || teamTagCount(s)).map(s => `<span class="${s.on ? 'on' : ''}"><b>${s.name}</b>${s.on ? s.desc : s.need}</span>`).join('') || '<span>같은 동아리 친구를 함께 넣으면 시너지가 켜져요</span>';
   const cb = campusBonus(G);
   $('camp').innerHTML = cb.list.length ? '<b>캠퍼스 보너스</b> · ' + cb.list.join(' · ') : '<b>캠퍼스 보너스</b> · 캠퍼스에서 과학실 · 다목적관 · 도서관 · 매점을 레벨업하면 전투가 강해져요';
-  const pw = team.reduce((a, id) => a + powerOf(G, id), 0), rec = chapMul(ch, stage).rec;
+  const pw = team.reduce((a, id) => a + powerOf(G, id), 0), rec = stageMulOf(ch, stage).rec;
   $('pow').innerHTML = `팀 전투력 ${fmt(pw)}<small style="color:${pw >= rec ? '#2f8f4e' : '#d0393e'}">추천 ${fmt(rec)}</small>`;
   $('go').disabled = !team.length;
 }
@@ -111,7 +111,7 @@ $('field').addEventListener('click', e => { const s = e.target.closest('.slot[da
 $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
 $('chaps').addEventListener('click', e => { const b = e.target.closest('.ch'); if (!b) return; const n = +b.dataset.ch; if (!progOf(G, n)) { const c = CHAPTERS[n - 1]; $('hint').textContent = `${n - 1}-${CHAP_UNLOCK} 스테이지를 깨면 「${c.place}」${josa(c.place, '이', '가').slice(c.place.length)} 열려요`; $('hint').scrollIntoView({ block: 'nearest' }); return; } ch = n; stage = progOf(G, n); save(); render(); });
 $('st-prev').onclick = () => { stage = Math.max(1, stage - 1); save(); render(); };
-$('st-next').onclick = () => { stage = Math.min(Math.min(MAX_STAGE, progOf(G, ch)), stage + 1); save(); render(); };
+$('st-next').onclick = () => { stage = Math.min(Math.min(maxStageOf(ch), progOf(G, ch)), stage + 1); save(); render(); };
 $('auto').onclick = autoPick;
 $('go').onclick = () => { save(); location.href = 'battle.html'; };
 if (typeof KS !== 'undefined') { KS.play('campus'); KS.bind($('b-music')); document.addEventListener('click', e => { if (e.target.closest('button, .card, .slot, .ch')) KS.fx('click'); }, true); }
