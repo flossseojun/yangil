@@ -4,6 +4,7 @@ const ICON_PATHS = {
   know: '<rect x="5" y="3" width="14" height="18" rx="2" fill="#5b8def"/><path d="M8.5 3v18"/><path d="M11.5 8h4.5M11.5 11.5h4.5" stroke="#fff"/>',
   snack: '<path d="M4 12.5a8 5.5 0 0 1 16 0V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z" fill="#f2b25c"/><path d="M9 9.5l1 3M13 9l1 3M16.5 10l.6 2.5"/>',
   power: '<path d="M13.5 2.5L5 13.5h6l-1.5 8 9-11.5h-6z" fill="#ffd23f"/>',
+  coin: '<circle cx="12" cy="12" r="8.5" fill="#ffc83a"/><circle cx="12" cy="12" r="5.5" fill="#ffe08a"/><path d="M10 9.5h4M12 9.5v5M10 14.5h4"/>',
   fight: '<path d="M4 4l9 9" stroke-width="3.2"/><path d="M4 4l9 9" stroke="#e6edf3" stroke-width="1.4"/><path d="M20 4l-9 9" stroke-width="3.2"/><path d="M20 4l-9 9" stroke="#e6edf3" stroke-width="1.4"/><path d="M9.5 15.5l5-5M14.5 15.5l-5-5" stroke="#e5484d" stroke-width="2.6"/><path d="M7 17l-2.5 2.5M17 17l2.5 2.5"/>',
   school: '<path d="M3 20.5V10l9-5 9 5v10.5z" fill="#f3ead6"/><path d="M3 10l9-5 9 5" fill="#2b4a3c"/><rect x="10" y="14" width="4" height="6.5" fill="#8a5a34"/><path d="M12 5V1.8l3 1.2-3 1.2"/><path d="M6.5 13h1.5M16 13h1.5"/>',
   rotate: '<path d="M19 12a7 7 0 1 1-2.2-5.1"/><path d="M19.5 3.5v4.5H15"/>',
@@ -38,6 +39,19 @@ const ICON_PATHS = {
   vending: '<rect x="6" y="2.5" width="12" height="19" rx="1.5" fill="#e5484d"/><rect x="8.5" y="5" width="7" height="8" fill="#dff1f7"/><path d="M9 17h6"/>',
   fountain: '<path d="M3 17h18l-1.5 4h-15z" fill="#d9d2c2"/><path d="M12 17V9" stroke-width="2.4"/><path d="M12 9c-3 0-5 3-5 6M12 9c3 0 5 3 5 6" stroke="#5b8def"/><circle cx="12" cy="7" r="2" fill="#9fd8f0"/>',
   note: '<rect x="5" y="3" width="14" height="18" rx="2" fill="#2b4a3c"/><rect x="7.5" y="5.5" width="9" height="5" rx="1" fill="#fffaf0"/><path d="M5 7h-1.5M5 12h-1.5M5 17h-1.5" stroke-width="2"/><path d="M15 21v-4l1.5 1 1.5-1v4" fill="#ffd23f"/>',
+  pencil: '<path d="M4 20l1.2-4.6L16.5 4.1a2 2 0 0 1 2.9 0l.5.5a2 2 0 0 1 0 2.9L8.6 18.8z" fill="#ffd23f"/><path d="M14.5 6l3.5 3.5M4 20l4.6-1.2"/><path d="M5.2 15.4l3.4 3.4" />',
+  pcase: '<rect x="2.5" y="7" width="19" height="10" rx="4" fill="#5b8def"/><path d="M2.5 11.5h19"/><rect x="10" y="9.8" width="4" height="3.4" rx="1" fill="#ffd23f"/>',
+  marker: '<path d="M14 3.5l6.5 6.5-8.5 8.5H6V12.5z" fill="#b8f06a"/><path d="M6 18.5L3.5 21H8M10.5 7l6.5 6.5"/>',
+  gymsuit: '<path d="M8 3.5L3 6.5l2 4 2-1V20.5h10V9.5l2 1 2-4-5-3c-.6 1.6-2.2 2.6-4 2.6S8.6 5.1 8 3.5z" fill="#e5484d"/><path d="M12 9v11"/>',
+  earphone: '<path d="M5 15v-3a7 7 0 0 1 14 0v3"/><rect x="3" y="14" width="5" height="7" rx="2" fill="#c86bff"/><rect x="16" y="14" width="5" height="7" rx="2" fill="#c86bff"/>',
+  goldpen: '<path d="M5 19l2-6L16 4l4 4-9 9z" fill="#ffd23f"/><path d="M5 19l1.5-1.5M14 6l4 4"/><circle cx="18.5" cy="5.5" r="1" fill="#fff"/>',
+  snowman: '<circle cx="12" cy="16" r="5" fill="#fff"/><circle cx="12" cy="8" r="3.5" fill="#fff"/><path d="M9 4.5h6M10 4.5V2h4v2.5" fill="#231c17"/><path d="M12 8.5l2.5.8" stroke="#ff8a3c"/>',
+  cherry: '<path d="M12 21v-7"/><circle cx="12" cy="9" r="6" fill="#ffb7cf"/><circle cx="9" cy="8" r="1" fill="#fff"/><circle cx="14.5" cy="10.5" r="1" fill="#fff"/>',
+  flags: '<path d="M2 5c6 4 14 4 20 0"/><path d="M5 6.5l1 4 2-3.5z" fill="#e5484d"/><path d="M10 7.6l1 4 2-3.7z" fill="#ffd23f"/><path d="M15 7.3l1 4 2-3.8z" fill="#5b8def"/>',
+  parasol: '<path d="M3 11a9 7 0 0 1 18 0z" fill="#e5484d"/><path d="M12 11v10M9 21h6M8 11a4 7 0 0 1 8 0" />',
+  booth: '<path d="M2 9l3-5h14l3 5z" fill="#e5484d"/><path d="M4 9v11M20 9v11"/><rect x="5" y="13" width="14" height="5" fill="#ffd23f"/>',
+  banner: '<path d="M4 3v18M20 3v18"/><rect x="4" y="5" width="16" height="8" fill="#fffaf0"/><path d="M7 9h10" stroke="#e5484d"/>',
+  xmas: '<path d="M12 2l4 6h-2l4 6h-3l4 5H5l4-5H6l4-6H8z" fill="#2f8f4e"/><path d="M12 19v3"/><circle cx="12" cy="2.5" r="1.3" fill="#ffd23f"/>',
   clipboard: '<rect x="5" y="4" width="14" height="17" rx="2" fill="#fffaf0"/><rect x="9" y="2.5" width="6" height="3.5" rx="1" fill="#ffd23f"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/>',
   expand: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" stroke-width="2.6"/>',
   shrink: '<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" stroke-width="2.6"/>',
@@ -47,7 +61,14 @@ function drawIcon(name, size = 18, cls = '') {
   return `<svg class="ico ${cls}" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[name] || ''}</svg>`;
 }
 // 자원 묶음: { know: 10, snack: 4 } → 아이콘 + 숫자
-const RES_ORDER = ['know', 'snack', 'power'];
+const RES_ORDER = ['know', 'snack', 'power', 'coin'];
+// 자원마다 하는 일 (자원 칸을 누르면 보여 준다)
+const RES_INFO = {
+  know:  { name: '지식', use: '시설 복구 · 레벨업, 구역 넓히기', from: '본관 · 과학실 · 도서관 · 컴퓨터실 · 온실 · 강당' },
+  snack: { name: '간식', use: '친구 레벨업 (빨리 키우기)', from: '매점 · 급식실 · 보건실 · 텃밭 · 기숙사' },
+  power: { name: '체력', use: '꾸미기 놓기, 친구 각성', from: '운동장 · 다목적관 · 방송실 · 정자 · 수영장' },
+  coin:  { name: '용돈', use: '친구 뽑기, 문구점 장비', from: '전투 승리 · 친구 의뢰 · 출석 · 오늘의 미션 · 시장 교환' },
+};
 const resText = (cost, size = 13) => RES_ORDER.filter(k => cost && cost[k]).map(k => `<span class="rs">${drawIcon(k, size)}${cost[k]}</span>`).join('');
 
 // 전체화면: 되는 기기는 바로 전체화면, 안 되는 기기(아이폰 사파리)는 '홈 화면에 추가' 안내

@@ -9,7 +9,7 @@ import { shot } from './chibishot.js';
 const N = 24;                       // 부지 크기 (N×N 칸)
 const SAVE = 'yangil.kingdom.v1';
 const $ = id => document.getElementById(id);
-const RES_NAME = { know: '지식', snack: '간식', power: '체력' };
+const RES_NAME = { know: '지식', snack: '간식', power: '체력', coin: '용돈' };
 const INK = '#231c17';
 
 /* ───────── 시설: 처음부터 제자리에 있고 레벨업한다 (0 = 공사 전) ───────── */
@@ -40,25 +40,33 @@ const FAC_ORDER = ['main', 'store', 'field', 'lab', 'library', 'club', 'cafe', '
 // 구역: 재건 정도 · 보스 진행 · 자원으로 연다
 const ZONES = {
   core: { name: '본교', x0: 0, z0: 0, x1: 24, z1: 24 },
-  east: { name: '별관 구역', x0: 24, z0: 0, x1: 36, z1: 24, need: { restore: .12 }, cost: { know: 120, snack: 80, power: 20 } },
-  back: { name: '뒷동산', x0: 0, z0: -12, x1: 24, z1: 0, need: { restore: .22, ch: 2 }, cost: { know: 220, snack: 160, power: 60 } },
-  west: { name: '기숙사 구역', x0: -12, z0: 0, x1: 0, z1: 24, need: { restore: .36, ch: 3 }, cost: { know: 360, snack: 260, power: 120 } },
+  east: { name: '별관 구역', x0: 24, z0: 0, x1: 36, z1: 24, need: { restore: .12 }, cost: { know: 180 } },
+  back: { name: '뒷동산', x0: 0, z0: -12, x1: 24, z1: 0, need: { restore: .22, ch: 2 }, cost: { know: 340 } },
+  west: { name: '기숙사 구역', x0: -12, z0: 0, x1: 0, z1: 24, need: { restore: .36, ch: 3 }, cost: { know: 520 } },
 };
 const ZONE_ORDER = ['core', 'east', 'back', 'west'];
 const MAX_LV = 5;
-const upCostOf = (t, L) => { const [a, b, c] = FAC[t].w, k = Math.pow(L, 1.7); return { know: Math.round(14 * k * a), snack: Math.round(9 * k * b), power: Math.round(6 * Math.pow(Math.max(0, L - 1), 1.7) * c) }; };
+const upCostOf = (t, L) => { const [a, b, c] = FAC[t].w, k = Math.pow(L, 1.7); return { know: Math.round(16 * k * (a + b * .5 + c * .3)) }; };   // 시설은 지식으로
 const PATH_X = [11, 12];                                      // 은행나무길 (정문 → 본관)
 const isPath = (x, z) => (PATH_X.includes(x) && z >= 5) || (z >= 5 && z <= 6 && x >= 7 && x <= 16);
 
 /* ───────── 꾸미기 (자유롭게 놓기) ───────── */
 const DECO = {
-  ginkgo:   { name: '은행나무', size: [1, 1], cost: { snack: 4 } },
-  bench:    { name: '벤치', size: [1, 1], cost: { snack: 2 } },
-  flower:   { name: '화단', size: [1, 1], cost: { snack: 3 } },
-  planter:  { name: '화분', size: [1, 1], cost: { snack: 2 } },
-  lamp:     { name: '가로등', size: [1, 1], cost: { know: 4, snack: 2 } },
-  vending:  { name: '자판기', size: [1, 1], cost: { know: 6, snack: 4 } },
-  fountain: { name: '분수', size: [2, 2], cost: { know: 20, snack: 15 } },
+  ginkgo:   { name: '은행나무', size: [1, 1], cost: { power: 3 } },
+  bench:    { name: '벤치', size: [1, 1], cost: { power: 2 } },
+  flower:   { name: '화단', size: [1, 1], cost: { power: 2 } },
+  planter:  { name: '화분', size: [1, 1], cost: { power: 2 } },
+  lamp:     { name: '가로등', size: [1, 1], cost: { power: 5 } },
+  vending:  { name: '자판기', size: [1, 1], cost: { power: 8 } },
+  fountain: { name: '분수', size: [2, 2], cost: { power: 28 } },
+  // 학교 행사 한정 (notebook.js 행사에서 열린다)
+  snowman: { name: '눈사람', size: [1, 1], cost: { power: 5 }, event: true },
+  cherry:  { name: '벚꽃나무', size: [1, 1], cost: { power: 5 }, event: true },
+  flags:   { name: '만국기', size: [2, 1], cost: { power: 10 }, event: true },
+  parasol: { name: '파라솔', size: [1, 1], cost: { power: 5 }, event: true },
+  booth:   { name: '축제 부스', size: [2, 2], cost: { power: 19 }, event: true },
+  banner:  { name: '응원 현수막', size: [2, 1], cost: { power: 10 }, event: true },
+  xmas:    { name: '크리스마스 트리', size: [1, 1], cost: { power: 11 }, event: true },
 };
 const DECO_ORDER = ['ginkgo', 'bench', 'flower', 'planter', 'lamp', 'vending', 'fountain'];
 const LINES = ['오늘 캠퍼스 분위기 좋다!', '매점 가자!', '은행나무길 걷는 거 좋아.', '오늘도 양일고 파이팅!', '나 여기서 낮잠 자도 돼?', '캠퍼스 점점 멋있어진다.'];
@@ -67,7 +75,7 @@ const LINES = ['오늘 캠퍼스 분위기 좋다!', '매점 가자!', '은행�
 let G;
 function fresh() {
   const others = ROSTER.filter(f => f.id !== 'seojun').sort(() => Math.random() - .5);
-  return { res: { know: 40, snack: 20, power: 5 }, fac: {}, facAt: {}, b: [], friends: ['seojun', ...others.slice(0, 4).map(f => f.id)], stat: {}, req: [], story: {} };
+  return { res: { know: 60, snack: 30, power: 10, coin: 60 }, fac: {}, facAt: {}, b: [], friends: ['seojun', ...others.slice(0, 4).map(f => f.id)], stat: {}, req: [], story: {} };
 }
 function migrate(g) {
   if (g.fac) return g;
@@ -80,7 +88,7 @@ function migrate(g) {
 }
 function load() { try { const g = JSON.parse(localStorage.getItem(SAVE)); if (g && g.res) return migrate(g); } catch (e) {} return fresh(); }
 function save() { if (window.__noSave) return; try { localStorage.setItem(SAVE, JSON.stringify(G)); } catch (e) {} }
-G = load(); G.zones = G.zones || {}; G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
+G = load(); if (G.res.coin == null) G.res.coin = 60; G.zones = G.zones || {}; G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
 const zoneOpen = z => !z || z === 'core' || !!G.zones[z];
 const facOpen = t => zoneOpen(FAC[t].zone);
 const lvOfFac = t => G.fac[t] || 0;
@@ -458,6 +466,13 @@ function makeDeco(t) {
   else if (t === 'lamp') { add(new THREE.CylinderGeometry(.04, .06, 1.6, 6), '#3a3f4a', 0, .8, 0); add(new THREE.SphereGeometry(.16, 10, 8), '#ffe8a0', 0, 1.65, 0); }
   else if (t === 'vending') { add(new THREE.BoxGeometry(.6, 1, .45), '#e5484d', 0, .5, 0); const w = new THREE.Mesh(new THREE.PlaneGeometry(.4, .5), new THREE.MeshBasicMaterial({ map: canvasTex(40, 50, c => { c.fillStyle = '#dff1f7'; c.fillRect(0, 0, 40, 50); ['#5b8def', '#ffd23f', '#6cd39a', '#ff9a3c'].forEach((col, i) => { c.fillStyle = col; c.fillRect(4 + (i % 2) * 18, 6 + Math.floor(i / 2) * 20, 12, 14); }); }) })); w.position.set(0, .62, .23); g.add(w); }
   else if (t === 'fountain') { add(new THREE.CylinderGeometry(.9, .95, .3, 20), '#d9d2c2', 0, .15, 0); const water = new THREE.Mesh(new THREE.CylinderGeometry(.8, .8, .05, 20), toon('#7fc4e8')); water.position.y = .3; g.add(water); add(new THREE.CylinderGeometry(.12, .16, .7, 10), '#d9d2c2', 0, .5, 0); add(new THREE.SphereGeometry(.18, 10, 8), '#9fd8f0', 0, .95, 0, 0); }
+  else if (t === 'snowman') { add(new THREE.SphereGeometry(.3, 14, 10), '#ffffff', 0, .3, 0); add(new THREE.SphereGeometry(.21, 14, 10), '#ffffff', 0, .74, 0); add(new THREE.ConeGeometry(.04, .2, 8), '#ff8a3c', 0, .76, .26).rotation.x = Math.PI / 2; add(new THREE.CylinderGeometry(.14, .14, .2, 12), '#231c17', 0, 1.02, 0); add(new THREE.CylinderGeometry(.2, .2, .03, 12), '#231c17', 0, .93, 0); add(new THREE.TorusGeometry(.16, .04, 6, 14), '#e5484d', 0, .56, 0, 0).rotation.x = Math.PI / 2; }
+  else if (t === 'cherry') { add(new THREE.CylinderGeometry(.07, .1, .8, 7), '#7a4a2a', 0, .4, 0); [[0, 1, 0, .42], [-.25, .85, .12, .3], [.26, .88, -.1, .32], [.05, 1.25, .05, .28]].forEach(([x, y, z, r]) => add(new THREE.IcosahedronGeometry(r, 1), '#ffb7cf', x, y, z)); }
+  else if (t === 'flags') { [-.9, .9].forEach(x => add(new THREE.CylinderGeometry(.03, .04, 1.4, 6), '#6b7078', x, .7, 0, 0)); add(new THREE.BoxGeometry(1.8, .015, .015), '#444', 0, 1.3, 0, 0); ['#e5484d', '#ffd23f', '#5b8def', '#2f8f6b', '#c86bff', '#ff9a3c', '#ffffff'].forEach((c, i) => { const f = add(new THREE.ConeGeometry(.08, .2, 3), c, -.75 + i * .25, 1.19, 0, .04); f.rotation.x = Math.PI; }); }
+  else if (t === 'parasol') { add(new THREE.CylinderGeometry(.025, .025, 1.3, 6), '#ddd', 0, .65, 0, 0); add(new THREE.ConeGeometry(.6, .3, 8), '#e5484d', 0, 1.35, 0); add(new THREE.ConeGeometry(.3, .16, 8), '#ffffff', 0, 1.47, 0, 0); add(new THREE.CylinderGeometry(.3, .3, .05, 14), '#fffaf0', 0, .5, 0); add(new THREE.CylinderGeometry(.04, .04, .5, 6), '#ddd', 0, .25, 0, 0); }
+  else if (t === 'booth') { [[-.8, -.8], [.8, -.8], [-.8, .8], [.8, .8]].forEach(([x, z]) => add(new THREE.CylinderGeometry(.04, .04, 1.3, 6), '#ffffff', x, .65, z, 0)); const roof = add(new THREE.ConeGeometry(1.25, .55, 4), '#e5484d', 0, 1.55, 0); roof.rotation.y = Math.PI / 4; add(new THREE.BoxGeometry(1.5, .5, .4), '#ffd23f', 0, .25, .55); add(new THREE.BoxGeometry(1.5, .06, .5), '#fffaf0', 0, .53, .55); }
+  else if (t === 'banner') { [-.9, .9].forEach(x => add(new THREE.CylinderGeometry(.03, .04, 1.4, 6), '#8a5a34', x, .7, 0, 0)); const tx = canvasTex(256, 64, (g2, w, h) => { g2.fillStyle = '#fffaf0'; g2.fillRect(0, 0, w, h); g2.strokeStyle = '#e5484d'; g2.lineWidth = 8; g2.strokeRect(4, 4, w - 8, h - 8); g2.fillStyle = '#e5484d'; g2.font = '38px Jua, sans-serif'; g2.textAlign = 'center'; g2.fillText('양일고 파이팅!', w / 2, 46); }); const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.75, .44), new THREE.MeshBasicMaterial({ map: tx, side: THREE.DoubleSide })); pl.position.set(0, 1.1, 0); g.add(pl); }
+  else if (t === 'xmas') { add(new THREE.CylinderGeometry(.06, .08, .25, 6), '#7a4a2a', 0, .12, 0); [[.45, .5, .45], [.36, .45, .8], [.25, .4, 1.1]].forEach(([r, h, y]) => add(new THREE.ConeGeometry(r, h, 10), '#2f8f4e', 0, y, 0)); add(new THREE.OctahedronGeometry(.1), '#ffd23f', 0, 1.38, 0); ['#e5484d', '#ffd23f', '#5b8def', '#ffffff', '#e5484d'].forEach((c, i) => { const a = i * 1.3; add(new THREE.SphereGeometry(.045, 6, 5), c, Math.cos(a) * (.3 - i * .03), .45 + i * .16, Math.sin(a) * (.3 - i * .03), 0); }); }
   bake(g); return g;
 }
 const footprint = b => { const [sx, sz] = DECO[b.t].size; return b.r % 2 ? [sz, sx] : [sx, sz]; };
@@ -600,7 +615,12 @@ function stepGifts(dt) {
   const p = pool[Math.floor(Math.random() * pool.length)]; p.gift = new THREE.Sprite(new THREE.SpriteMaterial({ map: giftTex, depthTest: false })); p.gift.scale.set(.55, .66, 1); p.gift.renderOrder = 11; world.add(p.gift);
 }
 function takeGift(p) {
-  world.remove(p.gift); p.gift = null; const k = ['know', 'snack', 'power'][Math.floor(Math.random() * 3)], n = 4 + Math.floor(campusLv() * 1.2 + Math.random() * 5);
+  world.remove(p.gift); p.gift = null;
+  if (typeof rollGear === 'function' && Math.random() < .12) {   // 가끔 문구 장비를 준다
+    const t = rollGear(campusLv() / 6); G.items = G.items || {}; G.items[t] = (G.items[t] || 0) + 1; bump('gift'); save(); KS.fx('levelup');
+    floatText(`${drawIcon(t, 22)}+1`, p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0))); sayText(p, `${STATIONERY[t].name} 하나 더 있어서 가져왔어. 너 써!`); return;
+  }
+  const k = ['know', 'snack', 'power', 'coin'][Math.floor(Math.random() * 4)], n = Math.round((4 + Math.floor(campusLv() * 1.2 + Math.random() * 5)) * (k === 'coin' ? .5 : 1));
   G.res[k] += n; bump('gift'); G.bond = G.bond || {}; save(); hud(); KS.fx('coin');
   floatText(`+${n}${drawIcon(k, 20)}`, p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0)));
   sayText(p, ['이거 너 줄게!', '매점에서 하나 더 샀어. 너 가져!', '오다 주웠다.', '선물이야!'][Math.floor(Math.random() * 4)]);
@@ -625,14 +645,17 @@ function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add(
 const canPay = cost => Object.entries(cost || {}).every(([k, n]) => (G.res[k] || 0) >= n);
 const costText = cost => Object.entries(cost || {}).filter(([, n]) => n).map(([k, n]) => `${RES_NAME[k]} ${n}`).join(' · ');
 function hud() {
-  ['know', 'snack', 'power'].forEach(k => { $('r-' + k).textContent = G.res[k] || 0; });
+  ['know', 'snack', 'power', 'coin'].forEach(k => { const el = $('r-' + k); if (el) el.textContent = G.res[k] || 0; });
   refreshTown();
   const pct = Math.round(restore() * 100);
   $('lv').innerHTML = `양평 재건 ${pct}%<span class="rbar2"><i style="width:${pct}%"></i></span><small>캠퍼스 Lv.${campusLv()} · 친구 ${G.friends.length}명</small>`;
   document.querySelectorAll('.bcard').forEach(c => c.classList.toggle('off', !canPay(DECO[c.dataset.t].cost)));
   refreshReqBadge();
 }
-$('cards').innerHTML = `<button class="cards-lab" id="deco-tog" aria-expanded="true">꾸미기<i>▾</i></button>` + DECO_ORDER.map(t => `<button class="bcard" data-t="${t}"><span class="bi">${drawIcon(t, 32)}</span><b>${DECO[t].name}</b><small class="cost">${resText(DECO[t].cost, 13)}</small></button>`).join('');
+$('cards').innerHTML = `<button class="cards-lab" id="deco-tog" aria-expanded="true">꾸미기<i>▾</i></button>` + DECO_ORDER.filter(t => !DECO[t].event).map(t => `<button class="bcard" data-t="${t}"><span class="bi">${drawIcon(t, 32)}</span><b>${DECO[t].name}</b><small class="cost">${resText(DECO[t].cost, 13)}</small></button>`).join('');
+// 행사에서 받은 한정 꾸미기 카드 (받으면 꾸미기 줄 끝에 붙는다)
+function syncEventCards() { const have = new Set([...document.querySelectorAll('.bcard')].map(c => c.dataset.t)); Object.keys(DECO).filter(t => DECO[t].event && (G.decoUnlock || {})[t] && !have.has(t)).forEach(t => $('cards').insertAdjacentHTML('beforeend', `<button class="bcard ev" data-t="${t}"><span class="tag">행사</span><span class="bi">${drawIcon(t, 32)}</span><b>${DECO[t].name}</b><small class="cost">${resText(DECO[t].cost, 13)}</small></button>`)); document.querySelectorAll('.bcard').forEach(c => c.classList.toggle('off', !canPay(DECO[c.dataset.t].cost))); }
+syncEventCards();
 
 /* ───────── 꾸미기 놓기 ───────── */
 let ghost = null;
@@ -676,7 +699,7 @@ function upgradeBlock(t) {
   const cost = upCostOf(t, next); if (!canPay(cost)) return { ok: false, why: '자원 부족', cost };
   return { ok: true, cost };
 }
-const recruitCost = () => { const n = G.friends.length; return { know: 18 + n * 4, snack: 10 + n * 2, power: 4 + n }; };
+const recruitCost = () => { const n = G.friends.length; return { coin: 40 + n * 3 }; };   // 뽑기는 용돈으로
 const recruitCap = () => 5 + lvOfFac('club') * 11;
 function showFac(t) {
   const d = FAC[t], lv = lvOfFac(t), el = $('info'), up = upgradeBlock(t), next = lv + 1, cost = up.cost || upCostOf(t, next);
@@ -689,21 +712,22 @@ function showFac(t) {
   if (d.recruit) lines.push(`친구 ${G.friends.length} / ${recruitCap()}명까지 모을 수 있어요`);
   el.innerHTML = `<span class="bi">${drawIcon(t === 'field' ? 'gym' : t === 'cafe' ? 'snack' : t === 'main' ? 'school' : t, 32)}</span>
     <span class="txt"><b>${d.name} <span class="stars">${stars}</span></b><small>${lv ? d.desc : '폐교 뒤 무너진 채 남아 있어요. 복구하면 · ' + d.desc}</small><small>${lines.join('<br>')}</small></span>
-    <span class="acts">${lv >= MAX_LV ? '<span class="max">최고 레벨</span>' : `<button id="i-up" class="up" ${up.ok ? '' : 'disabled'}>${lv ? `Lv.${next}로` : '복구하기'}<small>${up.ok || up.why === '자원 부족' ? resText(cost, 12) : up.why}</small></button>`}
-    ${d.recruit && lv ? `<button id="i-rec" class="up rec" ${canPay(recruitCost()) && G.friends.length < Math.min(recruitCap(), ROSTER.length) ? '' : 'disabled'}>친구 모집<small>${G.friends.length >= recruitCap() ? '레벨업 필요' : resText(recruitCost(), 12)}</small></button>` : ''}</span>`;
+    <span class="acts">${lv >= MAX_LV ? '<span class="max">최고 레벨</span>' : `<button id="i-up" class="up${up.why === '자원 부족' ? ' lack' : ''}" ${up.ok || up.why === '자원 부족' ? '' : 'disabled'}>${lv ? `Lv.${next}로` : '복구하기'}<small>${up.ok || up.why === '자원 부족' ? resText(cost, 12) : up.why}</small></button>`}
+    ${d.recruit && lv ? `<button id="i-rec" class="up rec">친구 뽑기<small>${G.friends.length >= recruitCap() ? '레벨업 필요' : '뽑기 열기'}</small></button>` : ''}</span>`;
   el.classList.add('show');
   const ub = $('i-up'); if (ub) ub.onclick = () => doUpgrade(t);
-  const rb = $('i-rec'); if (rb) rb.onclick = () => { const c = recruitCost(); if (!canPay(c)) return; Object.entries(c).forEach(([k, n]) => { G.res[k] -= n; }); recruit(); save(); hud(); showFac(t); };
+  const rb = $('i-rec'); if (rb) rb.onclick = () => { hideInfo(); window.__kingdom.openGacha && window.__kingdom.openGacha(); };
 }
+function focusFac(t) { const d = FAC[t]; controls.target.set(d.at[0] + d.size[0] / 2, 0, d.at[1] + d.size[1] / 2); placeCamera(); camera.zoom = Math.max(camera.zoom, 1); camera.updateProjectionMatrix(); showFac(t); }
 function doUpgrade(t) {
-  const up = upgradeBlock(t); if (!up.ok) { toast(up.why); return; }
+  const up = upgradeBlock(t); if (!up.ok) { if (up.why === '자원 부족' && window.__kingdom.lackHint) window.__kingdom.lackHint(up.cost); else toast(up.why); return; }
   Object.entries(up.cost).forEach(([k, n]) => { G.res[k] -= n; });
   G.fac[t] = lvOfFac(t) + 1; if (!G.facAt[t]) G.facAt[t] = Date.now(); bump('up');
   const old = meshes.get(t); world.remove(old); const s = bubbles.get(t); if (s) { world.remove(s); bubbles.delete(t); }
   animated.splice(0, animated.length, ...animated.filter(a => a.g !== old && (!a.obj || !isChild(a.obj, old))));
   const m = addFac(t); pop(m); KS.fx(G.fac[t] === 1 ? 'build' : 'levelup');
   floatText(G.fac[t] === 1 ? `${FAC[t].name} 복구!` : `${FAC[t].name} Lv.${G.fac[t]}!`, m.position.clone().add(new THREE.Vector3(0, (m.userData.h || 2) + .8, 0)));
-  if (t === 'club' && G.fac[t] === 1) setTimeout(recruit, 700);
+  if (t === 'club' && G.fac[t] === 1) G.freePull = (G.freePull || 0) + 1;   // 첫 뽑기는 무료 (notebook.js가 알려 준다)
   if (G.fac[t] === 1) firstRestore(t);
   refreshDecay(); save(); hud(); showFac(t); checkMilestone();
 }
@@ -746,13 +770,15 @@ function unlockZone(k) {
   }
 }
 
-function recruit() {
-  setTimeout(() => KS.fx('fanfare'), 300);
+// 친구 합류: pick이 없으면 아직 없는 친구 중 무작위, at은 나타날 시설
+function recruit(pick, at = 'club', why = '동아리실 뽑기', quiet = false) {
+  if (!quiet) setTimeout(() => KS.fx('fanfare'), 300);
   const pool = ROSTER.filter(f => !G.friends.includes(f.id));
-  if (!pool.length) { toast('모든 친구가 캠퍼스에 모였어요!'); return; }
-  const f = pool[Math.floor(Math.random() * pool.length)]; G.friends.push(f.id); bump('recruit'); const p = addPerson(f.id);
-  p.spr.position.set(FAC.club.at[0] + 2, 0, FAC.club.at[1] + 4.3);
-  toast(`동아리실 모집 · ${f.name} 합류`); setTimeout(() => say(p), 600);
+  if (!pool.length) { toast('모든 친구가 캠퍼스에 모였어요!'); return null; }
+  const f = (pick && pool.find(x => x.id === pick)) || pool[Math.floor(Math.random() * pool.length)]; G.friends.push(f.id); bump('recruit'); const p = addPerson(f.id);
+  const F = FAC[at] || FAC.club; p.spr.position.set(F.at[0] + F.size[0] / 2, 0, F.at[1] + F.size[1] + .6);
+  if (!quiet) { toast(`${why} · ${f.name} 합류`); setTimeout(() => say(p), 600); }
+  return f;
 }
 
 /* ───────── 친구 의뢰 게시판 ───────── */
@@ -769,7 +795,7 @@ function makeReq() {
   else if (kind === 'win') { r.n = 1; r.base = G.wins || 0; }
   else if (kind === 'gift') { r.n = 1; r.base = G.stat.gift || 0; }
   const rk = ['know', 'snack', 'power'][Math.floor(Math.random() * 3)];
-  r.reward = { [rk]: 12 + L * 6, snack: (rk === 'snack' ? 12 + L * 6 : 0) + 4 + L * 2 };
+  r.reward = { [rk]: 12 + L * 6, coin: 10 + Math.round(L * 1.5) };
   return r;
 }
 function progOfReq(r) {
@@ -868,10 +894,10 @@ function storyPages() {
   ];
 }
 const MILES = [
-  [.25, '양평역에 다시 기차가 선다', '중앙선 기차가 다시 양평역에 멈춰 섰다. 역 앞 거리에 사람들이 돌아온다.', { know: 60, snack: 40 }],
-  [.5, '물맑은시장이 다시 열렸다', '“떡볶이 나왔어요!” 시장 골목에 다시 불이 켜지고, 장날 북적임이 돌아왔다.', { know: 90, snack: 70, power: 30 }],
-  [.75, '양평군청에 불이 켜졌다', '군청 앞 광장에 다시 사람들이 모인다. 남한강 산책길도 다시 열렸다.', { know: 140, snack: 100, power: 60 }],
-  [1, '양평 재건 완료!', '무너졌던 양평이 다시 우리 동네가 됐다. 남한강은 오늘도 반짝이고, 양일고 종이 울린다.', { know: 300, snack: 200, power: 120 }],
+  [.25, '양평역에 다시 기차가 선다', '중앙선 기차가 다시 양평역에 멈춰 섰다. 역 앞 거리에 사람들이 돌아온다.', { know: 60, snack: 40, coin: 50 }],
+  [.5, '물맑은시장이 다시 열렸다', '“떡볶이 나왔어요!” 시장 골목에 다시 불이 켜지고, 장날 북적임이 돌아왔다.', { know: 90, snack: 70, power: 30, coin: 80 }],
+  [.75, '양평군청에 불이 켜졌다', '군청 앞 광장에 다시 사람들이 모인다. 남한강 산책길도 다시 열렸다.', { know: 140, snack: 100, power: 60, coin: 120 }],
+  [1, '양평 재건 완료!', '무너졌던 양평이 다시 우리 동네가 됐다. 남한강은 오늘도 반짝이고, 양일고 종이 울린다.', { know: 300, snack: 200, power: 120, coin: 200 }],
 ];
 function showStory(pages, done) {
   const el = $('story'); let i = 0;
@@ -907,4 +933,4 @@ if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };

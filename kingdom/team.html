@@ -33,7 +33,7 @@
   .sbtn:active { transform: translateY(2px); box-shadow: none; }
   .sbtn:disabled { background: var(--paper2); opacity: .5; cursor: default; }
   @media (max-width: 720px) { .top { flex-wrap: wrap; } .top .res { order: 3; width: 100%; } }
-  .chaps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .chaps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
   @media (max-width: 760px) { .chaps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .ch.tower { grid-column: span 2; } }
   .ch.tower:not(.lock) { background: #2b4a3c; color: #fff; } .ch.tower:not(.lock) small, .ch.tower:not(.lock) span { color: #d9efe2; } .ch.tower.on { background: var(--yellow); color: var(--ink); } .ch.tower.on small, .ch.tower.on span { color: var(--sub); }
   .st-stars { display: inline-flex; gap: 1px; margin-left: 4px; vertical-align: middle; }
@@ -132,6 +132,8 @@
   #install-tip b { font-family: Jua, sans-serif; font-weight: 400; } #install-tip .it-box > b { font-size: 20px; }
   #install-tip p { font-size: 14px; line-height: 1.6; margin: 8px 0; }
   #install-tip button { background: #ffd23f; border: 2.5px solid #231c17; border-radius: 12px; box-shadow: 0 3px 0 #231c17; padding: 8px 20px; font-family: Jua, sans-serif; font-size: 16px; cursor: pointer; }
+  .card .aw { font-style: normal; font-size: 10px; color: #fff; background: linear-gradient(90deg, #ff6b8b, #c86bff); border-radius: 5px; padding: 0 4px; }
+  .card .gear { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; display: grid; place-items: center; background: #fffaf0; border: 2px solid #231c17; border-radius: 7px; }
 </style>
 </head>
 <body>
@@ -152,17 +154,17 @@
   </section>
 </div>
 <div class="modal" id="pf" hidden></div>
-<script src="../avatar.js?v=1795185750"></script>
-<script src="../avatar2.js?v=1795185750"></script>
-<script src="../avatar3.js?v=1795185750"></script>
-<script src="../scene.js?v=1795185750"></script>
-<script src="../fullbody.js?v=1795185750"></script>
-<script src="roster.js?v=1795185750"></script>
-<script src="kits.js?v=1795185750"></script>
-<script src="ui.js?v=1795185750"></script>
-<script src="audio.js?v=1795185750"></script>
-<script src="profiles.js?v=1795185750"></script>
-<script src="team.js?v=1795185750"></script>
+<script src="../avatar.js?v=1795203001"></script>
+<script src="../avatar2.js?v=1795203001"></script>
+<script src="../avatar3.js?v=1795203001"></script>
+<script src="../scene.js?v=1795203001"></script>
+<script src="../fullbody.js?v=1795203001"></script>
+<script src="roster.js?v=1795203001"></script>
+<script src="kits.js?v=1795203001"></script>
+<script src="ui.js?v=1795203001"></script>
+<script src="audio.js?v=1795203001"></script>
+<script src="profiles.js?v=1795203001"></script>
+<script src="team.js?v=1795203001"></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module">
 import { shootAll, openViewer, closeViewer } from './chibishot.js';

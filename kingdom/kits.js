@@ -235,13 +235,21 @@ function skillDesc(id) {
 
 /* ───────── 키우기: 친구 레벨 · 친밀도 · 건물 보너스 · 스테이지 ───────── */
 const CAMPUS_KEY = 'yangil.kingdom.v1';
-const loadCampus = () => { try { const g = JSON.parse(localStorage.getItem(CAMPUS_KEY)); if (g && g.res) return g; } catch (e) {} return null; };
+const loadCampus = () => { try { const g = JSON.parse(localStorage.getItem(CAMPUS_KEY)); if (g && g.res) { if (g.res.coin == null) g.res.coin = 60; return g; } } catch (e) {} return null; };   // 용돈이 없던 저장은 60을 준다
 const saveCampus = g => { try { localStorage.setItem(CAMPUS_KEY, JSON.stringify(g)); } catch (e) {} };
 const MAX_LV = 10;
 const lvOf = (g, id) => Math.max(1, ((g && g.lv) || {})[id] || 1);
 const bondOf = (g, id) => ((g && g.bond) || {})[id] || 0;
 const lvMult = lv => 1 + (lv - 1) * .08;               // 레벨마다 체력 · 공격 · 스킬 +8%
-const upCost = lv => ({ know: 10 * lv, snack: 6 * lv, power: 4 * lv });
+const upCost = lv => ({ snack: 15 * lv });                 // 간식으로 바로 레벨업 (빨리 키우기)
+// 경험치: 전투에 데려간 친구가 받는다. 다 차면 자동으로 레벨업
+const xpNeed = lv => 50 + (lv - 1) * 40;
+const xpOf = (g, id) => ((g && g.xp) || {})[id] || 0;
+function addXp(g, id, n) {
+  g.xp = g.xp || {}; g.lv = g.lv || {}; let lv = lvOf(g, id), x = (g.xp[id] || 0) + n, up = 0;
+  while (lv < MAX_LV && x >= xpNeed(lv)) { x -= xpNeed(lv); lv++; up++; }
+  if (lv >= MAX_LV) x = 0; g.lv[id] = lv; g.xp[id] = x; return up;
+}
 // 건물 보너스: 같은 건물은 3개까지 센다
 const BUILD_BONUS = {
   lab: { name: '과학실', text: '폭발 · 마법 친구 공격 +10%', key: 'magic', v: .10 },
@@ -249,7 +257,7 @@ const BUILD_BONUS = {
   library: { name: '도서관', text: '스킬 충전 +6%', key: 'charge', v: .06 },
   store: { name: '매점', text: '회복량 +10%', key: 'heal', v: .10 },
 };
-const DECO_TYPES = ['ginkgo', 'bench', 'flower', 'lamp', 'vending', 'fountain', 'planter'];
+const DECO_TYPES = ['ginkgo', 'bench', 'flower', 'lamp', 'vending', 'fountain', 'planter', 'snowman', 'cherry', 'flags', 'parasol', 'booth', 'banner', 'xmas'];
 function campusBonus(g) {
   const b = { magic: 1, front: 1, charge: 1, heal: 1, mood: 1, list: [] }, cnt = {};
   ((g && g.b) || []).forEach(x => { cnt[x.t] = (cnt[x.t] || 0) + 1; });
@@ -265,25 +273,46 @@ function campusBonus(g) {
 // 스테이지: 갈수록 은행왕이 강해진다
 const MAX_STAGE = 10;
 const stageMul = st => ({ hp: 1 + (st - 1) * .4, dmg: 1 + (st - 1) * .18, reward: 1 + (st - 1) * .35, rec: Math.round((4200 + (st - 1) * 900) / 10) * 10 });
-function powerOf(g, id) { const r = ROLES[kitOf(id).role], m = lvMult(lvOf(g, id)); return Math.round((r.hp / 4 + r.atk * 4) * m); }
+// 문구 장비 (친구마다 1칸) · 각성 (Lv.10에서 한 번)
+const STATIONERY = {
+  pencil:   { name: '연필',      atk: .06, cost: { coin: 30 }, desc: '공격 +6%', rank: 1 },
+  pcase:    { name: '필통',      hp: .08, cost: { coin: 30 }, desc: '체력 +8%', rank: 1 },
+  marker:   { name: '형광펜',    atk: .12, cost: { coin: 70 }, desc: '공격 +12%', rank: 2 },
+  gymsuit:  { name: '체육복',    hp: .15, cost: { coin: 70 }, desc: '체력 +15%', rank: 2 },
+  earphone: { name: '이어폰',    charge: .12, cost: { coin: 70 }, desc: '스킬 충전 +12%', rank: 2 },
+  goldpen:  { name: '금색 볼펜', hp: .1, atk: .1, cost: { coin: 160 }, desc: '체력 · 공격 +10%', rank: 3 },
+};
+const GEAR_ORDER = ['pencil', 'pcase', 'marker', 'gymsuit', 'earphone', 'goldpen'];
+// 장비 뽑기: lv(0~)가 높을수록 좋은 장비가 잘 나온다
+function rollGear(lv = 0) { const w = { pencil: 30, pcase: 30, marker: 12 + lv, gymsuit: 12 + lv, earphone: 10 + lv, goldpen: Math.min(14, lv * .8) }; let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0); for (const k of GEAR_ORDER) { r -= w[k]; if (r <= 0) return k; } return 'pencil'; }
+const AWAKE_COST = { power: 400 };
+const awakeOf = (g, id) => !!((g && g.awake) || {})[id];
+const gearOf = (g, id) => STATIONERY[((g && g.gear) || {})[id]] || null;
+function boostOf(g, id) { const a = awakeOf(g, id) ? 1.1 : 1, q = gearOf(g, id) || {}; return { hp: a * (1 + (q.hp || 0)), atk: a * (1 + (q.atk || 0)), skill: awakeOf(g, id) ? 1.3 : 1, charge: 1 + (q.charge || 0) }; }
+function powerOf(g, id) { const r = ROLES[kitOf(id).role], m = lvMult(lvOf(g, id)), b = boostOf(g, id); return Math.round((r.hp / 4 * b.hp + r.atk * 4 * b.atk) * m * (b.skill > 1 ? 1.05 : 1) * b.charge); }
 // 챕터: 각 챕터 1-5를 깨면 다음 챕터가 열린다
 const CHAPTERS = [
   { n: 1, place: '은행나무길', boss: '은행왕', desc: '은행 폭탄을 조심!' },
   { n: 2, place: '다목적관', boss: 'LED 스크린', desc: '레이저 줄 공격 · 눈부신 화면(평타 빗나감)' },
   { n: 3, place: '밤의 교실', boss: '야자의 유령', desc: '사라지기(받는 피해 절반) · 가위눌림(친구 잠듦)' },
   { n: 4, place: '본관 옥상', boss: '본관', desc: '마지막 한 겹에서 누군가 나타난다…' },
-  { n: 5, place: '도전의 탑', boss: '역대 보스', desc: '층마다 보스가 바뀌고 점점 강해져요. 끝이 없어요!', tower: true },
+  { n: 5, place: '도전의 탑', boss: '역대 보스', desc: '층마다 보스가 바뀌고 점점 강해져요. 끝이 없어요!', tower: true, after: 4 },
+  { n: 6, place: '양평역', boss: '폭주 기관차', desc: '기차 돌진(가로 줄) · 경적(팀 공격 -30%)', after: 4, tier: 5 },
+  { n: 7, place: '물맑은시장', boss: '떡볶이 대왕', desc: '떡 비(작은 원 여러 개) · 매운맛(친구 기절)', after: 6, tier: 6 },
 ];
+const CH_SHOW = [1, 2, 3, 4, 6, 7, 5];   // 팀 편성 화면에 보이는 순서 (탑은 맨 끝)
+const prevOf = ch => (CHAPTERS[ch - 1] && CHAPTERS[ch - 1].after) || ch - 1;
 const CHAP_UNLOCK = 5;
-const progOf = (g, ch) => ch === 1 ? Math.max(1, (g && g.stage) || 1) : Math.max(((g && g.chs) || {})[ch] || 0, progOf(g, ch - 1) > CHAP_UNLOCK ? 1 : 0);   // 이미 앞 챕터 1-5를 깬 저장도 열린다
+const progOf = (g, ch) => ch === 1 ? Math.max(1, (g && g.stage) || 1) : Math.max(((g && g.chs) || {})[ch] || 0, progOf(g, prevOf(ch)) > CHAP_UNLOCK ? 1 : 0);   // 이미 앞 챕터 1-5를 깬 저장도 열린다
 function setProg(g, ch, v) { if (ch === 1) g.stage = v; else { g.chs = g.chs || {}; g.chs[ch] = v; } }
-const effStage = (ch, st) => st + (ch - 1) * 4;          // 2-1은 1-5와 비슷한 세기
+const effStage = (ch, st) => st + (((CHAPTERS[ch - 1] && CHAPTERS[ch - 1].tier) || ch) - 1) * 4;          // 2-1은 1-5와 비슷한 세기
 // 챕터 2~4는 특수 공격이 있는 대신 수치는 완만하게 오른다
 const chapMul = (ch, st) => { if (ch === 1) return stageMul(st); const e = effStage(ch, st); return { hp: 1 + (e - 1) * .26, dmg: 1 + (e - 1) * .11, reward: 1 + (e - 1) * .35, rec: Math.round((4200 + (e - 1) * 650) / 10) * 10 }; };
 // 도전의 탑(챕터 5): 4-5를 깨면 열리는 끝없는 층. 층마다 보스가 1→2→3→4 차례로 바뀐다
 const TOWER = 5;
 const maxStageOf = ch => ch === TOWER ? 9999 : MAX_STAGE;
-const bossChOf = (ch, st) => ch === TOWER ? ((st - 1) % 4) + 1 : ch;
+const TOWER_BOSSES = [1, 2, 3, 4, 6, 7];
+const bossChOf = (ch, st) => ch === TOWER ? TOWER_BOSSES[(st - 1) % TOWER_BOSSES.length] : ch;
 const stageMulOf = (ch, st) => ch === TOWER ? chapMul(4, 4 + st) : chapMul(ch, st);
 const stageName = (ch, st) => ch === TOWER ? `탑 ${st}층` : ch + '-' + st;
 // 별: 스테이지마다 가장 좋았던 별 수를 저장한다 (g.star['1-3'] = 2)
