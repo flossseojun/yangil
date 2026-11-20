@@ -372,6 +372,13 @@ function startBombs() {
   } else if (CH === 4) {
     randomTargets(2).forEach(u => addZone({ at: u.pos, r: 1.2, color: '#ff8a3a', dmg: 1050 + L * 150 }));
     sayBoss('벽돌 낙하!');
+  } else if (CH === 6) {   // 기차 돌진: 가로 줄 두 개
+    randomTargets(2).forEach((u, i) => addZone({ at: u.pos, axis: 'x', w: 1.4, color: i ? '#ffd23f' : '#ff6a3a', dmg: 1050 + L * 150, dur: 1.9 + i * .4 }));
+    sayBoss('기차 돌진!');
+  } else if (CH === 7) {   // 떡 비: 작은 원 여러 개
+    randomTargets(2).forEach(u => addZone({ at: u.pos, r: .95, color: '#ff4a3a', dmg: 820 + L * 120, dur: 2 }));
+    for (let i = 0; i < 3; i++) addZone({ at: new THREE.Vector3(rnd(-5.5, 3), 0, rnd(-1.6, 1.4)), r: .9, color: '#ff8a3c', dmg: 820 + L * 120, dur: 1.7 + i * .3 });
+    sayBoss('떡 비!');
   } else {
     randomTargets(2).forEach(u => addZone({ at: u.pos, r: 1.15, dmg: 1100 + L * 150 }));
     sayBoss('은행 폭탄!');
@@ -408,13 +415,15 @@ function special() {
     else { const pool = alive().filter(u => !u.sleep), t = pool.find(u => u.st.role !== 'healer' && Math.random() < .6) || pool[0]; if (t) sleepUnit(t, 4.5); }
     return;
   }
+  if (CH === 6) { B.nerf = 4; KS.fx('warn'); sayBoss('빠아앙! 경적 · 공격 -30%', 1.4); screenFlash('#ffd23f', .3); shake(.2, .4); return; }
+  if (CH === 7) { const pool = alive().filter(u => !u.sleep), t = pool.find(u => u.st.role !== 'healer' && Math.random() < .6) || pool[0]; if (t) sleepUnit(t, 3.5, '매워서 기절'); sayBoss('매운맛 폭탄!', 1.4); return; }
   if (revealed()) { B.nerf = 4; KS.fx('glitch'); sayBoss('밸런스 패치 · 공격 -30%', 1.4); screenFlash('#5dff8a', .35); flash('#5dff8a', 8, bossCenter, .8); }
 }
 function fireGlare() { KS.fx('flash'); ARENA.glare && ARENA.glare(0); B.blind = 3; screenFlash('#ffffff', .95); shake(.15, .3); sayBoss('눈부셔!', 1.4); }
-function sleepUnit(u, t) {
+function sleepUnit(u, t, label = '가위눌림') {
   KS.fx('sleep');
   u.sleep = t; u.ch.set('sleep'); u.zzz = u.zzz || iconSprite('zzz', .8); u.zzz.visible = true; scene.add(u.zzz);
-  popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'block', '가위눌림');
+  popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'block', label);
 }
 function wakeUnit(u, txt) { if (!u.sleep) return; u.sleep = 0; KS.fx('wake'); if (!u.dead) u.ch.set('idle'); if (u.zzz) u.zzz.visible = false; if (txt) popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', txt); }
 let revealTO = 0;
@@ -480,10 +489,10 @@ function finish(win) {
   if (g) {
     Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
     if (win) g.wins = (g.wins || 0) + 1;
-    if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); const nextCh = CH0 < CHAPTERS.length ? CH0 + 1 : 0, had = nextCh && progOf(g, nextCh); if (STAGE >= progOf(g, CH0) && STAGE < maxStageOf(CH0)) { setProg(g, CH0, STAGE + 1); unlocked = true; saveSel(CH0, STAGE + 1); } if (nextCh && !had && STAGE >= CHAP_UNLOCK) { setProg(g, nextCh, 1); chapOpen = nextCh; } }
+    if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); const nexts = CHAPTERS.filter(c => prevOf(c.n) === CH0 && c.n !== CH0 && !progOf(g, c.n)).map(c => c.n); if (STAGE >= progOf(g, CH0) && STAGE < maxStageOf(CH0)) { setProg(g, CH0, STAGE + 1); unlocked = true; saveSel(CH0, STAGE + 1); } if (STAGE >= CHAP_UNLOCK) nexts.forEach(n => { setProg(g, n, 1); chapOpen = chapOpen ? [].concat(chapOpen, n) : n; }); }
     // 별: 처음 얻은 별마다 보너스
     if (win) { g.star = g.star || {}; const key = CH0 + '-' + STAGE, had2 = g.star[key] || 0; if (stars > had2) { newStars = stars - had2; g.star[key] = stars; const bk = Math.round(15 * newStars * SM.reward), bs = Math.round(10 * newStars * SM.reward); g.res.know += bk; g.res.snack += bs; rw.know += bk; rw.snack += bs; } }
-    if (chapOpen) { g.ticket = (g.ticket || 0) + 2; tickets += 2; }   // 챕터를 처음 깨면 뽑기권 2장
+    if (chapOpen) { const k = [].concat(chapOpen).length * 2; g.ticket = (g.ticket || 0) + k; tickets += k; }   // 챕터를 처음 깨면 뽑기권 2장
     if (win && IN_TOWER) { if (STAGE % 5 === 0 && STAGE > (g.towerBest || 0)) { g.ticket = (g.ticket || 0) + 1; tickets += 1; } g.towerBest = Math.max(g.towerBest || 0, STAGE); }   // 탑 5층마다 1장
     saveCampus(g);
   }
@@ -492,13 +501,13 @@ function finish(win) {
     $('r-sub').textContent = win ? 'STAGE CLEAR' : 'STAGE FAILED';
     $('r-title').textContent = win ? '승리!' : clockT <= 0 ? '시간 초과…' : '패배…';
     $('r-stars').innerHTML = [0, 1, 2].map(i => drawIcon(i < stars ? 'star' : 'starOff', i === 1 ? 46 : 36)).join('');
-    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? `<br><b style="color:#9dffb0">새 챕터 ${chapOpen} 「${CHAPTERS[chapOpen - 1].place}」 열림!</b>` : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
+    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? [].concat(chapOpen).map(n => `<br><b style="color:#9dffb0">새 챕터 「${CHAPTERS[n - 1].place}」 열림!</b>`).join('') : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
     $('r-rw').innerHTML = RES_ORDER.map(k => `<span class="rs">${drawIcon(k, 20)}+${rw[k]}</span>`).join('');
     $('result').hidden = false;
   }, win ? 1300 : 800);
   if (win) { flash('#ffd27a', 10, bossCenter, 1.2); shake(.3, .6); tween(1.2, k => { boss.rotation.z = -k * .35; boss.position.y = -k * .8; }); }
 }
-$('go').onclick = () => { KS.play(['', 'ginkgo', 'neon', 'ghost', 'storm'][CH]); KS.fx('click'); $('start').hidden = true; started = true; units.forEach((u, i) => setTimeout(() => sayLine(u, 'start'), 900 + i * 300)); };
+$('go').onclick = () => { KS.play(['', 'ginkgo', 'neon', 'ghost', 'storm', 'storm', 'neon', 'ginkgo'][CH]); KS.fx('click'); $('start').hidden = true; started = true; units.forEach((u, i) => setTimeout(() => sayLine(u, 'start'), 900 + i * 300)); };
 $('r-retry').onclick = () => location.reload();
 $('r-camp').onclick = () => { location.href = './'; };
 $('b-auto').onclick = () => { auto = !auto; $('b-auto').classList.toggle('on', auto); };

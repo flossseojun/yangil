@@ -39,6 +39,7 @@ const TUT = [
   { text: '<b>매점</b>도 복구하면 간식이 나와요.', fac: 'store', done: () => K.lvOfFac('store') >= 1 },
   { text: '친구들 부탁을 들어주면 보상을 받아요.<br><b>의뢰</b> 버튼을 눌러 보자!', el: 'b-req', done: () => flags.req },
   { text: '<b>수첩</b>에는 출석 · 오늘의 미션 · 친구 도감 · 업적이 있어요.', el: 'b-note', done: () => flags.note },
+  { text: '<b>친구들</b>에서 친구를 강화하고 문구 장비를 끼워요.', el: 'b-friends', done: () => flags.fr },
   { text: '준비 끝! <b>전투</b>로 양평을 차지한 녀석들을 몰아내자.', el: 'b-fight', done: () => flags.fight },
 ];
 const tutEl = document.createElement('div'); tutEl.className = 'tut'; tutEl.hidden = true;
@@ -129,6 +130,11 @@ const ACH = [
   ['tower', '도전의 탑', '4-5를 깨고 도전의 탑 열기', () => typeof progOf === 'function' && progOf(G, 5) > 0 ? 1 : 0, 1, { know: 150, snack: 80, power: 60 }],
   ['tower10', '탑 10층', '도전의 탑 10층 깨기', () => G.towerBest || 0, 10, { know: 300, snack: 150, power: 100 }],
   ['star30', '별 모으기', '전투 별 30개 모으기', () => typeof totalStars === 'function' ? totalStars(G) : 0, 30, { know: 120, snack: 60, power: 40 }],
+  ['pull10', '뽑기 마니아', '친구 뽑기 10번 하기', () => G.stat.pulls || 0, 10, { know: 80, snack: 60 }],
+  ['gear5', '문구 부자', '친구 5명에게 장비 끼우기', () => Object.keys(G.gear || {}).length, 5, { know: 100, snack: 60, power: 30 }],
+  ['awake1', '첫 각성', '친구 한 명 각성시키기', () => G.stat.awake || 0, 1, { know: 200, snack: 120, power: 60 }],
+  ['evdeco', '행사 개근', '학교 행사 한정 꾸미기 받기', () => Object.keys(G.decoUnlock || {}).length, 1, { know: 120, snack: 80 }],
+  ['ch7', '시장까지 지켰다', '물맑은시장 챕터 열기', () => typeof progOf === 'function' && progOf(G, 7) > 0 ? 1 : 0, 1, { know: 150, snack: 100, power: 50 }],
   ['att7', '개근상', '7일 연속 출석', () => (G.daily && G.daily.best) || 0, 7, { know: 150, snack: 100, power: 50 }],
 ];
 G.ach = G.ach || {};
@@ -362,6 +368,7 @@ function frShop() {
     return `<div class="fr-c shop"><span class="gi-big">${gearIcon(t, 36)}</span><div class="fr-m"><b>${g.name}</b><small>${g.desc} · 가방 ${G.items[t] || 0}개 · 끼운 친구 ${worn(t)}명</small></div><button class="claim" data-buy="${t}" ${canPay(g.cost) ? '' : 'disabled'}>사기<small>${resText(g.cost, 11)}</small></button></div>`; }).join('')}</div>`;
 }
 function openFR() {
+  flags.fr = true;
   const total = G.friends.reduce((a, id) => a + powerOf(G, id), 0);
   fr.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="친구들"><div class="sh-top"><b>친구들</b><span class="nbres">${resText(G.res, 14)}</span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
     <div class="nbtabs"><button class="${frTab === 'list' ? 'on' : ''}" data-frtab="list">친구 강화</button><button class="${frTab === 'shop' ? 'on' : ''}" data-frtab="shop">문구점</button></div>
@@ -575,6 +582,20 @@ K.HOOK.tick.push(dt => { if ((gaT += dt) > .8) { gaT = 0; syncGacha(); } });
 syncGacha();
 if (K.lvOfFac('club') && G.gachaTold == null && G.friends.length > 5) G.gachaTold = 1;   // 이미 동아리실이 있던 친구는 짧게 알려 준다
 if (G.gachaTold === 1 && !G.gachaSeen && K.lvOfFac('club')) setTimeout(() => K.toast('동아리실 친구 모집이 별 버튼(뽑기)으로 바뀌었어요!'), 2500);
+
+/* ───────── 8½. 오른쪽 버튼 정리: 자주 안 쓰는 버튼은 '메뉴'로 ───────── */
+{
+  const more = document.createElement('button'); more.className = 'rbtn'; more.id = 'b-more'; more.setAttribute('aria-label', '메뉴'); more.setAttribute('aria-expanded', 'false');
+  more.innerHTML = '<span class="dots3"><i></i><i></i><i></i></span><span class="more-lab">메뉴</span>';
+  const pop = document.createElement('div'); pop.className = 'more-pop'; pop.hidden = true;
+  const LAB = { 'b-rot': '돌리기', 'b-in': '가까이', 'b-out': '멀리', 'b-music': '소리', 'b-full': '전체화면', 'b-back': '원래 게임' };
+  Object.keys(LAB).forEach(id => { const b = $(id); if (!b) return; const row = document.createElement('label'); row.className = 'more-row'; row.append(b); row.insertAdjacentHTML('beforeend', `<span>${LAB[id]}</span>`); pop.append(row); });
+  $('b-fight').after(more); document.body.append(pop);
+  const place = () => { const r = more.getBoundingClientRect(); pop.style.top = Math.max(8, Math.min(innerHeight - pop.offsetHeight - 8, r.top - 6)) + 'px'; pop.style.right = (innerWidth - r.left + 8) + 'px'; };
+  more.onclick = e => { e.stopPropagation(); KS.fx('click'); pop.hidden = !pop.hidden; more.setAttribute('aria-expanded', String(!pop.hidden)); if (!pop.hidden) place(); };
+  document.addEventListener('pointerdown', e => { if (!pop.hidden && !pop.contains(e.target) && e.target !== more && !more.contains(e.target)) { pop.hidden = true; more.setAttribute('aria-expanded', 'false'); } });
+  addEventListener('resize', () => { if (!pop.hidden) place(); });
+}
 
 /* ───────── 9. 낮과 밤: 실제 시간에 맞춰 하늘이 바뀌고, 밤에는 불이 켜진다 ───────── */
 const SKY = [   // [시, 하늘, 반구빛, 햇빛 세기, 햇빛 색, 밤 정도]

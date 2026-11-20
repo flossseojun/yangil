@@ -287,8 +287,108 @@ function mainHall(X) {
   };
 }
 
+
+/* ───────── 6. 양평역 · 폭주 기관차 ───────── */
+function station(X) {
+  const { scene, tex, cast } = X;
+  lights(X, { sky: [['#2a2f5a', 0], ['#c0607a', .55], ['#ffb27a', 1]], fog: ['#b06a7a', 18, 42], hemi: ['#ffe0d0', '#4a3a40', .9], sun: ['#ffc59a', 1.6, [6, 10, 8]], fill: ['#8ab0ff', .5] });
+  floorOf(X, (g) => { g.fillStyle = '#8a8580'; g.fillRect(0, 0, 512, 512); for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { g.fillStyle = `hsl(30, 6%, ${46 + Math.random() * 8}%)`; g.fillRect(i * 64 + 2, j * 64 + 2, 60, 60); } g.fillStyle = '#ffd23f'; g.fillRect(0, 230, 512, 26); g.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 32; i++) g.fillRect(i * 16 + 4, 236, 8, 14); });
+  // 철로 (뒤쪽)
+  const railM = new THREE.MeshStandardMaterial({ color: '#4a4f5a', metalness: .6, roughness: .4 }), slpM = new THREE.MeshStandardMaterial({ color: '#5a4636' });
+  [-4.4, -3.4].forEach(z => { const r = new THREE.Mesh(new THREE.BoxGeometry(40, .12, .12), railM); r.position.set(0, .07, z); scene.add(r); });
+  for (let x = -20; x < 20; x += 1.1) { const sl = new THREE.Mesh(new THREE.BoxGeometry(.3, .06, 1.6), slpM); sl.position.set(x, .03, -3.9); scene.add(sl); }
+  // 역 건물 + 이름판
+  const winT = tex(256, 128, (g, w, h) => { g.fillStyle = '#4a5a7a'; g.fillRect(0, 0, w, h); for (let i = 0; i < 12; i++) for (let j = 0; j < 3; j++) { g.fillStyle = Math.random() < .6 ? '#ffe2a0' : '#2a3450'; g.fillRect(i * 21 + 4, j * 40 + 10, 14, 24); } });
+  const bld = new THREE.Mesh(new THREE.BoxGeometry(22, 6, 3), [0, 0, 0, 0, 1, 0].map(k => new THREE.MeshStandardMaterial(k ? { map: winT, emissive: '#ffffff', emissiveMap: winT, emissiveIntensity: .5 } : { color: '#4a5a7a' })));
+  bld.position.set(1, 3, -11); scene.add(bld);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(23, .5, 4), new THREE.MeshStandardMaterial({ color: '#2b4a3c' })); roof.position.set(1, 6.2, -10.8); scene.add(roof);
+  const signT = tex(512, 128, (g, w, h) => { g.fillStyle = '#1d3f8a'; g.fillRect(0, 0, w, h); g.strokeStyle = '#fff'; g.lineWidth = 8; g.strokeRect(8, 8, w - 16, h - 16); g.fillStyle = '#fff'; g.font = '72px Jua, sans-serif'; g.textAlign = 'center'; g.fillText('양평역', w / 2, 92); });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(5, 1.25), new THREE.MeshBasicMaterial({ map: signT })); sign.position.set(1, 7.3, -9.4); scene.add(sign);
+  [-7, 9].forEach(x => { const p = new THREE.Mesh(new THREE.CylinderGeometry(.08, .1, 3.4, 8), railM); p.position.set(x, 1.7, -6); scene.add(p); const l = new THREE.Mesh(new THREE.SphereGeometry(.22, 10, 8), glowBasic('#ffe2a0', 2.2)); l.position.set(x, 3.5, -6); scene.add(l); });
+
+  const boss = new THREE.Group(); boss.position.set(...BOSS_AT); scene.add(boss);
+  const bodyM = new THREE.MeshStandardMaterial({ color: '#2f6fb8', roughness: .45, metalness: .2 }), darkM = new THREE.MeshStandardMaterial({ color: '#23262e', roughness: .6 }), trimM = new THREE.MeshStandardMaterial({ color: '#ffd23f', roughness: .5 });
+  const body = cast(new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.6, 3.4), bodyM)); body.position.y = 2.1; boss.add(body);
+  const nose = cast(new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 2.8, 20, 1, false, 0, Math.PI), bodyM)); nose.rotation.z = Math.PI / 2; nose.position.set(0, 2.1, 1.7); boss.add(nose);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.86, .3, 3.46), trimM); stripe.position.y = 1.35; boss.add(stripe);
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(2.2, .9, .1), new THREE.MeshStandardMaterial({ color: '#1a2440', emissive: '#203a70', emissiveIntensity: .6 })); glass.position.set(0, 2.9, 2.35); glass.rotation.x = -.5; boss.add(glass);
+  const eyeM = glowBasic('#fff3b0', 3);
+  [-.6, .6].forEach(x => { const e = new THREE.Mesh(new THREE.SphereGeometry(.26, 14, 10), eyeM); e.position.set(x, 1.85, 2.95); boss.add(e); const brow = new THREE.Mesh(new THREE.BoxGeometry(.6, .12, .12), darkM); brow.position.set(x, 2.25, 2.95); brow.rotation.z = x > 0 ? .4 : -.4; boss.add(brow); });
+  const grill = cast(new THREE.Mesh(new THREE.ConeGeometry(1.2, 1, 4), darkM)); grill.rotation.set(Math.PI / 2, Math.PI / 4, 0); grill.position.set(0, .7, 2.9); grill.scale.set(1.2, 1, .5); boss.add(grill);
+  const stack = cast(new THREE.Mesh(new THREE.CylinderGeometry(.35, .45, 1.2, 12), darkM)); stack.position.set(0, 3.9, -.6); boss.add(stack);
+  [-1.45, 1.45].forEach(x => [-1, .3, 1.4].forEach(z => { const w = cast(new THREE.Mesh(new THREE.CylinderGeometry(.5, .5, .25, 16), darkM)); w.rotation.z = Math.PI / 2; w.position.set(x, .55, z); boss.add(w); }));
+  const arms = [];
+  [-1, 1].forEach(sd => makeArm(X, boss, arms, sd, [1.5, 2.6, .4], darkM, trimM, new THREE.CylinderGeometry(.2, .26, 2.4, 8), new THREE.CylinderGeometry(.55, .55, .35, 16)));
+  const headL = new THREE.PointLight('#fff0b0', 8, 8, 1.6); headL.position.set(0, 1.9, 3.6); boss.add(headL);
+  const aura = addAura(boss, '#ffd23f');
+  const smokeT = tex(32, 32, (g) => { const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(230,230,240,.9)'); gr.addColorStop(1, 'rgba(230,230,240,0)'); g.fillStyle = gr; g.fillRect(0, 0, 32, 32); });
+  const smoke = floatPoints(X, 40, '#ffffff', .9, [2, 4, 2], smokeT); smoke.position.set(BOSS_AT[0], 4.4, BOSS_AT[2] - .6);
+  const COL = ['#2f6fb8', '#b8562f', '#8a1f2a'];
+  return {
+    name: () => '폭주 기관차', boss, arms, hitColor: '#ffe28a',
+    onLayer(l) { bodyM.color.set(COL[l]); return l === 2 ? '마지막 한 겹! 기관차가 과열됐다' : '한 겹 격파!'; },
+    idle(now, B) {
+      if (!B.dead) { boss.position.y = Math.abs(Math.sin(now * 8)) * .04; boss.rotation.y = Math.sin(now * .7) * .05; }
+      eyeM.color.set(B.flashT > 0 ? '#ffffff' : '#fff3b0').multiplyScalar(B.layer === 2 ? 3 + Math.sin(now * 10) : 3);
+      smoke.position.y = 4.4 + (now * 1.2) % 1; smoke.material.opacity = .8 - ((now * 1.2) % 1) * .5;
+      aura.material.opacity = .22 + Math.sin(now * 3) * .06 + B.layer * .06;
+    },
+  };
+}
+
+/* ───────── 7. 물맑은시장 · 떡볶이 대왕 ───────── */
+function market(X) {
+  const { scene, tex, cast } = X;
+  lights(X, { sky: [['#3a1d3a', 0], ['#a0402a', .55], ['#ffb05a', 1]], fog: ['#8a4a3a', 18, 42], hemi: ['#ffe0c0', '#5a3020', .95], sun: ['#ffb070', 1.5, [6, 10, 8]], fill: ['#ff8a5a', .5] });
+  floorOf(X, (g) => { g.fillStyle = '#7a6a5a'; g.fillRect(0, 0, 512, 512); for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++) { g.fillStyle = `hsl(28, 14%, ${36 + Math.random() * 10}%)`; g.fillRect(i * 32 + 1 + (j % 2) * 16, j * 32 + 1, 30, 30); } });
+  // 가게들 + 줄무늬 차양
+  const awn = ['#e5484d', '#2f8f6b', '#5b8def', '#ff9a3c', '#c86bff'];
+  for (let i = 0; i < 6; i++) {
+    const x = -12 + i * 4.6, g = new THREE.Group(); g.position.set(x, 0, -9);
+    const stall = new THREE.Mesh(new THREE.BoxGeometry(4, 3.2, 2.4), new THREE.MeshStandardMaterial({ color: '#efe2c8' })); stall.position.y = 1.6; g.add(stall);
+    const awT = tex(64, 32, (c, w, h) => { for (let k = 0; k < 8; k++) { c.fillStyle = k % 2 ? '#ffffff' : awn[i % awn.length]; c.fillRect(k * 8, 0, 8, h); } });
+    const a = new THREE.Mesh(new THREE.BoxGeometry(4.3, .15, 1.6), new THREE.MeshStandardMaterial({ map: awT })); a.position.set(0, 3.1, 1.6); a.rotation.x = .35; g.add(a);
+    const counter = new THREE.Mesh(new THREE.BoxGeometry(3.6, .9, .7), new THREE.MeshStandardMaterial({ color: '#a5774b' })); counter.position.set(0, .45, 1.4); g.add(counter);
+    scene.add(g);
+  }
+  const signT = tex(512, 128, (g, w, h) => { g.fillStyle = '#2b4a3c'; g.fillRect(0, 0, w, h); g.strokeStyle = '#ffd23f'; g.lineWidth = 8; g.strokeRect(8, 8, w - 16, h - 16); g.fillStyle = '#ffd23f'; g.font = '64px Jua, sans-serif'; g.textAlign = 'center'; g.fillText('물맑은시장', w / 2, 88); });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshBasicMaterial({ map: signT })); sign.position.set(0, 5.6, -8.4); scene.add(sign);
+  floatPoints(X, 26, '#ff6a4a', .7, [24, 2, 4]).position.set(-2, 4.2, -7);   // 줄 등불
+
+  const boss = new THREE.Group(); boss.position.set(...BOSS_AT); scene.add(boss);
+  const potM = new THREE.MeshStandardMaterial({ color: '#3a3a40', metalness: .55, roughness: .4 }), sauceM = new THREE.MeshStandardMaterial({ color: '#e0321e', emissive: '#a01a0a', emissiveIntensity: .5, roughness: .3 });
+  const tteokM = new THREE.MeshStandardMaterial({ color: '#fff4e0', roughness: .6 }), fishM = new THREE.MeshStandardMaterial({ color: '#e8b070', roughness: .7 });
+  const pot = cast(new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.6, 2.4, 24), potM)); pot.position.y = 1.4; boss.add(pot);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(1.9, .14, 8, 28), potM); rim.rotation.x = Math.PI / 2; rim.position.y = 2.6; boss.add(rim);
+  const sauce = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, .12, 24), sauceM); sauce.position.y = 2.55; boss.add(sauce);
+  [[-.7, .2, .9], [.5, -.2, .1], [.1, .6, -.6], [-.2, -.5, .3], [.9, .3, .6]].forEach(([x, z, r]) => { const t = cast(new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, 1.5, 10), tteokM)); t.position.set(x, 3.1, z); t.rotation.set(r * .6, 0, r); boss.add(t); });
+  [[.9, -.5], [-1, -.3]].forEach(([x, z]) => { const f = cast(new THREE.Mesh(new THREE.BoxGeometry(.9, .7, .1), fishM)); f.position.set(x, 3, z); f.rotation.set(.3, x, .2); boss.add(f); });
+  [-1.95, 1.95].forEach(x => { const h = new THREE.Mesh(new THREE.TorusGeometry(.32, .08, 6, 14), potM); h.position.set(x, 2.1, 0); h.rotation.y = Math.PI / 2; boss.add(h); });
+  const eyeM = glowBasic('#fff0c0', 2.8);
+  [-.55, .55].forEach(x => { const e = new THREE.Mesh(new THREE.SphereGeometry(.22, 12, 8), eyeM); e.position.set(x, 1.7, 1.66); e.scale.set(1.3, .8, .5); boss.add(e); const brow = new THREE.Mesh(new THREE.BoxGeometry(.55, .12, .1), sauceM); brow.position.set(x, 2.05, 1.7); brow.rotation.z = x > 0 ? .5 : -.5; boss.add(brow); });
+  const mouth = new THREE.Mesh(new THREE.BoxGeometry(1, .18, .1), glowBasic('#ff5a2a', 2.2)); mouth.position.set(0, 1.15, 1.66); boss.add(mouth);
+  const arms = [];
+  [-1, 1].forEach(sd => makeArm(X, boss, arms, sd, [1.7, 2.2, .3], tteokM, fishM, new THREE.CylinderGeometry(.24, .24, 2.4, 10), new THREE.BoxGeometry(1, .8, .25)));
+  const glow = new THREE.PointLight('#ff6a3a', 7, 7, 1.6); glow.position.set(0, 3.4, .5); boss.add(glow);
+  const aura = addAura(boss, '#ff4a2a');
+  const steamT = tex(32, 32, (g) => { const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,255,.85)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 32, 32); });
+  const steam = floatPoints(X, 30, '#ffffff', .8, [3, 3, 3], steamT); steam.position.set(BOSS_AT[0] - 1, 3.4, BOSS_AT[2] - 1.5);
+  const HOT = ['#e0321e', '#c01a10', '#8a0a2a'];
+  return {
+    name: () => '떡볶이 대왕', boss, arms, hitColor: '#ffb07a',
+    onLayer(l) { sauceM.color.set(HOT[l]); sauceM.emissiveIntensity = .5 + l * .3; return l === 2 ? '마지막 한 겹! 국물이 끓어 넘친다' : '한 겹 격파!'; },
+    idle(now, B) {
+      if (!B.dead) { boss.rotation.y = Math.sin(now * .8) * .06; boss.scale.set(1 + Math.sin(now * 2.2) * .02, 1 - Math.sin(now * 2.2) * .02, 1); }
+      sauce.position.y = 2.55 + Math.sin(now * 5) * .03; glow.intensity = 6 + Math.sin(now * 7) * 1.5 + B.layer * 2;
+      steam.position.y = 3.4 + (now * .8) % 1.2; steam.material.opacity = .7 - ((now * .8) % 1.2) * .4;
+      potM.emissive.set(B.flashT > 0 ? '#5a1a10' : '#000000');
+      aura.material.opacity = .22 + Math.sin(now * 3) * .06 + B.layer * .06;
+    },
+  };
+}
+
 export function buildArena(ch, X) {
-  const a = ([null, ginkgo, led, ghost, mainHall][ch] || ginkgo)(X);
+  const a = ([null, ginkgo, led, ghost, mainHall, ginkgo, station, market][ch] || ginkgo)(X);
   if (ch === 4) { X.sky = X.scene.background; X.boltSky = grad(X, [['#3a4a6a', 0], ['#8a9ac0', .6], ['#4a5a7a', 1]]); }
   return a;
 }

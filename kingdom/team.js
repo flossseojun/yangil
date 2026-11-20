@@ -33,7 +33,7 @@ function renderTop() {
   const sm = stageMulOf(ch, stage), sn = starsOf(G, ch, stage);
   $('st-n').innerHTML = stageName(ch, stage) + `<span class="st-stars">${[0, 1, 2].map(i => drawIcon(i < sn ? 'star' : 'starOff', 12)).join('')}</span>`; $('st-rec').textContent = `추천 ${fmt(sm.rec)}`;
   $('st-prev').disabled = stage <= 1; $('st-next').disabled = stage >= Math.min(maxStageOf(ch), progOf(G, ch));
-  $('chaps').innerHTML = CHAPTERS.map(c => { const open = progOf(G, c.n) > 0; return `<button class="ch${c.tower ? ' tower' : ''}${c.n === ch ? ' on' : ''}${open ? '' : ' lock'}" data-ch="${c.n}" ${open ? '' : 'aria-disabled="true"'}><small>챕터 ${c.n}</small><b>${open ? '' : drawIcon('lock', 16)}${c.place}</b><span>${open ? '보스 · ' + c.boss : `${c.n - 1}-${CHAP_UNLOCK} 클리어 시 열림`}</span></button>`; }).join('');
+  $('chaps').innerHTML = CH_SHOW.map(n => CHAPTERS[n - 1]).map(c => { const open = progOf(G, c.n) > 0; return `<button class="ch${c.tower ? ' tower' : ''}${c.n === ch ? ' on' : ''}${open ? '' : ' lock'}" data-ch="${c.n}" ${open ? '' : 'aria-disabled="true"'}><small>챕터 ${c.n}</small><b>${open ? '' : drawIcon('lock', 16)}${c.place}</b><span>${open ? '보스 · ' + c.boss : `${prevOf(c.n)}-${CHAP_UNLOCK} 클리어 시 열림`}</span></button>`; }).join('');
 }
 function renderField() {
   const L = layout(team);
@@ -55,7 +55,7 @@ function renderTabs() {
 function renderList() {
   const list = owned.filter(id => tab === 'all' || kitOf(id).role === tab).sort((a, b) => ROLE_ORDER.indexOf(kitOf(a).role) - ROLE_ORDER.indexOf(kitOf(b).role));
   $('list').innerHTML = list.map(id => { const k = kitOf(id), n = team.indexOf(id);
-    return `<div class="card ${n >= 0 ? 'on' : team.length >= 5 ? 'full' : ''}" role="button" tabindex="0" data-id="${id}" data-n="${n + 1}" style="--bg:${BG[k.role]}"><span class="lv">Lv.${lvOf(G, id)}</span><img src="${headImg(id)}" data-h="${id}" alt=""><b>${nameOf(id)}</b><span class="rl">${roleIcon(k.role, 11)}${ROLES[k.role].name}</span><span class="sk">${k.skill}</span><button class="info" data-pf="${id}" aria-label="${nameOf(id)} 프로필">i</button></div>`; }).join('');
+    return `<div class="card ${n >= 0 ? 'on' : team.length >= 5 ? 'full' : ''}" role="button" tabindex="0" data-id="${id}" data-n="${n + 1}" style="--bg:${BG[k.role]}"><span class="lv">Lv.${lvOf(G, id)}${awakeOf(G, id) ? ' <i class="aw">각성</i>' : ''}</span>${gearOf(G, id) ? `<span class="gear" title="${gearOf(G, id).name}">${drawIcon(G.gear[id], 16)}</span>` : ''}<img src="${headImg(id)}" data-h="${id}" alt=""><b>${nameOf(id)}</b><span class="rl">${roleIcon(k.role, 11)}${ROLES[k.role].name}</span><span class="sk">${k.skill}</span><button class="info" data-pf="${id}" aria-label="${nameOf(id)} 프로필">i</button></div>`; }).join('');
   $('hint').textContent = G.friends.length < 5 ? `캠퍼스 친구가 ${G.friends.length}명이라 체험 친구로 채웠어요. 캠퍼스 동아리실에서 친구를 모집할 수 있어요.` : `카드를 눌러 넣고 빼요. ⓘ를 누르면 친구 프로필 · 레벨업 · 추억 이야기를 볼 수 있어요.`;
 }
 const backEl = document.getElementById('back'); if (backEl) backEl.insertAdjacentHTML('afterbegin', drawIcon('back', 18));
@@ -90,7 +90,7 @@ function openProfile(id) {
       <div class="box"><h3>필살기</h3><div class="skn">${k.skill}</div><div class="skd">${skillDesc(id)}</div></div>
       <div class="box"><h3>레벨</h3><div class="lvrow"><b>Lv.${lv}</b><span class="lvbar"><i style="width:${lv / MAX_LV * 100}%"></i></span>
         ${lv >= MAX_LV ? '<span style="font-family:Jua">최고 레벨</span>' : G.friends.includes(id) ? `<button class="up" data-up="${id}" ${can ? '' : 'disabled'}>레벨업 ${resText(cost, 15)}</button>` : '<span style="font-size:12px;color:var(--muted)">캠퍼스 친구가 되면 키울 수 있어요</span>'}</div>
-        <div class="skd" style="margin-top:4px">체력 · 공격 · 스킬 +${Math.round((lvMult(lv) - 1) * 100)}% · 전투력 ${fmt(powerOf(G, id))}</div></div>
+        <div class="skd" style="margin-top:4px">체력 · 공격 · 스킬 +${Math.round((lvMult(lv) - 1) * 100)}% · 전투력 ${fmt(powerOf(G, id))}</div><div class="skd" style="margin-top:4px">장비 · ${gearOf(G, id) ? `${drawIcon(G.gear[id], 14)} ${gearOf(G, id).name} (${gearOf(G, id).desc})` : '없음 (캠퍼스 친구들 → 문구점)'}${awakeOf(G, id) ? ' · <b>각성</b> 체력 · 공격 +10%, 스킬 +30%' : lv >= MAX_LV ? ' · 캠퍼스 친구들 창에서 각성할 수 있어요' : ''}</div></div>
       <div class="box"><h3>친밀도 <span class="hearts">${Array.from({ length: 5 }, (_, i) => drawIcon(i < bond ? 'heart' : 'heartOff', 16)).join('')}</span> · 함께 이길 때마다 +1</h3>
         <ul class="story">${st.map((x, i) => i < open ? `<li><b>추억 ${i + 1} · ${x.title}</b>${x.text}</li>` : `<li class="lock">${drawIcon('lock', 15)}추억 ${i + 1} · 친밀도 ${i + 1}에 열려요</li>`).join('') || '<li class="lock">아직 이야기가 없어요</li>'}</ul></div>
       <div class="box"><h3>대사</h3><ul class="lines">${(pf.lines || []).slice(0, Math.max(3, Math.min(9, 3 + bond * 2))).map(l => `<li>${l}</li>`).join('')}</ul></div>
@@ -109,7 +109,7 @@ addEventListener('keydown', e => { if (e.key === 'Escape') { $('pf').hidden = tr
 $('list').addEventListener('click', e => { const i = e.target.closest('[data-pf]'); if (i) { openProfile(i.dataset.pf); return; } const c = e.target.closest('.card'); if (c) toggle(c.dataset.id); });
 $('field').addEventListener('click', e => { const s = e.target.closest('.slot[data-id]'); if (s) openProfile(s.dataset.id); });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
-$('chaps').addEventListener('click', e => { const b = e.target.closest('.ch'); if (!b) return; const n = +b.dataset.ch; if (!progOf(G, n)) { const c = CHAPTERS[n - 1]; $('hint').textContent = `${n - 1}-${CHAP_UNLOCK} 스테이지를 깨면 「${c.place}」${josa(c.place, '이', '가').slice(c.place.length)} 열려요`; $('hint').scrollIntoView({ block: 'nearest' }); return; } ch = n; stage = progOf(G, n); save(); render(); });
+$('chaps').addEventListener('click', e => { const b = e.target.closest('.ch'); if (!b) return; const n = +b.dataset.ch; if (!progOf(G, n)) { const c = CHAPTERS[n - 1]; $('hint').textContent = `${prevOf(n)}-${CHAP_UNLOCK} 스테이지를 깨면 「${c.place}」${josa(c.place, '이', '가').slice(c.place.length)} 열려요`; $('hint').scrollIntoView({ block: 'nearest' }); return; } ch = n; stage = progOf(G, n); save(); render(); });
 $('st-prev').onclick = () => { stage = Math.max(1, stage - 1); save(); render(); };
 $('st-next').onclick = () => { stage = Math.min(Math.min(maxStageOf(ch), progOf(G, ch)), stage + 1); save(); render(); };
 $('auto').onclick = autoPick;

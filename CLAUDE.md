@@ -25,7 +25,7 @@
 - **공용 일반 스크립트:** roster.js(친구 58명) · kits.js(역할 · 스킬 · 레벨 · 챕터 · 캠퍼스 보너스) · profiles.js(대사 · 추억) · ui.js(손그림 아이콘 `drawIcon`, 전체화면) · audio.js(`KS` 소리) · yangpyeong.js(`YP_MAP`, OpenStreetMap에서 받아 게임 좌표로 바꾼 양평읍 지도, 한 칸 ≈ 4.5m).
 - **모듈:** chibi3d.js(`makeChibi` 3D 친구 · 표정 · 버릇) · chibishot.js(3D 친구 사진 찍기 · 프로필 3D 보기) · bosses.js(챕터별 무대 · 보스 모습).
 - **캠퍼스(kingdom.js):** 시설 `FAC`(레벨 0~5, 0 = 폐허) · 구역 `ZONES`(core/east/back/west, 재건 % · 전투 챕터로 열림) · 꾸미기 `DECO` · 친구 의뢰 · 선물 · 이야기(`showStory`, `MILES`).
-- **전투:** 챕터 1~4(은행왕 · LED 스크린 · 야자의 유령 · 본관→염서준), 각 챕터 1-5를 깨면 다음 챕터가 열린다.
+- **전투:** 챕터 1~4(은행왕 · LED 스크린 · 야자의 유령 · 본관→염서준) · 6 양평역(폭주 기관차) · 7 물맑은시장(떡볶이 대왕) · 5 도전의 탑. 열리는 순서는 `after`(4-5 → 탑 · 양평역, 6-5 → 시장), 화면 순서는 `CH_SHOW`.
 - **저장(localStorage):** `yangil.kingdom.v1`(캠퍼스 G: res, fac, zones, b, friends, lv, bond, stage, chs, wins, story, req) · `.team` · `.chap` · `.stage` · `.voice` · `.sound` · `.deco`.
 - **UI 스타일:** 카툰 + 학교 문구. 잉크 외곽선(#231c17), 종이(#fffaf0), 노랑(#ffd23f), 칠판 초록(#2b4a3c). 이모지 대신 `drawIcon`. 가로 화면은 `@media (max-height: 480px)`.
 - 파일을 바꾸면 html의 `?v=숫자`를 올려야 휴대폰 캐시가 갱신된다.

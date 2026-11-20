@@ -286,18 +286,23 @@ const CHAPTERS = [
   { n: 2, place: '다목적관', boss: 'LED 스크린', desc: '레이저 줄 공격 · 눈부신 화면(평타 빗나감)' },
   { n: 3, place: '밤의 교실', boss: '야자의 유령', desc: '사라지기(받는 피해 절반) · 가위눌림(친구 잠듦)' },
   { n: 4, place: '본관 옥상', boss: '본관', desc: '마지막 한 겹에서 누군가 나타난다…' },
-  { n: 5, place: '도전의 탑', boss: '역대 보스', desc: '층마다 보스가 바뀌고 점점 강해져요. 끝이 없어요!', tower: true },
+  { n: 5, place: '도전의 탑', boss: '역대 보스', desc: '층마다 보스가 바뀌고 점점 강해져요. 끝이 없어요!', tower: true, after: 4 },
+  { n: 6, place: '양평역', boss: '폭주 기관차', desc: '기차 돌진(가로 줄) · 경적(팀 공격 -30%)', after: 4, tier: 5 },
+  { n: 7, place: '물맑은시장', boss: '떡볶이 대왕', desc: '떡 비(작은 원 여러 개) · 매운맛(친구 기절)', after: 6, tier: 6 },
 ];
+const CH_SHOW = [1, 2, 3, 4, 6, 7, 5];   // 팀 편성 화면에 보이는 순서 (탑은 맨 끝)
+const prevOf = ch => (CHAPTERS[ch - 1] && CHAPTERS[ch - 1].after) || ch - 1;
 const CHAP_UNLOCK = 5;
-const progOf = (g, ch) => ch === 1 ? Math.max(1, (g && g.stage) || 1) : Math.max(((g && g.chs) || {})[ch] || 0, progOf(g, ch - 1) > CHAP_UNLOCK ? 1 : 0);   // 이미 앞 챕터 1-5를 깬 저장도 열린다
+const progOf = (g, ch) => ch === 1 ? Math.max(1, (g && g.stage) || 1) : Math.max(((g && g.chs) || {})[ch] || 0, progOf(g, prevOf(ch)) > CHAP_UNLOCK ? 1 : 0);   // 이미 앞 챕터 1-5를 깬 저장도 열린다
 function setProg(g, ch, v) { if (ch === 1) g.stage = v; else { g.chs = g.chs || {}; g.chs[ch] = v; } }
-const effStage = (ch, st) => st + (ch - 1) * 4;          // 2-1은 1-5와 비슷한 세기
+const effStage = (ch, st) => st + (((CHAPTERS[ch - 1] && CHAPTERS[ch - 1].tier) || ch) - 1) * 4;          // 2-1은 1-5와 비슷한 세기
 // 챕터 2~4는 특수 공격이 있는 대신 수치는 완만하게 오른다
 const chapMul = (ch, st) => { if (ch === 1) return stageMul(st); const e = effStage(ch, st); return { hp: 1 + (e - 1) * .26, dmg: 1 + (e - 1) * .11, reward: 1 + (e - 1) * .35, rec: Math.round((4200 + (e - 1) * 650) / 10) * 10 }; };
 // 도전의 탑(챕터 5): 4-5를 깨면 열리는 끝없는 층. 층마다 보스가 1→2→3→4 차례로 바뀐다
 const TOWER = 5;
 const maxStageOf = ch => ch === TOWER ? 9999 : MAX_STAGE;
-const bossChOf = (ch, st) => ch === TOWER ? ((st - 1) % 4) + 1 : ch;
+const TOWER_BOSSES = [1, 2, 3, 4, 6, 7];
+const bossChOf = (ch, st) => ch === TOWER ? TOWER_BOSSES[(st - 1) % TOWER_BOSSES.length] : ch;
 const stageMulOf = (ch, st) => ch === TOWER ? chapMul(4, 4 + st) : chapMul(ch, st);
 const stageName = (ch, st) => ch === TOWER ? `탑 ${st}층` : ch + '-' + st;
 // 별: 스테이지마다 가장 좋았던 별 수를 저장한다 (g.star['1-3'] = 2)
