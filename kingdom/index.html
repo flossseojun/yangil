@@ -87,6 +87,45 @@
   .cards { padding-top: 12px; }
   .bcard { width: auto; min-width: 96px; }
   @media (max-height: 480px) { .side { top: 58px; display: grid; grid-template-columns: repeat(2, 40px); gap: 6px; } .rbtn { width: 40px; height: 40px; } #b-fight { width: 40px; height: 40px; margin: 0; } #b-fight span { display: none; } .bcard { padding: 5px 6px; } .bcard .bi { height: 28px; } }
+  /* ── 새 캠퍼스: 시설 정보 · 의뢰 ── */
+  #b-req { position: relative; }
+  .badge { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--red); color: #fff; border: 2px solid var(--ink); font-style: normal; font-family: Jua, sans-serif; font-size: 12px; line-height: 16px; }
+  .badge[hidden] { display: none; }
+  .cards-lab { flex: 0 0 auto; align-self: center; writing-mode: vertical-rl; font-family: Jua, sans-serif; font-size: 14px; color: var(--ink); background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 10px; padding: 8px 4px; box-shadow: 0 3px 0 var(--ink); }
+  .info { align-items: center; width: min(560px, 94vw); max-width: 94vw; }
+  .info .txt { flex: 1; min-width: 0; }
+  .info .txt b { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .info .stars { display: inline-flex; gap: 1px; }
+  .info .txt small + small { margin-top: 4px; color: var(--ink); }
+  .info .acts { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
+  .info button.up { display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--yellow); color: var(--ink); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 6px 12px; font-family: Jua, sans-serif; font-size: 16px; cursor: pointer; }
+  .info button.up small { display: flex; gap: 6px; font-size: 12px; color: var(--ink); }
+  .info button.up:disabled { background: #e6dcc6; color: #7a6d5c; box-shadow: 0 3px 0 #7a6d5c; border-color: #7a6d5c; cursor: default; }
+  .info button.up:disabled small { color: #7a6d5c; }
+  .info button.rec { background: #cfe3ff; }
+  .info button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+  .info .max { font-family: Jua, sans-serif; color: #2f8f4e; }
+  .info button.del { color: var(--red); padding: 8px 12px; border-radius: 12px; }
+  @media (max-width: 520px) { .info { flex-wrap: wrap; } .info .acts { flex-direction: row; width: 100%; } .info .acts button { flex: 1; } }
+  .modal { position: fixed; inset: 0; z-index: 30; background: rgba(20,16,12,.5); display: grid; place-items: center; padding: 16px; }
+  .modal[hidden] { display: none; }
+  .sheet { width: min(520px, 100%); max-height: 86vh; overflow-y: auto; background: var(--paper) repeating-linear-gradient(transparent 0 23px, rgba(91,141,239,.18) 23px 24px); background-color: var(--paper); border: 3px solid var(--ink); border-radius: 14px; box-shadow: 0 6px 0 var(--ink); padding: 14px; }
+  .sh-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .sh-top b { font-family: Jua, sans-serif; font-weight: 400; font-size: 24px; }
+  .sh-top small { color: var(--sub); font-size: 12px; }
+  .sh-top .x { margin-left: auto; width: 34px; height: 34px; display: grid; place-items: center; background: #fff; border: 2.5px solid var(--ink); border-radius: 10px; box-shadow: 0 2px 0 var(--ink); cursor: pointer; padding: 0; }
+  .req { display: flex; align-items: center; gap: 10px; background: #fff; border: 2.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; margin-bottom: 10px; }
+  .req.done { background: #fff8d6; }
+  .req img { width: 56px; height: 56px; border-radius: 10px; border: 2px solid var(--ink); background: #cfe3ff; flex: 0 0 auto; }
+  .req .rq { flex: 1; min-width: 0; }
+  .req .rq b { font-family: Jua, sans-serif; font-weight: 400; font-size: 15px; }
+  .req .rq p { margin: 1px 0 4px; font-size: 13px; line-height: 1.4; }
+  .rbar { position: relative; height: 14px; border-radius: 7px; background: #f1e7d0; border: 2px solid var(--ink); overflow: hidden; }
+  .rbar i { display: block; height: 100%; background: #6cd39a; }
+  .rbar span { position: absolute; inset: 0; text-align: center; font-size: 10px; font-weight: 700; line-height: 10px; }
+  .req .rw { display: flex; gap: 8px; margin-top: 4px; font-family: Jua, sans-serif; font-size: 13px; }
+  .claim { flex: 0 0 auto; background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 8px 10px; font-family: Jua, sans-serif; font-size: 15px; cursor: pointer; color: var(--ink); }
+  .claim:disabled { background: #e6dcc6; color: #7a6d5c; box-shadow: none; border-color: #b8ab92; cursor: default; }
 </style>
 </head>
 <body>
@@ -101,12 +140,14 @@
   <button class="rbtn" id="b-rot" aria-label="화면 돌리기" data-ic="rotate"></button>
   <button class="rbtn" id="b-in" aria-label="가까이" data-ic="plus"></button>
   <button class="rbtn" id="b-out" aria-label="멀리" data-ic="minus"></button>
+  <button class="rbtn" id="b-req" aria-label="친구 의뢰" data-ic="clipboard"><i class="badge" id="req-n" hidden>0</i></button>
   <button class="rbtn" id="b-fight" aria-label="보스 전투" data-ic="fight"><span>전투</span></button>
   <button class="rbtn" id="b-music" aria-label="소리 켜고 끄기"></button>
   <button class="rbtn" id="b-back" aria-label="원래 게임으로" data-ic="school"></button>
 </div>
-<div class="place" id="place"><button class="pbtn rot" id="p-rot">돌리기</button><button class="pbtn no" id="p-no">취소</button><button class="pbtn ok" id="p-ok">여기에 짓기</button></div>
+<div class="place" id="place"><button class="pbtn rot" id="p-rot">돌리기</button><button class="pbtn no" id="p-no">취소</button><button class="pbtn ok" id="p-ok">여기에 놓기</button></div>
 <div class="info" id="info"></div>
+<div class="modal" id="reqs" hidden></div>
 <div class="bar"><div class="cards" id="cards"></div></div>
 <div class="toast" id="toast"></div>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>

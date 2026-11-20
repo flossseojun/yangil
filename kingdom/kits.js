@@ -245,15 +245,20 @@ const upCost = lv => ({ know: 10 * lv, snack: 6 * lv, power: 4 * lv });
 // 건물 보너스: 같은 건물은 3개까지 센다
 const BUILD_BONUS = {
   lab: { name: '과학실', text: '폭발 · 마법 친구 공격 +10%', key: 'magic', v: .10 },
-  gym: { name: '체육관', text: '방어 · 돌격 친구 체력 +12%', key: 'front', v: .12 },
+  gym: { name: '다목적관', text: '방어 · 돌격 친구 체력 +12%', key: 'front', v: .12 },
   library: { name: '도서관', text: '스킬 충전 +6%', key: 'charge', v: .06 },
   store: { name: '매점', text: '회복량 +10%', key: 'heal', v: .10 },
 };
+const DECO_TYPES = ['ginkgo', 'bench', 'flower', 'lamp', 'vending', 'fountain', 'planter'];
 function campusBonus(g) {
   const b = { magic: 1, front: 1, charge: 1, heal: 1, mood: 1, list: [] }, cnt = {};
   ((g && g.b) || []).forEach(x => { cnt[x.t] = (cnt[x.t] || 0) + 1; });
-  Object.entries(BUILD_BONUS).forEach(([t, d]) => { const n = Math.min(3, cnt[t] || 0); if (n) { b[d.key] += d.v * n; b.list.push(`${d.name} ×${n} · ${d.text.replace(/\+(\d+)%/, (m, x) => '+' + x * n + '%')}`); } });
-  const deco = (cnt.ginkgo || 0) + (cnt.bench || 0) + (cnt.flower || 0), mood = Math.min(5, Math.floor(deco / 4));
+  const fac = (g && g.fac) || null;
+  Object.entries(BUILD_BONUS).forEach(([t, d]) => {
+    if (fac) { const lv = Math.min(5, fac[t] || 0); if (lv) { const v = Math.round(d.v * .6 * lv * 100); b[d.key] += v / 100; b.list.push(`${d.name} Lv.${lv} · ${d.text.replace(/\+(\d+)%/, '+' + v + '%')}`); } return; }
+    const n = Math.min(3, cnt[t] || 0); if (n) { b[d.key] += d.v * n; b.list.push(`${d.name} ×${n} · ${d.text.replace(/\+(\d+)%/, (m, x) => '+' + x * n + '%')}`); }
+  });
+  const deco = DECO_TYPES.reduce((a, t) => a + (cnt[t] || 0), 0), mood = Math.min(5, Math.floor(deco / 4));
   if (mood) { b.mood += mood * .03; b.list.push(`꾸미기 ${deco}개 · 모든 친구 체력 +${mood * 3}%`); }
   return b;
 }

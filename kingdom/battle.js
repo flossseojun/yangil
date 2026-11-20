@@ -479,6 +479,7 @@ function finish(win) {
   const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [];
   if (g) {
     Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
+    if (win) g.wins = (g.wins || 0) + 1;
     if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); const nextCh = CH < CHAPTERS.length ? CH + 1 : 0, had = nextCh && progOf(g, nextCh); if (STAGE >= progOf(g, CH) && STAGE < MAX_STAGE) { setProg(g, CH, STAGE + 1); unlocked = true; saveSel(CH, STAGE + 1); } if (nextCh && !had && STAGE >= CHAP_UNLOCK) { setProg(g, nextCh, 1); chapOpen = nextCh; } }
     saveCampus(g);
   }

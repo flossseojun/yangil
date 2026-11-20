@@ -43,7 +43,7 @@ function renderField() {
   const syn = teamSynergy(team);
   $('syn').innerHTML = syn.filter(s => s.on || teamTagCount(s)).map(s => `<span class="${s.on ? 'on' : ''}"><b>${s.name}</b>${s.on ? s.desc : s.need}</span>`).join('') || '<span>같은 동아리 친구를 함께 넣으면 시너지가 켜져요</span>';
   const cb = campusBonus(G);
-  $('camp').innerHTML = cb.list.length ? '<b>캠퍼스 보너스</b> · ' + cb.list.join(' · ') : '<b>캠퍼스 보너스</b> · 캠퍼스에 과학실 · 체육관 · 도서관 · 매점을 지으면 전투가 강해져요';
+  $('camp').innerHTML = cb.list.length ? '<b>캠퍼스 보너스</b> · ' + cb.list.join(' · ') : '<b>캠퍼스 보너스</b> · 캠퍼스에서 과학실 · 다목적관 · 도서관 · 매점을 레벨업하면 전투가 강해져요';
   const pw = team.reduce((a, id) => a + powerOf(G, id), 0), rec = chapMul(ch, stage).rec;
   $('pow').innerHTML = `팀 전투력 ${fmt(pw)}<small style="color:${pw >= rec ? '#2f8f4e' : '#d0393e'}">추천 ${fmt(rec)}</small>`;
   $('go').disabled = !team.length;
@@ -56,7 +56,7 @@ function renderList() {
   const list = owned.filter(id => tab === 'all' || kitOf(id).role === tab).sort((a, b) => ROLE_ORDER.indexOf(kitOf(a).role) - ROLE_ORDER.indexOf(kitOf(b).role));
   $('list').innerHTML = list.map(id => { const k = kitOf(id), n = team.indexOf(id);
     return `<div class="card ${n >= 0 ? 'on' : team.length >= 5 ? 'full' : ''}" role="button" tabindex="0" data-id="${id}" data-n="${n + 1}" style="--bg:${BG[k.role]}"><span class="lv">Lv.${lvOf(G, id)}</span><img src="${headImg(id)}" data-h="${id}" alt=""><b>${nameOf(id)}</b><span class="rl">${roleIcon(k.role, 11)}${ROLES[k.role].name}</span><span class="sk">${k.skill}</span><button class="info" data-pf="${id}" aria-label="${nameOf(id)} 프로필">i</button></div>`; }).join('');
-  $('hint').textContent = G.friends.length < 5 ? `캠퍼스 친구가 ${G.friends.length}명이라 체험 친구로 채웠어요. 캠퍼스에 동아리방을 지으면 친구가 늘어요.` : `카드를 눌러 넣고 빼요. ⓘ를 누르면 친구 프로필 · 레벨업 · 추억 이야기를 볼 수 있어요.`;
+  $('hint').textContent = G.friends.length < 5 ? `캠퍼스 친구가 ${G.friends.length}명이라 체험 친구로 채웠어요. 캠퍼스 동아리실에서 친구를 모집할 수 있어요.` : `카드를 눌러 넣고 빼요. ⓘ를 누르면 친구 프로필 · 레벨업 · 추억 이야기를 볼 수 있어요.`;
 }
 const backEl = document.getElementById('back'); if (backEl) backEl.insertAdjacentHTML('afterbegin', drawIcon('back', 18));
 function render() { renderTop(); renderField(); renderTabs(); renderList(); }
