@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2b4a3c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="양일 캠퍼스">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>양일 캠퍼스 전투</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
 <style>
@@ -198,12 +205,42 @@
   .stars .ico { animation: starPop .45s cubic-bezier(.22,1.6,.36,1) backwards; } .stars .ico:nth-child(2) { animation-delay: .15s; } .stars .ico:nth-child(3) { animation-delay: .3s; }
   @keyframes starPop { from { transform: scale(0) rotate(-30deg); } }
   .sk .face img { width: 76px; bottom: -2px; }
+  #install-tip { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(20,16,12,.55); padding: 16px; }
+  #install-tip[hidden] { display: none; }
+  #install-tip .it-box { width: min(360px, 100%); background: #fffaf0; color: #231c17; border: 3px solid #231c17; border-radius: 14px; box-shadow: 0 5px 0 #231c17; padding: 14px 16px; text-align: center; font-family: 'Gowun Dodum', sans-serif; }
+  #install-tip b { font-family: Jua, sans-serif; font-weight: 400; } #install-tip .it-box > b { font-size: 20px; }
+  #install-tip p { font-size: 14px; line-height: 1.6; margin: 8px 0; }
+  #install-tip button { background: #ffd23f; border: 2.5px solid #231c17; border-radius: 12px; box-shadow: 0 3px 0 #231c17; padding: 8px 20px; font-family: Jua, sans-serif; font-size: 16px; cursor: pointer; }
+  /* 노치 · 가로 화면 */
+  .stage { left: max(12px, env(safe-area-inset-left)); top: max(10px, env(safe-area-inset-top)); }
+  .ctl { right: max(12px, env(safe-area-inset-right)); top: max(10px, env(safe-area-inset-top)); }
+  .syn { left: max(12px, env(safe-area-inset-left)); }
+  .skills { bottom: max(10px, env(safe-area-inset-bottom)); }
+  #b-full[hidden] { display: none; }
+  @media (max-height: 480px) {
+    .stage { padding: 2px 8px 3px; transform: none; font-size: 11px; }
+    .stage b { font-size: 16px; display: inline; margin-left: 6px; }
+    .ctl { gap: 5px; }
+    .ctl button { min-width: 34px; height: 34px; padding: 0 7px; font-size: 13px; border-radius: 10px; }
+    .ctl button .ico { width: 17px; height: 17px; }
+    .boss { left: calc(max(12px, env(safe-area-inset-left)) + 166px); right: calc(max(12px, env(safe-area-inset-right)) + 260px); width: auto; transform: none; top: max(8px, env(safe-area-inset-top)); }
+    .bname { margin-bottom: 1px; } .bname b { font-size: 15px; } .bname i { font-size: 10px; }
+    .bbar { height: 14px; border-width: 2.5px; } .bcount { margin-top: 14px; font-size: 13px; }
+    .syn { display: none; }
+    .sk { width: 60px; height: 78px; } .sk .face { inset: 0 0 22px 0; } .sk .face img { width: 58px; } .sk b { height: 22px; line-height: 20px; font-size: 11px; }
+    .sk .cd { inset: 0 0 22px 0; font-size: 22px; } .sk.ready { transform: translateY(-4px); }
+    .skills { gap: 6px; }
+    .unit { width: 38px; } .unit .bar { height: 6px; }
+    .panel { padding: 10px 20px 12px 36px; } .panel h2 { font-size: 26px; margin: 2px 0; } .panel p { margin: 2px 0 8px; font-size: 12px; } .tip { display: none; }
+    .stars .ico { width: 30px; height: 30px; }
+  }
+  @media (max-height: 480px) and (max-width: 700px) { .boss { right: calc(max(12px, env(safe-area-inset-right)) + 230px); left: calc(max(12px, env(safe-area-inset-left)) + 120px); } .ctl #b-speed { display: none; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div class="stage glass"><span id="stg">1-1</span> · <span id="st-place">은행나무길</span><b id="timer">1:30</b></div>
-<div class="ctl"><button class="glass" id="b-auto">AUTO</button><button class="glass" id="b-speed">×1</button><button class="glass" id="b-pause" aria-label="일시정지">❚❚</button><button class="glass" id="b-music" aria-label="소리 켜고 끄기"></button><button class="glass" id="b-voice" aria-label="목소리 켜고 끄기">🔊</button></div>
+<div class="ctl"><button class="glass" id="b-auto">AUTO</button><button class="glass" id="b-speed">×1</button><button class="glass" id="b-pause" aria-label="일시정지">❚❚</button><button class="glass" id="b-full" aria-label="전체화면"></button><button class="glass" id="b-music" aria-label="소리 켜고 끄기"></button><button class="glass" id="b-voice" aria-label="목소리 켜고 끄기">🔊</button></div>
 <div class="boss"><div class="bmain"><div class="bname"><b id="boss-name">은행왕</b><i>보스</i></div><div class="bbar"><div class="layer next" id="b-next"></div><div class="trail" id="b-trail"></div><div class="layer now" id="b-now"></div><span class="shine"></span></div></div><div class="bcount" id="b-count">×3</div></div>
 <div class="syn glass" id="syn"></div>
 <div class="skills" id="skills"></div>

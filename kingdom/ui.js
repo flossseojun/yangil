@@ -38,6 +38,8 @@ const ICON_PATHS = {
   vending: '<rect x="6" y="2.5" width="12" height="19" rx="1.5" fill="#e5484d"/><rect x="8.5" y="5" width="7" height="8" fill="#dff1f7"/><path d="M9 17h6"/>',
   fountain: '<path d="M3 17h18l-1.5 4h-15z" fill="#d9d2c2"/><path d="M12 17V9" stroke-width="2.4"/><path d="M12 9c-3 0-5 3-5 6M12 9c3 0 5 3 5 6" stroke="#5b8def"/><circle cx="12" cy="7" r="2" fill="#9fd8f0"/>',
   clipboard: '<rect x="5" y="4" width="14" height="17" rx="2" fill="#fffaf0"/><rect x="9" y="2.5" width="6" height="3.5" rx="1" fill="#ffd23f"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/>',
+  expand: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" stroke-width="2.6"/>',
+  shrink: '<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" stroke-width="2.6"/>',
   main: '<path d="M3 20.5V10l9-5 9 5v10.5z" fill="#f3ead6"/><path d="M3 10l9-5 9 5" fill="#2b4a3c"/><rect x="10" y="14" width="4" height="6.5" fill="#8a5a34"/>',
 };
 function drawIcon(name, size = 18, cls = '') {
@@ -46,3 +48,28 @@ function drawIcon(name, size = 18, cls = '') {
 // 자원 묶음: { know: 10, snack: 4 } → 아이콘 + 숫자
 const RES_ORDER = ['know', 'snack', 'power'];
 const resText = (cost, size = 13) => RES_ORDER.filter(k => cost && cost[k]).map(k => `<span class="rs">${drawIcon(k, size)}${cost[k]}</span>`).join('');
+
+// 전체화면: 되는 기기는 바로 전체화면, 안 되는 기기(아이폰 사파리)는 '홈 화면에 추가' 안내
+const isStandalone = () => matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches || navigator.standalone === true;
+function setupFullscreen(btn, landscape) {
+  if (!btn) return;
+  const can = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  if (isStandalone()) { btn.hidden = true; return; }
+  const draw = () => { const on = !!(document.fullscreenElement || document.webkitFullscreenElement); btn.innerHTML = drawIcon(on ? 'shrink' : 'expand', 20); btn.setAttribute('aria-label', on ? '전체화면 끄기' : '전체화면'); };
+  draw(); document.addEventListener('fullscreenchange', draw); document.addEventListener('webkitfullscreenchange', draw);
+  btn.addEventListener('click', async e => {
+    e.stopPropagation();
+    if (!can) { showInstallTip(); return; }
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+      const el = document.documentElement; await (el.requestFullscreen || el.webkitRequestFullscreen).call(el, { navigationUI: 'hide' });
+      if (landscape && screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+    } catch (err) { showInstallTip(); }
+  });
+}
+function showInstallTip() {
+  let el = document.getElementById('install-tip');
+  if (!el) { el = document.createElement('div'); el.id = 'install-tip'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="it-box"><b>주소창 없이 크게 하기</b><p>아이폰: 아래 <b>공유 버튼</b> → <b>홈 화면에 추가</b><br>안드로이드: 오른쪽 위 <b>⋮</b> → <b>홈 화면에 추가</b></p><p>홈 화면 아이콘으로 열면 앱처럼 화면 전체를 써요.</p><button>알겠어요</button></div>`;
+  el.hidden = false; el.querySelector('button').onclick = () => { el.hidden = true; };
+}

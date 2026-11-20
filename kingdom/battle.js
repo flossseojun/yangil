@@ -465,7 +465,7 @@ function speak(id, text) {
     synth.speak(u);
   } catch (e) {}
 }
-KS.bind($('b-music'));
+KS.bind($('b-music')); setupFullscreen($('b-full'), true);
 $('b-voice').onclick = () => { voiceOn = !voiceOn; $('b-voice').innerHTML = drawIcon(voiceOn ? 'sound' : 'mute', 20); try { localStorage.setItem('yangil.kingdom.voice', voiceOn ? '1' : '0'); } catch (e) {} };
 $('b-voice').innerHTML = drawIcon(voiceOn ? 'sound' : 'mute', 20); $('b-pause').innerHTML = drawIcon('pause', 18);
 

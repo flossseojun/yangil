@@ -3,13 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2b4a3c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="양일 캠퍼스">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>팀 편성</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
 <style>
   :root { --ink: #231c17; --paper: #fffaf0; --paper2: #f1e7d0; --yellow: #ffd23f; --red: #e5484d; --green: #2b4a3c; --board: #2f4a3e; --muted: #7a6d5c; --sub: #4a4038; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; min-height: 100%; background: var(--board); color: var(--ink); font-family: 'Gowun Dodum', sans-serif; }
-  body { padding: max(12px, env(safe-area-inset-top)) 16px 16px; }
+  body { padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
   .ico { display: block; flex: 0 0 auto; }
   .stk { background: var(--paper); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); }
   .top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
@@ -117,6 +124,12 @@
   .pf .art:has(canvas) .spin { display: block; }
   .slot img, .card img { transition: opacity .2s; }
   .sbtn.mus { background: var(--paper); }
+  #install-tip { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(20,16,12,.55); padding: 16px; }
+  #install-tip[hidden] { display: none; }
+  #install-tip .it-box { width: min(360px, 100%); background: #fffaf0; color: #231c17; border: 3px solid #231c17; border-radius: 14px; box-shadow: 0 5px 0 #231c17; padding: 14px 16px; text-align: center; font-family: 'Gowun Dodum', sans-serif; }
+  #install-tip b { font-family: Jua, sans-serif; font-weight: 400; } #install-tip .it-box > b { font-size: 20px; }
+  #install-tip p { font-size: 14px; line-height: 1.6; margin: 8px 0; }
+  #install-tip button { background: #ffd23f; border: 2.5px solid #231c17; border-radius: 12px; box-shadow: 0 3px 0 #231c17; padding: 8px 20px; font-family: Jua, sans-serif; font-size: 16px; cursor: pointer; }
 </style>
 </head>
 <body>
