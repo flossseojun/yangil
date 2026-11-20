@@ -54,7 +54,7 @@ function stepTut() {
   if (G.tut == null) G.tut = 0;
   if (G.tut >= TUT.length) return;
   const s = TUT[G.tut];
-  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
+  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || ($('fr') && !$('fr').hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
   if (tutStarted !== G.tut) { tutStarted = G.tut; s.start && s.start(); tutEl.querySelector('p').innerHTML = `<b class="n">${G.tut + 1}/${TUT.length}</b> ${s.text}`; }
   tutEl.hidden = false;
   if (s.done()) { nextTut(); return; }
@@ -83,6 +83,7 @@ const MISSIONS = {
   deco:  { n: 1, text: () => '꾸미기 1개 놓기', cur: () => G.stat.deco || 0 },
   reqs:  { n: 1, text: () => '친구 의뢰 1개 들어주기', cur: () => G.stat.reqs || 0 },
   win:   { n: 1, text: () => '전투 1번 이기기', cur: () => G.wins || 0 },
+  lvup:  { n: 1, text: () => '친구 1번 강화하기', cur: () => G.stat.lvup || 0 },
 };
 const attReward = d => ({ know: 20 + d * 10, snack: 15 + d * 8, power: d === 7 ? 40 : d * 4 });
 const msReward = () => ({ know: 15 + L() * 3, snack: 10 + L() * 2 });
@@ -322,5 +323,56 @@ K.HOOK.tap.push(ray => {
     });
   }
 }
+/* ───────── 7. 친구들: 캠퍼스 친구를 눌러 강화한다 ───────── */
+G.lv = G.lv || {};
+const fr = document.createElement('div'); fr.className = 'modal'; fr.id = 'fr'; fr.hidden = true; document.body.appendChild(fr);
+let frRole = 'all', frOpen = null;
+const fmt = n => n.toLocaleString('ko-KR');
+const statOf = (id, lv) => { const r = ROLES[kitOf(id).role], m = lvMult(lv); return { hp: Math.round(r.hp * m), atk: Math.round(r.atk * m) }; };
+function frBlock(id) { const lv = lvOf(G, id); if (lv >= MAX_LV) return '최고 레벨'; return canPay(upCost(lv)) ? '' : '자원 부족'; }
+function openFR() {
+  const list = G.friends.filter(id => frRole === 'all' || kitOf(id).role === frRole)
+    .sort((a, b) => lvOf(G, b) - lvOf(G, a) || ROLE_ORDER.indexOf(kitOf(a).role) - ROLE_ORDER.indexOf(kitOf(b).role));
+  const total = G.friends.reduce((a, id) => a + powerOf(G, id), 0);
+  const roles = [['all', `전체 ${G.friends.length}`]].concat(ROLE_ORDER.filter(r => G.friends.some(id => kitOf(id).role === r)).map(r => [r, ROLES[r].name]));
+  const body = list.map(id => {
+    const f = K.rosterOf(id), k = kitOf(id), r = ROLES[k.role], lv = lvOf(G, id), why = frBlock(id), open = frOpen === id;
+    const now = statOf(id, lv), nx = statOf(id, Math.min(MAX_LV, lv + 1));
+    const det = open ? `<div class="fr-det">
+        <div><b>체력</b> ${fmt(now.hp)}${lv < MAX_LV ? ` → <em>${fmt(nx.hp)}</em>` : ''}</div>
+        <div><b>공격</b> ${fmt(now.atk)}${lv < MAX_LV ? ` → <em>${fmt(nx.atk)}</em>` : ''}</div>
+        <div><b>스킬</b> ${k.skill} · ${r.desc}</div>
+        <div><b>친밀도</b> ${hearts(Math.min(5, (G.bond || {})[id] || 0))}</div></div>` : '';
+    return `<div class="fr-c${open ? ' on' : ''}" data-fr="${id}" style="--rc:${r.color}">
+      <img src="${faceSVG(id)}" alt="">
+      <div class="fr-m"><b>${f.name}</b><small>${roleIcon(k.role, 12)} ${r.name} · 전투력 ${fmt(powerOf(G, id))}</small>
+        <div class="fr-lv"><span>Lv.${lv}</span><i><u style="width:${lv / MAX_LV * 100}%"></u></i><span>${MAX_LV}</span></div></div>
+      <button class="claim" data-frup="${id}" ${why ? 'disabled' : ''}>${lv >= MAX_LV ? '최고' : `강화<small>${resText(upCost(lv), 11)}</small>`}</button>${det}</div>`;
+  }).join('');
+  fr.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="친구들"><div class="sh-top"><b>친구들</b><span class="nbres">${resText(G.res, 14)}</span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
+    <p class="fr-sum">캠퍼스 친구 ${G.friends.length}명 · 모두의 전투력 <b>${fmt(total)}</b><br><small>강화할 때마다 체력 · 공격 · 스킬이 8%씩 세져요. 친구를 누르면 자세히 보여요.</small></p>
+    <div class="nbtabs fr-tabs">${roles.map(([k, n]) => `<button class="${frRole === k ? 'on' : ''}" data-role="${k}">${k === 'all' ? '' : roleIcon(k, 12)}${n}</button>`).join('')}</div>
+    <div class="fr-list">${body}</div></div>`;
+  fr.hidden = false;
+}
+fr.addEventListener('click', e => {
+  if (e.target === fr || e.target.closest('[data-close]')) { fr.hidden = true; return; }
+  const keep = fr.querySelector('.sheet') ? fr.querySelector('.sheet').scrollTop : 0, redraw = () => { openFR(); fr.querySelector('.sheet').scrollTop = keep; };
+  const rb = e.target.closest('[data-role]'); if (rb) { KS.fx('click'); frRole = rb.dataset.role; frOpen = null; openFR(); return; }
+  const ub = e.target.closest('[data-frup]');
+  if (ub) {
+    if (ub.disabled) return; const id = ub.dataset.frup, lv = lvOf(G, id), cost = upCost(lv);
+    if (lv >= MAX_LV || !canPay(cost)) return;
+    Object.entries(cost).forEach(([k, n]) => { G.res[k] -= n; }); G.lv[id] = lv + 1; G.stat.lvup = (G.stat.lvup || 0) + 1;
+    K.save(); K.hud(); refreshBadge(); KS.fx('levelup'); K.toast(`${K.rosterOf(id).name} Lv.${lv + 1}!`);
+    const p = K.people.find(q => q.id === id); if (p) K.sayText(p, lv + 1 >= MAX_LV ? '최고 레벨! 이제 누구든 덤벼!' : '나 더 강해진 것 같아!');
+    frOpen = id; redraw(); return;
+  }
+  const c = e.target.closest('[data-fr]'); if (c) { KS.fx('pop'); frOpen = frOpen === c.dataset.fr ? null : c.dataset.fr; redraw(); }
+});
+const frBtn = document.createElement('button'); frBtn.className = 'rbtn'; frBtn.id = 'b-friends'; frBtn.setAttribute('aria-label', '친구들');
+frBtn.innerHTML = drawIcon('club', 24); nbBtn.after(frBtn);
+frBtn.onclick = () => { KS.fx('click'); openFR(); };
+
 K.save();
-Object.assign(K, { openNB, openLM, daily, ACH, TUT, offline, refreshBadge });
+Object.assign(K, { openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });

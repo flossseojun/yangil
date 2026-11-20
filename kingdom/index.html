@@ -227,6 +227,18 @@
   #sv-in { width: 100%; font: 12px monospace; border: 2.5px solid var(--ink); border-radius: 10px; padding: 6px; margin-bottom: 6px; resize: none; user-select: text; -webkit-user-select: text; }
   .lm-st { font-size: 14px; line-height: 1.7; background: #fff; border: 2px dashed #b8ab92; border-radius: 10px; padding: 8px 10px; margin: 0 0 10px; }
   @media (max-height: 480px) { .tut { top: 46px; padding: 4px 10px; } .tut p { font-size: 12px; } }
+  .fr-sum { font-size: 14px; margin: 0 0 8px; line-height: 1.5; } .fr-sum b { font-family: Jua, sans-serif; font-weight: 400; font-size: 17px; } .fr-sum small { color: var(--sub); font-size: 12px; }
+  .fr-tabs { flex-wrap: wrap; } .fr-tabs button { flex: 1 0 auto; display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 13px; padding: 5px 8px; }
+  .fr-list { display: flex; flex-direction: column; gap: 8px; }
+  .fr-c { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #fff; border: 2.5px solid var(--ink); border-left: 8px solid var(--rc); border-radius: 12px; padding: 7px 9px; cursor: pointer; }
+  .fr-c.on { background: #fff8d6; }
+  .fr-c > img { width: 52px; height: 52px; flex: 0 0 auto; background: #cfe3ff; border: 2px solid var(--ink); border-radius: 10px; }
+  .fr-m { flex: 1; min-width: 0; } .fr-m b { font-family: Jua, sans-serif; font-weight: 400; font-size: 16px; } .fr-m small { display: flex; align-items: center; gap: 3px; font-size: 12px; color: var(--sub); }
+  .fr-lv { display: flex; align-items: center; gap: 5px; margin-top: 3px; font-family: Jua, sans-serif; font-size: 12px; } .fr-lv span:last-child { color: var(--sub); }
+  .fr-lv i { flex: 1; height: 10px; border: 2px solid var(--ink); border-radius: 6px; background: #f1e7d0; overflow: hidden; } .fr-lv u { display: block; height: 100%; background: var(--yellow); }
+  .fr-c .claim { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 76px; } .fr-c .claim small { display: flex; gap: 3px; font-size: 11px; }
+  .fr-det { flex-basis: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 13px; border-top: 2px dashed #d9cfb8; padding-top: 6px; }
+  .fr-det div:nth-child(n+3) { grid-column: span 2; display: flex; align-items: center; gap: 4px; } .fr-det b { font-family: Jua, sans-serif; font-weight: 400; margin-right: 4px; } .fr-det em { font-style: normal; color: #2f8f4e; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -256,20 +268,20 @@
 <a class="osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">지도 © OpenStreetMap</a>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
 
-<script src="../avatar.js?v=1795185750"></script>
-<script src="../avatar2.js?v=1795185750"></script>
-<script src="../avatar3.js?v=1795185750"></script>
-<script src="../scene.js?v=1795185750"></script>
-<script src="../fullbody.js?v=1795185750"></script>
-<script src="roster.js?v=1795185750"></script>
-<script src="yangpyeong.js?v=1795185750"></script>
-<script src="kits.js?v=1795185750"></script>
-<script src="profiles.js?v=1795185750"></script>
-<script src="ui.js?v=1795185750"></script>
-<script src="audio.js?v=1795185750"></script>
+<script src="../avatar.js?v=1795186325"></script>
+<script src="../avatar2.js?v=1795186325"></script>
+<script src="../avatar3.js?v=1795186325"></script>
+<script src="../scene.js?v=1795186325"></script>
+<script src="../fullbody.js?v=1795186325"></script>
+<script src="roster.js?v=1795186325"></script>
+<script src="yangpyeong.js?v=1795186325"></script>
+<script src="kits.js?v=1795186325"></script>
+<script src="profiles.js?v=1795186325"></script>
+<script src="ui.js?v=1795186325"></script>
+<script src="audio.js?v=1795186325"></script>
 <script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
-<script type="module" src="kingdom.js?v=1795185750"></script>
-<script type="module" src="notebook.js?v=1795185750"></script>
+<script type="module" src="kingdom.js?v=1795186325"></script>
+<script type="module" src="notebook.js?v=1795186325"></script>
 </body>
 </html>
