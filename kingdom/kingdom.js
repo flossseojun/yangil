@@ -157,9 +157,13 @@ ground.position.set(N / 2, -.2, N / 2); ground.receiveShadow = true; scene.add(g
 const outside = new THREE.Group(); scene.add(outside);
 /* ───────── 바깥: 양평읍 실제 지도 (OpenStreetMap · yangpyeong.js) ───────── */
 const mapLabels = [];
+// 양평 복구: 큰 장소는 재건 % 단계에서, 나머지 건물은 학교에서 가까운 곳부터 살아난다
+const LANDMARK = { station: [.25, '양평역'], market: [.5, '양평물맑은시장'], hall: [.75, '양평군청'] };
+const townU = { uRestore: { value: 0 } };
+let townBase = null;
 {
   const M = typeof YP_MAP !== 'undefined' ? YP_MAP : { B: [], R: [], RL: [], W: [], WL: [], L: [], P: [] };
-  const base = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), toon('#b9dca0')); base.rotation.x = -Math.PI / 2; base.position.set(N / 2, -.42, N / 2); base.receiveShadow = true; outside.add(base);
+  const base = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), new THREE.MeshToonMaterial({ color: '#b9dca0', gradientMap: gradMap() })); townBase = base; base.rotation.x = -Math.PI / 2; base.position.set(N / 2, -.42, N / 2); base.receiveShadow = true; outside.add(base);
   const shapeOf = f => { const s = new THREE.Shape(); for (let i = 0; i < f.length; i += 2) i ? s.lineTo(f[i], -f[i + 1]) : s.moveTo(f[i], -f[i + 1]); return s; };
   const flatGroup = (list, color, y) => { const geos = list.map(f => { try { const g = new THREE.ShapeGeometry(shapeOf(f)); g.rotateX(-Math.PI / 2); g.translate(0, y, 0); return g; } catch (e) { return null; } }).filter(Boolean); if (!geos.length) return; const g = mergeGeometries(geos.map(x => x.index ? x.toNonIndexed() : x)); const m = new THREE.Mesh(g, toon(color)); m.receiveShadow = true; outside.add(m); };
   const LC = { park: '#8fcf6a', grass: '#a3d684', wood: '#5f9a48', farm: '#d8cf8a', pitch: '#7fbf5a', platform: '#cfc8bb' };
@@ -183,19 +187,35 @@ const mapLabels = [];
     const lp = []; M.RL.forEach(p => { for (let i = 0; i + 3 < p.length; i += 2) lp.push(p[i], -.37, p[i + 1], p[i + 2], -.37, p[i + 3]); }); const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3)); outside.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: '#3a3f4a' }))); }
   // 건물: 실제 윤곽을 층수만큼 올린다 (한 층 ≈ 3m ≈ .66칸)
   { const geos = [], PAL = ['#efe6d6', '#e6dccb', '#f3ece0', '#dcd3c4', '#e9e2d8', '#d9e2e6', '#f0e2d0'];
-    M.B.forEach(([lv, f], i) => { if (f.length < 6) return; try { const g = new THREE.ExtrudeGeometry(shapeOf(f), { depth: Math.max(.6, lv * .66), bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.4, 0); const ng = g.toNonIndexed(), n = ng.attributes.position.count, col = new THREE.Color(lv >= 8 ? '#f1ead9' : PAL[i % PAL.length]), cols = new Float32Array(n * 3), nrm = ng.attributes.normal; for (let k = 0; k < n; k++) { const top = nrm.getY(k) > .5, c = top ? col.clone().multiplyScalar(lv >= 8 ? .9 : .82).lerp(new THREE.Color(lv >= 8 ? '#8a9aa8' : '#b0705a'), .35) : col; cols.set([c.r, c.g, c.b], k * 3); } ng.setAttribute('color', new THREE.BufferAttribute(cols, 3)); ng.deleteAttribute('uv'); geos.push(ng); g.dispose(); } catch (e) {} });
-    if (geos.length) { const g = mergeGeometries(geos); const m = new THREE.Mesh(g, new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: gradMap() })); m.castShadow = true; m.receiveShadow = true; outside.add(m); } }
+    const LM = M.P.filter(p => LANDMARK[p[0]]).map(p => [p[2], p[3], LANDMARK[p[0]][0]]);
+    let sd = 11; const rnd2 = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
+    const thrOf = f => { let cx = 0, cz = 0; for (let k = 0; k < f.length; k += 2) { cx += f[k]; cz += f[k + 1]; } cx /= f.length / 2; cz /= f.length / 2; const d = Math.hypot(cx - 12, cz - 6); let t = Math.min(.97, .03 + .92 * Math.pow(Math.min(1, d / 300), .8) + rnd2() * .05); LM.forEach(([x, z, th]) => { if (Math.hypot(cx - x, cz - z) < 16) t = Math.min(t, th - .005); }); return t; };
+    M.B.forEach(([lv, f], i) => { if (f.length < 6) return; try { const thr = thrOf(f); const g = new THREE.ExtrudeGeometry(shapeOf(f), { depth: Math.max(.6, lv * .66), bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.4, 0); const ng = g.toNonIndexed(), n = ng.attributes.position.count, col = new THREE.Color(lv >= 8 ? '#f1ead9' : PAL[i % PAL.length]), cols = new Float32Array(n * 3), nrm = ng.attributes.normal; for (let k = 0; k < n; k++) { const top = nrm.getY(k) > .5, c = top ? col.clone().multiplyScalar(lv >= 8 ? .9 : .82).lerp(new THREE.Color(lv >= 8 ? '#8a9aa8' : '#b0705a'), .35) : col; cols.set([c.r, c.g, c.b], k * 3); } ng.setAttribute('color', new THREE.BufferAttribute(cols, 3)); ng.setAttribute('aThr', new THREE.BufferAttribute(new Float32Array(n).fill(thr), 1)); ng.deleteAttribute('uv'); geos.push(ng); g.dispose(); } catch (e) {} });
+    if (geos.length) { const g = mergeGeometries(geos); const bm = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: gradMap() });
+      // 무너진 건물: 지붕을 들쭉날쭉 낮추고 잿빛으로 (셰이더에서 처리해서 다시 만들 필요 없음)
+      bm.onBeforeCompile = sh2 => {
+        sh2.uniforms.uRestore = townU.uRestore;
+        sh2.vertexShader = 'attribute float aThr;\nuniform float uRestore;\nvarying float vRuin;\n' + sh2.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nfloat ruin = step(uRestore, aThr);\nfloat hh = 0.12 + 0.3 * fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5453);\ntransformed.y = mix(transformed.y, -0.4 + (transformed.y + 0.4) * hh, ruin);\nvRuin = ruin;');
+        sh2.fragmentShader = 'varying float vRuin;\n' + sh2.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\nfloat gy = dot(diffuseColor.rgb, vec3(0.33));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.58, 0.52) * (0.7 + gy * 0.4), vRuin * 0.85);');
+      };
+      const m = new THREE.Mesh(g, bm); m.castShadow = true; m.receiveShadow = true; outside.add(m); } }
   // 이름표: 양평역 · 시장 · 남한강 · 군청 · 학교들
   const seen = new Set();
   M.P.forEach(([kind, name, x, z]) => {
     if (seen.has(name) || /상인회|별관|마을회관/.test(name)) return; seen.add(name);
     const big = kind === 'station' || kind === 'market' || kind === 'river';
-    const t = canvasTex(320, 96, (g, w, h) => { g.font = `${big ? 40 : 30}px Jua, sans-serif`; const tw = Math.min(w - 16, g.measureText(name).width + 40); g.fillStyle = kind === 'river' ? '#dff1fb' : kind === 'station' ? '#ffd23f' : kind === 'market' ? '#ffb4a0' : '#fffaf0'; g.beginPath(); g.roundRect((w - tw) / 2, 8, tw, 64, 14); g.fill(); g.lineWidth = 5; g.strokeStyle = INK; g.stroke(); g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, w / 2, 42); g.beginPath(); g.moveTo(w / 2 - 10, 72); g.lineTo(w / 2, 90); g.lineTo(w / 2 + 10, 72); g.closePath(); g.fillStyle = INK; g.fill(); });
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); sp.renderOrder = 13; sp.position.set(x, kind === 'river' ? 1 : 6, z); sp.userData.base = big ? 1.35 : 1; outside.add(sp); mapLabels.push(sp);
+    const draw = (g, w, h) => { const ruined = LANDMARK[kind] && restore() < LANDMARK[kind][0] - 1e-9, name2 = ruined ? '무너진 ' + name : name; g.clearRect(0, 0, w, h); g.font = `${big ? 40 : 30}px Jua, sans-serif`; const tw = Math.min(w - 16, g.measureText(name2).width + 40); g.fillStyle = ruined ? '#c9c2b4' : kind === 'river' ? '#dff1fb' : kind === 'station' ? '#ffd23f' : kind === 'market' ? '#ffb4a0' : '#fffaf0'; g.beginPath(); g.roundRect((w - tw) / 2, 8, tw, 64, 14); g.fill(); g.lineWidth = 5; g.strokeStyle = INK; g.stroke(); g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name2, w / 2, 42); g.beginPath(); g.moveTo(w / 2 - 10, 72); g.lineTo(w / 2, 90); g.lineTo(w / 2 + 10, 72); g.closePath(); g.fillStyle = INK; g.fill(); };
+    const t = canvasTex(360, 96, draw); t.userData = { draw };
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); sp.renderOrder = 13; sp.position.set(x, kind === 'river' ? 1 : 6, z); sp.userData.base = big ? 1.35 : 1; sp.userData.lm = !!LANDMARK[kind]; outside.add(sp); mapLabels.push(sp);
   });
 }
 // 이름표는 멀리 볼수록 크게 (화면에서 비슷한 크기로)
-function stepLabels() { const k = 1 / camera.zoom; mapLabels.forEach(s => { const b = s.userData.base * 5.2 * k; s.scale.set(b, b * .3, 1); s.visible = camera.zoom < 1.4 || s.userData.base > 1; }); }
+function refreshTown() {
+  const r = restore(); townU.uRestore.value = r;
+  if (townBase) townBase.material.color.set('#' + new THREE.Color('#bfae8e').lerp(new THREE.Color('#b9dca0'), Math.min(1, r * 1.6)).getHexString());
+  mapLabels.forEach(s => { if (!s.userData.lm) return; const t = s.material.map, c = t.image, g = c.getContext('2d'); t.userData.draw(g, c.width, c.height); t.needsUpdate = true; });
+}
+function stepLabels() { const k = 1 / camera.zoom; mapLabels.forEach(s => { const b = s.userData.base * 5.2 * k; s.scale.set(b, b * .267, 1); s.visible = camera.zoom < 1.4 || s.userData.base > 1; }); }
 // 담장 · 산울타리 · 정문
 const fixed = new THREE.Group(); scene.add(fixed);
 {
@@ -605,8 +625,9 @@ const canPay = cost => Object.entries(cost || {}).every(([k, n]) => (G.res[k] ||
 const costText = cost => Object.entries(cost || {}).filter(([, n]) => n).map(([k, n]) => `${RES_NAME[k]} ${n}`).join(' · ');
 function hud() {
   ['know', 'snack', 'power'].forEach(k => { $('r-' + k).textContent = G.res[k] || 0; });
+  refreshTown();
   const pct = Math.round(restore() * 100);
-  $('lv').innerHTML = `양일고 재건 ${pct}%<span class="rbar2"><i style="width:${pct}%"></i></span><small>캠퍼스 Lv.${campusLv()} · 친구 ${G.friends.length}명</small>`;
+  $('lv').innerHTML = `양평 재건 ${pct}%<span class="rbar2"><i style="width:${pct}%"></i></span><small>캠퍼스 Lv.${campusLv()} · 친구 ${G.friends.length}명</small>`;
   document.querySelectorAll('.bcard').forEach(c => c.classList.toggle('off', !canPay(DECO[c.dataset.t].cost)));
   refreshReqBadge();
 }
@@ -838,17 +859,17 @@ const BOSS_LIST = ['은행나무길의 <b>은행왕</b>', '다목적관의 <b>LE
 function storyPages() {
   const team = G.friends.slice(0, 5);
   return [
-    { t: '그 후, 양일고는…', p: '학생들이 하나둘 떠나고, 결국 양일고는 문을 닫았다.<br>운동장엔 잡초가 자라고, 본관 유리창은 깨졌다.', art: 'ruin' },
-    { t: '빈 학교에 이상한 것들이 눌러앉았다', p: BOSS_LIST.join('<br>'), art: 'boss' },
-    { t: '그때, 졸업생들이 돌아왔다', p: '“우리 학교, 우리가 다시 세우자!”', art: 'team', team },
-    { t: '양일고 재건 시작', p: '먼저 무너진 <b>본관</b>을 눌러 복구해 보자.<br>자원을 모아 건물을 되살리고, <b>전투</b>로 학교를 차지한 녀석들을 몰아내자!', art: 'go' },
+    { t: '그날, 양평이 무너졌다', p: '어느 날 양평에 이상한 것들이 나타났다.<br>양평역의 기차가 멈추고, 물맑은시장은 문을 닫고, 거리는 무너졌다.', art: 'ruin' },
+    { t: '양평을 차지한 녀석들', p: BOSS_LIST.join('<br>'), art: 'boss' },
+    { t: '그때, 양일고 친구들이 돌아왔다', p: '“학교부터 다시 세우자. 양일고가 살아나면 양평도 살아날 거야!”', art: 'team', team },
+    { t: '양평 재건 시작', p: '먼저 무너진 <b>양일고 본관</b>을 눌러 복구해 보자.<br>학교를 다시 세울수록 <b>학교 가까운 동네부터</b> 하나씩 살아난다.<br><b>전투</b>로 양평을 차지한 녀석들을 몰아내자!', art: 'go' },
   ];
 }
 const MILES = [
-  [.25, '본관에 다시 불이 켜졌다', '창문 너머로 수업 종소리가 들린다. 동네 사람들이 하나둘 학교를 기웃거린다.', { know: 60, snack: 40 }],
-  [.5, '점심시간 종이 다시 울린다', '매점 앞이 북적이고, 복도에 떠드는 소리가 가득하다. 양일고가 숨을 쉰다.', { know: 90, snack: 70, power: 30 }],
-  [.75, '운동장에 공 차는 소리', '체육 시간 호루라기 소리, 응원 소리. 이제 아무도 여기를 폐교라고 부르지 않는다.', { know: 140, snack: 100, power: 60 }],
-  [1, '양일고 재건 완료!', '무너졌던 학교가 다시 우리 학교가 됐다. 오늘도 양일고 파이팅!', { know: 300, snack: 200, power: 120 }],
+  [.25, '양평역에 다시 기차가 선다', '중앙선 기차가 다시 양평역에 멈춰 섰다. 역 앞 거리에 사람들이 돌아온다.', { know: 60, snack: 40 }],
+  [.5, '물맑은시장이 다시 열렸다', '“떡볶이 나왔어요!” 시장 골목에 다시 불이 켜지고, 장날 북적임이 돌아왔다.', { know: 90, snack: 70, power: 30 }],
+  [.75, '양평군청에 불이 켜졌다', '군청 앞 광장에 다시 사람들이 모인다. 남한강 산책길도 다시 열렸다.', { know: 140, snack: 100, power: 60 }],
+  [1, '양평 재건 완료!', '무너졌던 양평이 다시 우리 동네가 됐다. 남한강은 오늘도 반짝이고, 양일고 종이 울린다.', { know: 300, snack: 200, power: 120 }],
 ];
 function showStory(pages, done) {
   const el = $('story'); let i = 0;
@@ -880,7 +901,7 @@ function checkMilestone() {
     }
   }
 }
-if (!G.story.intro) { G.story.intro = 1; save(); setTimeout(() => showStory(storyPages()), 500); }
+if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout(() => showStory(storyPages()), 500); }
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
