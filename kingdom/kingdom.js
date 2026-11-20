@@ -188,7 +188,7 @@ function rosterOf(id) { return ROSTER.find(f => f.id === id) || { id, name: id, 
 function freeCell() { const s = blocked(); for (let k = 0; k < 200; k++) { const x = 1 + Math.floor(Math.random() * (N - 2)), z = 1 + Math.floor(Math.random() * (N - 2)); if (!s.has(x + ',' + z)) return [x + .5, z + .5]; } return [8, 12]; }
 const MAX_SHOWN = 18;   // 휴대폰이 느려지지 않게 캠퍼스에는 최대 18명만 나와 있다 (나머지는 수업 중)
 function addPerson(id) {
-  const spr = makeChibi(id, { scale: .7, noShadow: true, castShadow: false });
+  const spr = makeChibi(id, { scale: .7, noShadow: true, castShadow: false, lookUp: .5 });
   const [x, z] = freeCell(); spr.position.set(x, 0, z); spr.rotation.y = Math.random() * 6;
   const shade = new THREE.Mesh(new THREE.CircleGeometry(.24, 16), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: .18 })); shade.rotation.x = -Math.PI / 2; shade.position.y = .01;
   const p = { id, spr, shade, ch: spr.userData.chibi, target: null, wait: Math.random() * 3, step: 0 };
@@ -212,7 +212,11 @@ function stepPeople(dt) {
       }
     }
     p.step += dt; const walking = !!p.target;
-    if (walking) { const d = p.target.clone().sub(o); if (d.lengthSq() > 1e-4) { const want = Math.atan2(d.x, d.z); let dr = want - p.spr.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); p.spr.rotation.y += dr * Math.min(1, dt * 8); } }
+    // 걸을 땐 가는 쪽, 멈추면 카메라 쪽을 본다 (위에서 내려다봐도 얼굴이 보이게)
+    let want = null;
+    if (walking) { const d = p.target.clone().sub(o); if (d.lengthSq() > 1e-4) want = Math.atan2(d.x, d.z); }
+    else { const c = world.worldToLocal(camera.position.clone()).sub(o); want = Math.atan2(c.x, c.z); }
+    if (want != null) { let dr = want - p.spr.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); p.spr.rotation.y += dr * Math.min(1, dt * (walking ? 8 : 3)); }
     p.ch.set(walking ? 'walk' : 'idle'); p.ch.update(dt);
     p.shade.position.set(o.x, .01, o.z);
   });
@@ -227,7 +231,7 @@ function say(p) {
   const f = rosterOf(p.id), el = document.createElement('div'); el.className = 'bubble';
   const own = typeof PROFILES !== 'undefined' && PROFILES[p.id] && PROFILES[p.id].lines.length ? PROFILES[p.id].lines : LINES;
   el.innerHTML = `<b>${f.name}</b>${own[Math.floor(Math.random() * own.length)]}<small>${f.role}</small>`;
-  p.target = null; p.wait = 3.2; p.ch.face('happy', 2); p.ch.habitNow(); const tc = camera.position.clone().sub(p.spr.position); p.spr.rotation.y = Math.atan2(tc.x, tc.z);
+  p.target = null; p.wait = 3.2; p.ch.face('happy', 2); p.ch.habitNow(); 
   document.body.appendChild(el); talk = { el, p, until: performance.now() + 3200 };
 }
 let toastT = 0;

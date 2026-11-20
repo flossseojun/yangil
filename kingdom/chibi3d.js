@@ -160,11 +160,12 @@ function mergeRigid(group, keep) {
 /* ───────── 몸 ───────── */
 export function makeChibi(id, opts = {}) {
   CAST.on = opts.castShadow !== false;
+  const lookUp = opts.lookUp || 0;   // 카메라가 높을수록 고개를 살짝 든다
   const look = (typeof lookOf === 'function' ? lookOf(id) : { av: {} }).av || {};
   const kit = typeof kitOf === 'function' ? kitOf(id) : {};
   const r = rngOf(id), pick = a => a[Math.floor(r() * a.length)];
   const v = {
-    r, eyeGap: 56 + r() * 16, eyeY: .54 + r() * .05, eyeSize: .9 + r() * .25, browY: 52 + r() * 10, browTilt: (r() - .5) * 8, browArch: (r() - .5) * 8, browW: 7 + r() * 4,
+    r, eyeGap: 56 + r() * 16, eyeY: .47 + r() * .04, eyeSize: .9 + r() * .25, browY: 52 + r() * 10, browTilt: (r() - .5) * 8, browArch: (r() - .5) * 8, browW: 7 + r() * 4,
     mouthW: 16 + r() * 10, tooth: r() < .25, blush: .18 + r() * .2, iris: pick(['#5a3a2a', '#3a2a22', '#4a3628', '#2a2420']),
     vol: r() * .06, side: r() < .5 ? -1 : 1, spiky: r() < .35, ahoge: r() < .3,
     height: .93 + r() * .14, headW: 1 + r() * .1, layer: kit.top ? 'club' : pick(['jacket', 'jacket', 'vest', 'shirt']),
@@ -194,9 +195,9 @@ export function makeChibi(id, opts = {}) {
   [-1, 1].forEach(s => { const ear = part(new THREE.SphereGeometry(.11, 10, 8), skinM, .08); ear.scale.set(.6, 1, .8); ear.position.set(s * HEAD_R * v.headW * 1.0, -.04, 0); head.add(ear); });
   hair(look, head, v, skinM);
   if (look.acc === 'glasses') {
-    const gm = toon('#2a2420'), square = r() < .5, gx = (v.eyeGap / 1024) * Math.PI * 2 * HEAD_R * 1.05;
-    [-1, 1].forEach(s => { const ring = new THREE.Mesh(square ? new THREE.TorusGeometry(.14, .022, 6, 4) : new THREE.TorusGeometry(.13, .022, 8, 24), gm); if (square) ring.rotation.z = Math.PI / 4; ring.position.set(s * gx, -.02 - (v.eyeY - .56) * 1.2, HEAD_R * .93); ring.rotation.y = s * .25; head.add(ring); });
-    const br = new THREE.Mesh(new THREE.CylinderGeometry(.015, .015, gx * .8, 6), gm); br.rotation.z = Math.PI / 2; br.position.set(0, 0, HEAD_R * .99); head.add(br);
+    const eyeH = HEAD_R * .96 * Math.cos(v.eyeY * Math.PI), gm = toon('#2a2420'), square = r() < .5, gx = (v.eyeGap / 1024) * Math.PI * 2 * HEAD_R * 1.05;
+    [-1, 1].forEach(s => { const ring = new THREE.Mesh(square ? new THREE.TorusGeometry(.14, .022, 6, 4) : new THREE.TorusGeometry(.13, .022, 8, 24), gm); if (square) ring.rotation.z = Math.PI / 4; ring.position.set(s * gx, eyeH, HEAD_R * .93); ring.rotation.y = s * .25; head.add(ring); });
+    const br = new THREE.Mesh(new THREE.CylinderGeometry(.015, .015, gx * .8, 6), gm); br.rotation.z = Math.PI / 2; br.position.set(0, eyeH + .02, HEAD_R * .99); head.add(br);
   }
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(.42, 24), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: .25, depthWrite: false })); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .01; if (!opts.noShadow) root.add(shadow);
   root.scale.setScalar(opts.scale || 1);
@@ -274,7 +275,7 @@ export function makeChibi(id, opts = {}) {
       body.rotation.x = pose.lean - pose.lie * Math.PI / 2; body.position.y = pose.y - pose.crouch + pose.lie * .3; body.position.z = -pose.lie * .2;
       arms.forEach((a, i) => { a.rotation.x = pose.rx[i]; a.rotation.z = pose.rz[i]; });
       legs.forEach((l, i) => { l.rotation.x = pose.leg[i] + pose.crouch * 2.2; });
-      head.rotation.set(pose.hx, pose.hy, pose.hz);
+      head.rotation.set(pose.hx - lookUp, pose.hy, pose.hz);
       if (gear) gear.position.y = gearHome.y + pose.gearY;
       (head.userData.sway || []).forEach(([o, base]) => { o.rotation.x = base + Math.sin(t * (st.base === 'walk' ? 10 : 2.4)) * (st.base === 'walk' ? .18 : .05) - pose.lean * .4; o.rotation.z = Math.sin(t * 5) * (st.base === 'walk' ? .12 : .02); });
     },

@@ -95,7 +95,7 @@ function spriteTex(id, pose, expr, cb) {
 }
 const units = ordered.map(id => {
   const st = STATS[id];
-  const spr = makeChibi(id, { scale: 1.3, noShadow: true }); spr.position.set(st.home[0] - 9, 0, st.home[1]);
+  const spr = makeChibi(id, { scale: 1.3, noShadow: true, lookUp: .2 }); spr.position.set(st.home[0] - 9, 0, st.home[1]);
   const u = { id, st, hp: st.hp, max: st.hp, home: new THREE.Vector3(st.home[0], 0, st.home[1]), pos: new THREE.Vector3(st.home[0] - 9, 0, st.home[1]), atkT: rnd(0, st.rate), gauge: rnd(.25, .55), shield: 0, shieldT: 0, dead: false, spr, ch: spr.userData.chibi, hitT: 0, lunge: 0, step: 0 };
   u.ring = new THREE.Mesh(new THREE.RingGeometry(.42, .6, 32), new THREE.MeshBasicMaterial({ color: st.color, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); u.ring.rotation.x = -Math.PI / 2;
   u.shadow = new THREE.Mesh(new THREE.CircleGeometry(.38, 20), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: .35 })); u.shadow.rotation.x = -Math.PI / 2;
