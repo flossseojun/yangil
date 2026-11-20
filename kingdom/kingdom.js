@@ -747,13 +747,13 @@ function unlockZone(k) {
 }
 
 // 친구 합류: pick이 없으면 아직 없는 친구 중 무작위, at은 나타날 시설
-function recruit(pick, at = 'club', why = '동아리실 뽑기') {
-  setTimeout(() => KS.fx('fanfare'), 300);
+function recruit(pick, at = 'club', why = '동아리실 뽑기', quiet = false) {
+  if (!quiet) setTimeout(() => KS.fx('fanfare'), 300);
   const pool = ROSTER.filter(f => !G.friends.includes(f.id));
   if (!pool.length) { toast('모든 친구가 캠퍼스에 모였어요!'); return null; }
   const f = (pick && pool.find(x => x.id === pick)) || pool[Math.floor(Math.random() * pool.length)]; G.friends.push(f.id); bump('recruit'); const p = addPerson(f.id);
   const F = FAC[at] || FAC.club; p.spr.position.set(F.at[0] + F.size[0] / 2, 0, F.at[1] + F.size[1] + .6);
-  toast(`${why} · ${f.name} 합류`); setTimeout(() => say(p), 600);
+  if (!quiet) { toast(`${why} · ${f.name} 합류`); setTimeout(() => say(p), 600); }
   return f;
 }
 
