@@ -4,6 +4,7 @@ const ICON_PATHS = {
   know: '<rect x="5" y="3" width="14" height="18" rx="2" fill="#5b8def"/><path d="M8.5 3v18"/><path d="M11.5 8h4.5M11.5 11.5h4.5" stroke="#fff"/>',
   snack: '<path d="M4 12.5a8 5.5 0 0 1 16 0V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z" fill="#f2b25c"/><path d="M9 9.5l1 3M13 9l1 3M16.5 10l.6 2.5"/>',
   power: '<path d="M13.5 2.5L5 13.5h6l-1.5 8 9-11.5h-6z" fill="#ffd23f"/>',
+  coin: '<circle cx="12" cy="12" r="8.5" fill="#ffc83a"/><circle cx="12" cy="12" r="5.5" fill="#ffe08a"/><path d="M10 9.5h4M12 9.5v5M10 14.5h4"/>',
   fight: '<path d="M4 4l9 9" stroke-width="3.2"/><path d="M4 4l9 9" stroke="#e6edf3" stroke-width="1.4"/><path d="M20 4l-9 9" stroke-width="3.2"/><path d="M20 4l-9 9" stroke="#e6edf3" stroke-width="1.4"/><path d="M9.5 15.5l5-5M14.5 15.5l-5-5" stroke="#e5484d" stroke-width="2.6"/><path d="M7 17l-2.5 2.5M17 17l2.5 2.5"/>',
   school: '<path d="M3 20.5V10l9-5 9 5v10.5z" fill="#f3ead6"/><path d="M3 10l9-5 9 5" fill="#2b4a3c"/><rect x="10" y="14" width="4" height="6.5" fill="#8a5a34"/><path d="M12 5V1.8l3 1.2-3 1.2"/><path d="M6.5 13h1.5M16 13h1.5"/>',
   rotate: '<path d="M19 12a7 7 0 1 1-2.2-5.1"/><path d="M19.5 3.5v4.5H15"/>',
@@ -60,7 +61,14 @@ function drawIcon(name, size = 18, cls = '') {
   return `<svg class="ico ${cls}" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${INK}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[name] || ''}</svg>`;
 }
 // 자원 묶음: { know: 10, snack: 4 } → 아이콘 + 숫자
-const RES_ORDER = ['know', 'snack', 'power'];
+const RES_ORDER = ['know', 'snack', 'power', 'coin'];
+// 자원마다 하는 일 (자원 칸을 누르면 보여 준다)
+const RES_INFO = {
+  know:  { name: '지식', use: '시설 복구 · 레벨업, 구역 넓히기', from: '본관 · 과학실 · 도서관 · 컴퓨터실 · 온실 · 강당' },
+  snack: { name: '간식', use: '친구 레벨업 (빨리 키우기)', from: '매점 · 급식실 · 보건실 · 텃밭 · 기숙사' },
+  power: { name: '체력', use: '꾸미기 놓기, 친구 각성', from: '운동장 · 다목적관 · 방송실 · 정자 · 수영장' },
+  coin:  { name: '용돈', use: '친구 뽑기, 문구점 장비', from: '전투 승리 · 친구 의뢰 · 출석 · 오늘의 미션 · 시장 교환' },
+};
 const resText = (cost, size = 13) => RES_ORDER.filter(k => cost && cost[k]).map(k => `<span class="rs">${drawIcon(k, size)}${cost[k]}</span>`).join('');
 
 // 전체화면: 되는 기기는 바로 전체화면, 안 되는 기기(아이폰 사파리)는 '홈 화면에 추가' 안내

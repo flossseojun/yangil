@@ -349,6 +349,19 @@
   .more-row { display: flex; flex-direction: column; align-items: center; gap: 3px; font-family: Jua, sans-serif; font-size: 12px; color: var(--ink); cursor: pointer; }
   .more-row .rbtn { box-shadow: 0 2px 0 var(--ink); } .more-row:has(#b-full[hidden]) { display: none; }
   @media (max-height: 480px) { .more-lab { display: none; } .dots3 i { width: 4px; height: 4px; } .more-row .rbtn { width: 36px; height: 36px; } }
+  /* ── 자원 설명 · 길 안내 · 장비 칸 ── */
+  .claim.lack, .up.lack { background: #e6dcc6 !important; color: #7a6d5c; box-shadow: 0 3px 0 #7a6d5c; border-color: #7a6d5c; }
+  .res-tip { position: fixed; z-index: 75; width: min(300px, calc(100vw - 16px)); background: var(--paper); border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 0 5px 0 var(--ink); padding: 10px 12px; }
+  .res-tip[hidden] { display: none; } .res-tip.center { left: 50% !important; top: 40% !important; transform: translate(-50%, -50%); }
+  .res-tip > b { display: flex; align-items: center; gap: 5px; font-family: Jua, sans-serif; font-weight: 400; font-size: 18px; } .res-tip em { font-style: normal; font-size: 13px; color: #fff; background: var(--red); border-radius: 6px; padding: 0 6px; }
+  .res-tip p { margin: 6px 0 0; font-size: 13px; line-height: 1.45; } .res-tip p small { display: inline-block; font-family: Jua, sans-serif; font-size: 11px; background: var(--yellow); border: 1.5px solid var(--ink); border-radius: 5px; padding: 0 4px; margin-right: 5px; }
+  .res-tip .sv-row { margin-top: 10px; flex-wrap: wrap; }
+  .gslot { flex: 0 0 auto; width: 40px; height: 40px; display: grid; place-items: center; background: #fff; border: 2px dashed #b8ab92; border-radius: 10px; cursor: pointer; padding: 0; }
+  .gslot i { font-style: normal; font-family: Jua, sans-serif; font-size: 20px; color: #b8ab92; } .gslot.on { border: 2px solid var(--ink); background: #fff3c4; }
+  .tm-tag { font-size: 11px; color: var(--ink); background: var(--yellow); border: 1.5px solid var(--ink); border-radius: 5px; padding: 0 4px; margin-right: 4px; vertical-align: middle; }
+  .fr-tools { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; } .fr-tools small { font-size: 11px; color: var(--sub); line-height: 1.4; }
+  #b-friends { position: relative; }
+  @media (max-width: 420px) { .hud { gap: 4px; } .res { font-size: 14px; padding: 2px 8px 2px 4px; } .res .ico { width: 15px; height: 15px; } .title { font-size: 13px; padding: 3px 8px 4px; } .title small { display: none; } }
 </style>
 </head>
 <body>
@@ -357,6 +370,7 @@
   <span class="res" title="지식"><i data-ic="know"></i><span id="r-know">0</span></span>
   <span class="res" title="간식"><i data-ic="snack"></i><span id="r-snack">0</span></span>
   <span class="res" title="체력"><i data-ic="power"></i><span id="r-power">0</span></span>
+  <span class="res" title="용돈"><i data-ic="coin"></i><span id="r-coin">0</span></span>
   <span class="title" id="lv">양일 캠퍼스<small>Lv.1 · 친구 0명</small></span>
 </div>
 <div class="side">
@@ -378,20 +392,20 @@
 <a class="osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">지도 © OpenStreetMap</a>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
 
-<script src="../avatar.js?v=1795202494"></script>
-<script src="../avatar2.js?v=1795202494"></script>
-<script src="../avatar3.js?v=1795202494"></script>
-<script src="../scene.js?v=1795202494"></script>
-<script src="../fullbody.js?v=1795202494"></script>
-<script src="roster.js?v=1795202494"></script>
-<script src="yangpyeong.js?v=1795202494"></script>
-<script src="kits.js?v=1795202494"></script>
-<script src="profiles.js?v=1795202494"></script>
-<script src="ui.js?v=1795202494"></script>
-<script src="audio.js?v=1795202494"></script>
+<script src="../avatar.js?v=1795203001"></script>
+<script src="../avatar2.js?v=1795203001"></script>
+<script src="../avatar3.js?v=1795203001"></script>
+<script src="../scene.js?v=1795203001"></script>
+<script src="../fullbody.js?v=1795203001"></script>
+<script src="roster.js?v=1795203001"></script>
+<script src="yangpyeong.js?v=1795203001"></script>
+<script src="kits.js?v=1795203001"></script>
+<script src="profiles.js?v=1795203001"></script>
+<script src="ui.js?v=1795203001"></script>
+<script src="audio.js?v=1795203001"></script>
 <script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
-<script type="module" src="kingdom.js?v=1795202494"></script>
-<script type="module" src="notebook.js?v=1795202494"></script>
+<script type="module" src="kingdom.js?v=1795203001"></script>
+<script type="module" src="notebook.js?v=1795203001"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ import { shot } from './chibishot.js';
 const N = 24;                       // 부지 크기 (N×N 칸)
 const SAVE = 'yangil.kingdom.v1';
 const $ = id => document.getElementById(id);
-const RES_NAME = { know: '지식', snack: '간식', power: '체력' };
+const RES_NAME = { know: '지식', snack: '간식', power: '체력', coin: '용돈' };
 const INK = '#231c17';
 
 /* ───────── 시설: 처음부터 제자리에 있고 레벨업한다 (0 = 공사 전) ───────── */
@@ -40,33 +40,33 @@ const FAC_ORDER = ['main', 'store', 'field', 'lab', 'library', 'club', 'cafe', '
 // 구역: 재건 정도 · 보스 진행 · 자원으로 연다
 const ZONES = {
   core: { name: '본교', x0: 0, z0: 0, x1: 24, z1: 24 },
-  east: { name: '별관 구역', x0: 24, z0: 0, x1: 36, z1: 24, need: { restore: .12 }, cost: { know: 120, snack: 80, power: 20 } },
-  back: { name: '뒷동산', x0: 0, z0: -12, x1: 24, z1: 0, need: { restore: .22, ch: 2 }, cost: { know: 220, snack: 160, power: 60 } },
-  west: { name: '기숙사 구역', x0: -12, z0: 0, x1: 0, z1: 24, need: { restore: .36, ch: 3 }, cost: { know: 360, snack: 260, power: 120 } },
+  east: { name: '별관 구역', x0: 24, z0: 0, x1: 36, z1: 24, need: { restore: .12 }, cost: { know: 180 } },
+  back: { name: '뒷동산', x0: 0, z0: -12, x1: 24, z1: 0, need: { restore: .22, ch: 2 }, cost: { know: 340 } },
+  west: { name: '기숙사 구역', x0: -12, z0: 0, x1: 0, z1: 24, need: { restore: .36, ch: 3 }, cost: { know: 520 } },
 };
 const ZONE_ORDER = ['core', 'east', 'back', 'west'];
 const MAX_LV = 5;
-const upCostOf = (t, L) => { const [a, b, c] = FAC[t].w, k = Math.pow(L, 1.7); return { know: Math.round(14 * k * a), snack: Math.round(9 * k * b), power: Math.round(6 * Math.pow(Math.max(0, L - 1), 1.7) * c) }; };
+const upCostOf = (t, L) => { const [a, b, c] = FAC[t].w, k = Math.pow(L, 1.7); return { know: Math.round(16 * k * (a + b * .5 + c * .3)) }; };   // 시설은 지식으로
 const PATH_X = [11, 12];                                      // 은행나무길 (정문 → 본관)
 const isPath = (x, z) => (PATH_X.includes(x) && z >= 5) || (z >= 5 && z <= 6 && x >= 7 && x <= 16);
 
 /* ───────── 꾸미기 (자유롭게 놓기) ───────── */
 const DECO = {
-  ginkgo:   { name: '은행나무', size: [1, 1], cost: { snack: 4 } },
-  bench:    { name: '벤치', size: [1, 1], cost: { snack: 2 } },
-  flower:   { name: '화단', size: [1, 1], cost: { snack: 3 } },
-  planter:  { name: '화분', size: [1, 1], cost: { snack: 2 } },
-  lamp:     { name: '가로등', size: [1, 1], cost: { know: 4, snack: 2 } },
-  vending:  { name: '자판기', size: [1, 1], cost: { know: 6, snack: 4 } },
-  fountain: { name: '분수', size: [2, 2], cost: { know: 20, snack: 15 } },
+  ginkgo:   { name: '은행나무', size: [1, 1], cost: { power: 3 } },
+  bench:    { name: '벤치', size: [1, 1], cost: { power: 2 } },
+  flower:   { name: '화단', size: [1, 1], cost: { power: 2 } },
+  planter:  { name: '화분', size: [1, 1], cost: { power: 2 } },
+  lamp:     { name: '가로등', size: [1, 1], cost: { power: 5 } },
+  vending:  { name: '자판기', size: [1, 1], cost: { power: 8 } },
+  fountain: { name: '분수', size: [2, 2], cost: { power: 28 } },
   // 학교 행사 한정 (notebook.js 행사에서 열린다)
-  snowman: { name: '눈사람', size: [1, 1], cost: { snack: 6 }, event: true },
-  cherry:  { name: '벚꽃나무', size: [1, 1], cost: { snack: 6 }, event: true },
-  flags:   { name: '만국기', size: [2, 1], cost: { know: 6, snack: 6 }, event: true },
-  parasol: { name: '파라솔', size: [1, 1], cost: { snack: 6 }, event: true },
-  booth:   { name: '축제 부스', size: [2, 2], cost: { know: 12, snack: 12 }, event: true },
-  banner:  { name: '응원 현수막', size: [2, 1], cost: { know: 6, snack: 6 }, event: true },
-  xmas:    { name: '크리스마스 트리', size: [1, 1], cost: { know: 6, snack: 8 }, event: true },
+  snowman: { name: '눈사람', size: [1, 1], cost: { power: 5 }, event: true },
+  cherry:  { name: '벚꽃나무', size: [1, 1], cost: { power: 5 }, event: true },
+  flags:   { name: '만국기', size: [2, 1], cost: { power: 10 }, event: true },
+  parasol: { name: '파라솔', size: [1, 1], cost: { power: 5 }, event: true },
+  booth:   { name: '축제 부스', size: [2, 2], cost: { power: 19 }, event: true },
+  banner:  { name: '응원 현수막', size: [2, 1], cost: { power: 10 }, event: true },
+  xmas:    { name: '크리스마스 트리', size: [1, 1], cost: { power: 11 }, event: true },
 };
 const DECO_ORDER = ['ginkgo', 'bench', 'flower', 'planter', 'lamp', 'vending', 'fountain'];
 const LINES = ['오늘 캠퍼스 분위기 좋다!', '매점 가자!', '은행나무길 걷는 거 좋아.', '오늘도 양일고 파이팅!', '나 여기서 낮잠 자도 돼?', '캠퍼스 점점 멋있어진다.'];
@@ -75,7 +75,7 @@ const LINES = ['오늘 캠퍼스 분위기 좋다!', '매점 가자!', '은행�
 let G;
 function fresh() {
   const others = ROSTER.filter(f => f.id !== 'seojun').sort(() => Math.random() - .5);
-  return { res: { know: 40, snack: 20, power: 5 }, fac: {}, facAt: {}, b: [], friends: ['seojun', ...others.slice(0, 4).map(f => f.id)], stat: {}, req: [], story: {} };
+  return { res: { know: 60, snack: 30, power: 10, coin: 60 }, fac: {}, facAt: {}, b: [], friends: ['seojun', ...others.slice(0, 4).map(f => f.id)], stat: {}, req: [], story: {} };
 }
 function migrate(g) {
   if (g.fac) return g;
@@ -88,7 +88,7 @@ function migrate(g) {
 }
 function load() { try { const g = JSON.parse(localStorage.getItem(SAVE)); if (g && g.res) return migrate(g); } catch (e) {} return fresh(); }
 function save() { if (window.__noSave) return; try { localStorage.setItem(SAVE, JSON.stringify(G)); } catch (e) {} }
-G = load(); G.zones = G.zones || {}; G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
+G = load(); if (G.res.coin == null) G.res.coin = 60; G.zones = G.zones || {}; G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
 const zoneOpen = z => !z || z === 'core' || !!G.zones[z];
 const facOpen = t => zoneOpen(FAC[t].zone);
 const lvOfFac = t => G.fac[t] || 0;
@@ -620,7 +620,7 @@ function takeGift(p) {
     const t = rollGear(campusLv() / 6); G.items = G.items || {}; G.items[t] = (G.items[t] || 0) + 1; bump('gift'); save(); KS.fx('levelup');
     floatText(`${drawIcon(t, 22)}+1`, p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0))); sayText(p, `${STATIONERY[t].name} 하나 더 있어서 가져왔어. 너 써!`); return;
   }
-  const k = ['know', 'snack', 'power'][Math.floor(Math.random() * 3)], n = 4 + Math.floor(campusLv() * 1.2 + Math.random() * 5);
+  const k = ['know', 'snack', 'power', 'coin'][Math.floor(Math.random() * 4)], n = Math.round((4 + Math.floor(campusLv() * 1.2 + Math.random() * 5)) * (k === 'coin' ? .5 : 1));
   G.res[k] += n; bump('gift'); G.bond = G.bond || {}; save(); hud(); KS.fx('coin');
   floatText(`+${n}${drawIcon(k, 20)}`, p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0)));
   sayText(p, ['이거 너 줄게!', '매점에서 하나 더 샀어. 너 가져!', '오다 주웠다.', '선물이야!'][Math.floor(Math.random() * 4)]);
@@ -645,7 +645,7 @@ function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add(
 const canPay = cost => Object.entries(cost || {}).every(([k, n]) => (G.res[k] || 0) >= n);
 const costText = cost => Object.entries(cost || {}).filter(([, n]) => n).map(([k, n]) => `${RES_NAME[k]} ${n}`).join(' · ');
 function hud() {
-  ['know', 'snack', 'power'].forEach(k => { $('r-' + k).textContent = G.res[k] || 0; });
+  ['know', 'snack', 'power', 'coin'].forEach(k => { const el = $('r-' + k); if (el) el.textContent = G.res[k] || 0; });
   refreshTown();
   const pct = Math.round(restore() * 100);
   $('lv').innerHTML = `양평 재건 ${pct}%<span class="rbar2"><i style="width:${pct}%"></i></span><small>캠퍼스 Lv.${campusLv()} · 친구 ${G.friends.length}명</small>`;
@@ -699,7 +699,7 @@ function upgradeBlock(t) {
   const cost = upCostOf(t, next); if (!canPay(cost)) return { ok: false, why: '자원 부족', cost };
   return { ok: true, cost };
 }
-const recruitCost = () => { const n = G.friends.length; return { know: 18 + n * 4, snack: 10 + n * 2, power: 4 + n }; };
+const recruitCost = () => { const n = G.friends.length; return { coin: 40 + n * 3 }; };   // 뽑기는 용돈으로
 const recruitCap = () => 5 + lvOfFac('club') * 11;
 function showFac(t) {
   const d = FAC[t], lv = lvOfFac(t), el = $('info'), up = upgradeBlock(t), next = lv + 1, cost = up.cost || upCostOf(t, next);
@@ -712,14 +712,15 @@ function showFac(t) {
   if (d.recruit) lines.push(`친구 ${G.friends.length} / ${recruitCap()}명까지 모을 수 있어요`);
   el.innerHTML = `<span class="bi">${drawIcon(t === 'field' ? 'gym' : t === 'cafe' ? 'snack' : t === 'main' ? 'school' : t, 32)}</span>
     <span class="txt"><b>${d.name} <span class="stars">${stars}</span></b><small>${lv ? d.desc : '폐교 뒤 무너진 채 남아 있어요. 복구하면 · ' + d.desc}</small><small>${lines.join('<br>')}</small></span>
-    <span class="acts">${lv >= MAX_LV ? '<span class="max">최고 레벨</span>' : `<button id="i-up" class="up" ${up.ok ? '' : 'disabled'}>${lv ? `Lv.${next}로` : '복구하기'}<small>${up.ok || up.why === '자원 부족' ? resText(cost, 12) : up.why}</small></button>`}
+    <span class="acts">${lv >= MAX_LV ? '<span class="max">최고 레벨</span>' : `<button id="i-up" class="up${up.why === '자원 부족' ? ' lack' : ''}" ${up.ok || up.why === '자원 부족' ? '' : 'disabled'}>${lv ? `Lv.${next}로` : '복구하기'}<small>${up.ok || up.why === '자원 부족' ? resText(cost, 12) : up.why}</small></button>`}
     ${d.recruit && lv ? `<button id="i-rec" class="up rec">친구 뽑기<small>${G.friends.length >= recruitCap() ? '레벨업 필요' : '뽑기 열기'}</small></button>` : ''}</span>`;
   el.classList.add('show');
   const ub = $('i-up'); if (ub) ub.onclick = () => doUpgrade(t);
   const rb = $('i-rec'); if (rb) rb.onclick = () => { hideInfo(); window.__kingdom.openGacha && window.__kingdom.openGacha(); };
 }
+function focusFac(t) { const d = FAC[t]; controls.target.set(d.at[0] + d.size[0] / 2, 0, d.at[1] + d.size[1] / 2); placeCamera(); camera.zoom = Math.max(camera.zoom, 1); camera.updateProjectionMatrix(); showFac(t); }
 function doUpgrade(t) {
-  const up = upgradeBlock(t); if (!up.ok) { toast(up.why); return; }
+  const up = upgradeBlock(t); if (!up.ok) { if (up.why === '자원 부족' && window.__kingdom.lackHint) window.__kingdom.lackHint(up.cost); else toast(up.why); return; }
   Object.entries(up.cost).forEach(([k, n]) => { G.res[k] -= n; });
   G.fac[t] = lvOfFac(t) + 1; if (!G.facAt[t]) G.facAt[t] = Date.now(); bump('up');
   const old = meshes.get(t); world.remove(old); const s = bubbles.get(t); if (s) { world.remove(s); bubbles.delete(t); }
@@ -794,7 +795,7 @@ function makeReq() {
   else if (kind === 'win') { r.n = 1; r.base = G.wins || 0; }
   else if (kind === 'gift') { r.n = 1; r.base = G.stat.gift || 0; }
   const rk = ['know', 'snack', 'power'][Math.floor(Math.random() * 3)];
-  r.reward = { [rk]: 12 + L * 6, snack: (rk === 'snack' ? 12 + L * 6 : 0) + 4 + L * 2 };
+  r.reward = { [rk]: 12 + L * 6, coin: 10 + Math.round(L * 1.5) };
   return r;
 }
 function progOfReq(r) {
@@ -893,10 +894,10 @@ function storyPages() {
   ];
 }
 const MILES = [
-  [.25, '양평역에 다시 기차가 선다', '중앙선 기차가 다시 양평역에 멈춰 섰다. 역 앞 거리에 사람들이 돌아온다.', { know: 60, snack: 40 }],
-  [.5, '물맑은시장이 다시 열렸다', '“떡볶이 나왔어요!” 시장 골목에 다시 불이 켜지고, 장날 북적임이 돌아왔다.', { know: 90, snack: 70, power: 30 }],
-  [.75, '양평군청에 불이 켜졌다', '군청 앞 광장에 다시 사람들이 모인다. 남한강 산책길도 다시 열렸다.', { know: 140, snack: 100, power: 60 }],
-  [1, '양평 재건 완료!', '무너졌던 양평이 다시 우리 동네가 됐다. 남한강은 오늘도 반짝이고, 양일고 종이 울린다.', { know: 300, snack: 200, power: 120 }],
+  [.25, '양평역에 다시 기차가 선다', '중앙선 기차가 다시 양평역에 멈춰 섰다. 역 앞 거리에 사람들이 돌아온다.', { know: 60, snack: 40, coin: 50 }],
+  [.5, '물맑은시장이 다시 열렸다', '“떡볶이 나왔어요!” 시장 골목에 다시 불이 켜지고, 장날 북적임이 돌아왔다.', { know: 90, snack: 70, power: 30, coin: 80 }],
+  [.75, '양평군청에 불이 켜졌다', '군청 앞 광장에 다시 사람들이 모인다. 남한강 산책길도 다시 열렸다.', { know: 140, snack: 100, power: 60, coin: 120 }],
+  [1, '양평 재건 완료!', '무너졌던 양평이 다시 우리 동네가 됐다. 남한강은 오늘도 반짝이고, 양일고 종이 울린다.', { know: 300, snack: 200, power: 120, coin: 200 }],
 ];
 function showStory(pages, done) {
   const el = $('story'); let i = 0;
@@ -932,4 +933,4 @@ if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };

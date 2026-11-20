@@ -235,13 +235,21 @@ function skillDesc(id) {
 
 /* ───────── 키우기: 친구 레벨 · 친밀도 · 건물 보너스 · 스테이지 ───────── */
 const CAMPUS_KEY = 'yangil.kingdom.v1';
-const loadCampus = () => { try { const g = JSON.parse(localStorage.getItem(CAMPUS_KEY)); if (g && g.res) return g; } catch (e) {} return null; };
+const loadCampus = () => { try { const g = JSON.parse(localStorage.getItem(CAMPUS_KEY)); if (g && g.res) { if (g.res.coin == null) g.res.coin = 60; return g; } } catch (e) {} return null; };   // 용돈이 없던 저장은 60을 준다
 const saveCampus = g => { try { localStorage.setItem(CAMPUS_KEY, JSON.stringify(g)); } catch (e) {} };
 const MAX_LV = 10;
 const lvOf = (g, id) => Math.max(1, ((g && g.lv) || {})[id] || 1);
 const bondOf = (g, id) => ((g && g.bond) || {})[id] || 0;
 const lvMult = lv => 1 + (lv - 1) * .08;               // 레벨마다 체력 · 공격 · 스킬 +8%
-const upCost = lv => ({ know: 10 * lv, snack: 6 * lv, power: 4 * lv });
+const upCost = lv => ({ snack: 15 * lv });                 // 간식으로 바로 레벨업 (빨리 키우기)
+// 경험치: 전투에 데려간 친구가 받는다. 다 차면 자동으로 레벨업
+const xpNeed = lv => 50 + (lv - 1) * 40;
+const xpOf = (g, id) => ((g && g.xp) || {})[id] || 0;
+function addXp(g, id, n) {
+  g.xp = g.xp || {}; g.lv = g.lv || {}; let lv = lvOf(g, id), x = (g.xp[id] || 0) + n, up = 0;
+  while (lv < MAX_LV && x >= xpNeed(lv)) { x -= xpNeed(lv); lv++; up++; }
+  if (lv >= MAX_LV) x = 0; g.lv[id] = lv; g.xp[id] = x; return up;
+}
 // 건물 보너스: 같은 건물은 3개까지 센다
 const BUILD_BONUS = {
   lab: { name: '과학실', text: '폭발 · 마법 친구 공격 +10%', key: 'magic', v: .10 },
@@ -267,17 +275,17 @@ const MAX_STAGE = 10;
 const stageMul = st => ({ hp: 1 + (st - 1) * .4, dmg: 1 + (st - 1) * .18, reward: 1 + (st - 1) * .35, rec: Math.round((4200 + (st - 1) * 900) / 10) * 10 });
 // 문구 장비 (친구마다 1칸) · 각성 (Lv.10에서 한 번)
 const STATIONERY = {
-  pencil:   { name: '연필',      atk: .06, cost: { know: 60, snack: 30 }, desc: '공격 +6%' },
-  pcase:    { name: '필통',      hp: .08, cost: { know: 50, snack: 40 }, desc: '체력 +8%' },
-  marker:   { name: '형광펜',    atk: .12, cost: { know: 150, snack: 60, power: 20 }, desc: '공격 +12%' },
-  gymsuit:  { name: '체육복',    hp: .15, cost: { snack: 120, power: 40 }, desc: '체력 +15%' },
-  earphone: { name: '이어폰',    charge: .12, cost: { know: 140, power: 40 }, desc: '스킬 충전 +12%' },
-  goldpen:  { name: '금색 볼펜', hp: .1, atk: .1, cost: { know: 300, snack: 150, power: 80 }, desc: '체력 · 공격 +10%' },
+  pencil:   { name: '연필',      atk: .06, cost: { coin: 30 }, desc: '공격 +6%', rank: 1 },
+  pcase:    { name: '필통',      hp: .08, cost: { coin: 30 }, desc: '체력 +8%', rank: 1 },
+  marker:   { name: '형광펜',    atk: .12, cost: { coin: 70 }, desc: '공격 +12%', rank: 2 },
+  gymsuit:  { name: '체육복',    hp: .15, cost: { coin: 70 }, desc: '체력 +15%', rank: 2 },
+  earphone: { name: '이어폰',    charge: .12, cost: { coin: 70 }, desc: '스킬 충전 +12%', rank: 2 },
+  goldpen:  { name: '금색 볼펜', hp: .1, atk: .1, cost: { coin: 160 }, desc: '체력 · 공격 +10%', rank: 3 },
 };
 const GEAR_ORDER = ['pencil', 'pcase', 'marker', 'gymsuit', 'earphone', 'goldpen'];
 // 장비 뽑기: lv(0~)가 높을수록 좋은 장비가 잘 나온다
 function rollGear(lv = 0) { const w = { pencil: 30, pcase: 30, marker: 12 + lv, gymsuit: 12 + lv, earphone: 10 + lv, goldpen: Math.min(14, lv * .8) }; let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0); for (const k of GEAR_ORDER) { r -= w[k]; if (r <= 0) return k; } return 'pencil'; }
-const AWAKE_COST = { know: 400, snack: 250, power: 150 };
+const AWAKE_COST = { power: 400 };
 const awakeOf = (g, id) => !!((g && g.awake) || {})[id];
 const gearOf = (g, id) => STATIONERY[((g && g.gear) || {})[id]] || null;
 function boostOf(g, id) { const a = awakeOf(g, id) ? 1.1 : 1, q = gearOf(g, id) || {}; return { hp: a * (1 + (q.hp || 0)), atk: a * (1 + (q.atk || 0)), skill: awakeOf(g, id) ? 1.3 : 1, charge: 1 + (q.charge || 0) }; }

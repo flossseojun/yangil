@@ -483,12 +483,15 @@ let started = false, over = false, paused = false, speed = 1, clockT = TIME_LIMI
 function finish(win) {
   if (over) return; over = true; KS.jingle(win);
   const left = alive().length, stars = win ? (left === 5 ? 3 : left >= 3 ? 2 : 1) : 0;
-  const base = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6 } : { know: 5, snack: 3, power: 0 };
+  const base = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6, coin: 12 + stars * 6 } : { know: 5, snack: 3, power: 0, coin: 3 };
   const rw = Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.round(v * SM.reward)]));
-  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0, gearGot = null;
+  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0, gearGot = null, lvUps = [], xpGain = 0;
   if (g) {
     Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
     if (win) g.wins = (g.wins || 0) + 1;
+    // 경험치: 함께 싸운 친구들이 받는다 (지면 조금)
+    xpGain = Math.round((win ? 30 : 10) * (1 + (effStage(CH, IN_TOWER ? 5 + STAGE : STAGE) - 1) * .15));
+    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const up = addXp(g, id, xpGain); if (up) lvUps.push([id, lvOf(g, id)]); });
     if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); const nexts = CHAPTERS.filter(c => prevOf(c.n) === CH0 && c.n !== CH0 && !progOf(g, c.n)).map(c => c.n); if (STAGE >= progOf(g, CH0) && STAGE < maxStageOf(CH0)) { setProg(g, CH0, STAGE + 1); unlocked = true; saveSel(CH0, STAGE + 1); } if (STAGE >= CHAP_UNLOCK) nexts.forEach(n => { setProg(g, n, 1); chapOpen = chapOpen ? [].concat(chapOpen, n) : n; }); }
     // 별: 처음 얻은 별마다 보너스
     if (win) { g.star = g.star || {}; const key = CH0 + '-' + STAGE, had2 = g.star[key] || 0; if (stars > had2) { newStars = stars - had2; g.star[key] = stars; const bk = Math.round(15 * newStars * SM.reward), bs = Math.round(10 * newStars * SM.reward); g.res.know += bk; g.res.snack += bs; rw.know += bk; rw.snack += bs; } }
@@ -503,7 +506,7 @@ function finish(win) {
     $('r-sub').textContent = win ? 'STAGE CLEAR' : 'STAGE FAILED';
     $('r-title').textContent = win ? '승리!' : clockT <= 0 ? '시간 초과…' : '패배…';
     $('r-stars').innerHTML = [0, 1, 2].map(i => drawIcon(i < stars ? 'star' : 'starOff', i === 1 ? 46 : 36)).join('');
-    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? [].concat(chapOpen).map(n => `<br><b style="color:#9dffb0">새 챕터 「${CHAPTERS[n - 1].place}」 열림!</b>`).join('') : ''}${gearGot ? `<br><b style="color:#9ad5ff">장비 획득 · ${STATIONERY[gearGot].name}! (${STATIONERY[gearGot].desc})</b>` : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
+    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? [].concat(chapOpen).map(n => `<br><b style="color:#9dffb0">새 챕터 「${CHAPTERS[n - 1].place}」 열림!</b>`).join('') : ''}<br>함께한 친구들 경험치 +${xpGain}${lvUps.length ? ` · <b style="color:#ffd779">${lvUps.map(([id, l]) => `${nameOf(id)} Lv.${l}`).join(', ')} 레벨 업!</b>` : ''}${gearGot ? `<br><b style="color:#9ad5ff">장비 획득 · ${STATIONERY[gearGot].name}! (${STATIONERY[gearGot].desc})</b>` : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
     $('r-rw').innerHTML = RES_ORDER.map(k => `<span class="rs">${drawIcon(k, 20)}+${rw[k]}</span>`).join('');
     $('result').hidden = false;
   }, win ? 1300 : 800);
