@@ -485,7 +485,7 @@ function finish(win) {
   const left = alive().length, stars = win ? (left === 5 ? 3 : left >= 3 ? 2 : 1) : 0;
   const base = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6 } : { know: 5, snack: 3, power: 0 };
   const rw = Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.round(v * SM.reward)]));
-  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0;
+  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0, gearGot = null;
   if (g) {
     Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
     if (win) g.wins = (g.wins || 0) + 1;
@@ -493,6 +493,8 @@ function finish(win) {
     // 별: 처음 얻은 별마다 보너스
     if (win) { g.star = g.star || {}; const key = CH0 + '-' + STAGE, had2 = g.star[key] || 0; if (stars > had2) { newStars = stars - had2; g.star[key] = stars; const bk = Math.round(15 * newStars * SM.reward), bs = Math.round(10 * newStars * SM.reward); g.res.know += bk; g.res.snack += bs; rw.know += bk; rw.snack += bs; } }
     if (chapOpen) { const k = [].concat(chapOpen).length * 2; g.ticket = (g.ticket || 0) + k; tickets += k; }   // 챕터를 처음 깨면 뽑기권 2장
+    // 장비: 처음 깬 스테이지는 꼭, 다시 깨면 30% (탑은 40%)
+    if (win && (unlocked || chapOpen || Math.random() < (IN_TOWER ? .4 : .3))) { gearGot = rollGear(effStage(CH, IN_TOWER ? 5 + STAGE : STAGE) / 2); g.items = g.items || {}; g.items[gearGot] = (g.items[gearGot] || 0) + 1; }
     if (win && IN_TOWER) { if (STAGE % 5 === 0 && STAGE > (g.towerBest || 0)) { g.ticket = (g.ticket || 0) + 1; tickets += 1; } g.towerBest = Math.max(g.towerBest || 0, STAGE); }   // 탑 5층마다 1장
     saveCampus(g);
   }
@@ -501,7 +503,7 @@ function finish(win) {
     $('r-sub').textContent = win ? 'STAGE CLEAR' : 'STAGE FAILED';
     $('r-title').textContent = win ? '승리!' : clockT <= 0 ? '시간 초과…' : '패배…';
     $('r-stars').innerHTML = [0, 1, 2].map(i => drawIcon(i < stars ? 'star' : 'starOff', i === 1 ? 46 : 36)).join('');
-    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? [].concat(chapOpen).map(n => `<br><b style="color:#9dffb0">새 챕터 「${CHAPTERS[n - 1].place}」 열림!</b>`).join('') : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
+    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? [].concat(chapOpen).map(n => `<br><b style="color:#9dffb0">새 챕터 「${CHAPTERS[n - 1].place}」 열림!</b>`).join('') : ''}${gearGot ? `<br><b style="color:#9ad5ff">장비 획득 · ${STATIONERY[gearGot].name}! (${STATIONERY[gearGot].desc})</b>` : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
     $('r-rw').innerHTML = RES_ORDER.map(k => `<span class="rs">${drawIcon(k, 20)}+${rw[k]}</span>`).join('');
     $('result').hidden = false;
   }, win ? 1300 : 800);

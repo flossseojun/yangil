@@ -247,13 +247,15 @@ function openLM(kind, name) {
   const trades = (I.trades || []).map((t, i) => `<div class="req"><div class="rq"><b>교환</b><div class="rw">${resText(t[0], 14)} → ${resText(t[1], 14)}</div></div><button class="claim" data-tr="${i}" ${canPay(t[0]) ? '' : 'disabled'}>바꾸기</button></div>`).join('');
   lm.innerHTML = `<div class="sheet" role="dialog" aria-label="${name}"><div class="sh-top"><b>${name}</b><small>다시 살아난 양평</small><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
     <p class="lm-st">${I.story}</p>${news}
+    ${kind === 'market' ? (() => { const gt = G.town.gearDay === dayNum(), t = GEAR_ORDER[dayNum() % 5]; return `<div class="req${gt ? '' : ' done'}"><div class="rq"><b>문구 좌판 · 오늘의 장비</b><p>하루에 한 번 공짜로 하나 받아요</p><div class="rw">${drawIcon(t, 16)} ${STATIONERY[t].name} <small>${STATIONERY[t].desc}</small></div></div><button class="claim" data-gday ${gt ? 'disabled' : ''}>${gt ? '내일 또' : '받기'}</button></div>`; })() : ''}
     <div class="req${got ? '' : ' done'}"><div class="rq"><b>${I.daily}</b><p>하루에 한 번 받을 수 있어요</p><div class="rw">${resText(rw, 13)}</div></div><button class="claim" data-day ${got ? 'disabled' : ''}>${got ? '내일 또' : '받기'}</button></div>${trades}</div>`;
   lm.dataset.kind = kind; lm.dataset.name = name; lm.hidden = false;
 }
 lm.addEventListener('click', e => {
   if (e.target === lm || e.target.closest('[data-close]')) { lm.hidden = true; return; }
   const b = e.target.closest('button'); if (!b || b.disabled) return; const kind = lm.dataset.kind, I = LM_INFO[kind];
-  if (b.dataset.day != null) { if (G.town[kind] === dayNum()) return; G.town[kind] = dayNum(); give(I.rw()); KS.fx('coin'); }
+  if (b.dataset.gday != null) { if (G.town.gearDay === dayNum()) return; G.town.gearDay = dayNum(); const t = GEAR_ORDER[dayNum() % 5]; G.items[t] = (G.items[t] || 0) + 1; K.save(); KS.fx('levelup'); K.toast(`${STATIONERY[t].name}을(를) 받았어요! 친구들 → 장비에서 끼워요`); }
+  else if (b.dataset.day != null) { if (G.town[kind] === dayNum()) return; G.town[kind] = dayNum(); give(I.rw()); KS.fx('coin'); }
   else if (b.dataset.tr != null) { const [pay, get] = I.trades[+b.dataset.tr]; if (!canPay(pay)) return; Object.entries(pay).forEach(([k, n]) => { G.res[k] -= n; }); give(get); KS.fx('coin'); }
   openLM(kind, lm.dataset.name);
 });
@@ -364,7 +366,7 @@ function frList() {
 }
 function frShop() {
   const worn = t => Object.values(G.gear).filter(x => x === t).length;
-  return `<p class="fr-sum"><small>장비는 친구마다 하나씩 낄 수 있어요. 친구를 눌러 펼친 뒤 끼우세요. 빼면 다시 가방으로 돌아와요.</small></p><div class="fr-list">${GEAR_ORDER.map(t => { const g = STATIONERY[t];
+  return `<p class="fr-sum"><small>장비는 친구마다 하나씩 낄 수 있어요. 친구를 눌러 펼친 뒤 끼우세요. 빼면 다시 가방으로 돌아와요.<br><b>얻는 곳</b> · 전투 승리(처음 깬 스테이지는 꼭!) · 친구 선물(!) · 물맑은시장 문구 좌판(하루 1개) · 여기 문구점</small></p><div class="fr-list">${GEAR_ORDER.map(t => { const g = STATIONERY[t];
     return `<div class="fr-c shop"><span class="gi-big">${gearIcon(t, 36)}</span><div class="fr-m"><b>${g.name}</b><small>${g.desc} · 가방 ${G.items[t] || 0}개 · 끼운 친구 ${worn(t)}명</small></div><button class="claim" data-buy="${t}" ${canPay(g.cost) ? '' : 'disabled'}>사기<small>${resText(g.cost, 11)}</small></button></div>`; }).join('')}</div>`;
 }
 function openFR() {

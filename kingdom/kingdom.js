@@ -615,7 +615,12 @@ function stepGifts(dt) {
   const p = pool[Math.floor(Math.random() * pool.length)]; p.gift = new THREE.Sprite(new THREE.SpriteMaterial({ map: giftTex, depthTest: false })); p.gift.scale.set(.55, .66, 1); p.gift.renderOrder = 11; world.add(p.gift);
 }
 function takeGift(p) {
-  world.remove(p.gift); p.gift = null; const k = ['know', 'snack', 'power'][Math.floor(Math.random() * 3)], n = 4 + Math.floor(campusLv() * 1.2 + Math.random() * 5);
+  world.remove(p.gift); p.gift = null;
+  if (typeof rollGear === 'function' && Math.random() < .12) {   // 가끔 문구 장비를 준다
+    const t = rollGear(campusLv() / 6); G.items = G.items || {}; G.items[t] = (G.items[t] || 0) + 1; bump('gift'); save(); KS.fx('levelup');
+    floatText(`${drawIcon(t, 22)}+1`, p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0))); sayText(p, `${STATIONERY[t].name} 하나 더 있어서 가져왔어. 너 써!`); return;
+  }
+  const k = ['know', 'snack', 'power'][Math.floor(Math.random() * 3)], n = 4 + Math.floor(campusLv() * 1.2 + Math.random() * 5);
   G.res[k] += n; bump('gift'); G.bond = G.bond || {}; save(); hud(); KS.fx('coin');
   floatText(`+${n}${drawIcon(k, 20)}`, p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0)));
   sayText(p, ['이거 너 줄게!', '매점에서 하나 더 샀어. 너 가져!', '오다 주웠다.', '선물이야!'][Math.floor(Math.random() * 4)]);

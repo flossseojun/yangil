@@ -275,6 +275,8 @@ const STATIONERY = {
   goldpen:  { name: '금색 볼펜', hp: .1, atk: .1, cost: { know: 300, snack: 150, power: 80 }, desc: '체력 · 공격 +10%' },
 };
 const GEAR_ORDER = ['pencil', 'pcase', 'marker', 'gymsuit', 'earphone', 'goldpen'];
+// 장비 뽑기: lv(0~)가 높을수록 좋은 장비가 잘 나온다
+function rollGear(lv = 0) { const w = { pencil: 30, pcase: 30, marker: 12 + lv, gymsuit: 12 + lv, earphone: 10 + lv, goldpen: Math.min(14, lv * .8) }; let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0); for (const k of GEAR_ORDER) { r -= w[k]; if (r <= 0) return k; } return 'pencil'; }
 const AWAKE_COST = { know: 400, snack: 250, power: 150 };
 const awakeOf = (g, id) => !!((g && g.awake) || {})[id];
 const gearOf = (g, id) => STATIONERY[((g && g.gear) || {})[id]] || null;
