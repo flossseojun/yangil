@@ -116,14 +116,14 @@ function damageBoss(n, opts = {}) {
   if (B.dead || over) return;
   if (opts.normal && B.blind > 0) { if (Math.random() < .35) popText(bossCenter.clone().add(new THREE.Vector3(rnd(-1, 1), rnd(0, 1.2), 1)), 'block', 'MISS'); return; }
   const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * (B.vanish > 0 ? .5 : 1) * rnd(.92, 1.08));
-  B.hp -= dmg; B.flashT = .12;
+  B.hp -= dmg; B.flashT = .12; KS.fx(crit ? 'crit' : 'hit');
   const at = bossCenter.clone().add(new THREE.Vector3(rnd(-1.2, 1.2), rnd(-.6, 1.4), 1));
   popText(at, crit || opts.big ? 'big' : 'mid', fmt(dmg) + (crit ? '<small>크리티컬!</small>' : ''));
   if (opts.big || crit) shake(crit ? .12 : .08);
   while (B.hp <= 0 && !B.dead) {
     if (B.layer >= LAYERS.length - 1) { B.hp = 0; B.dead = true; finish(true); break; }
     B.layer++; const carry = -B.hp; B.hp = LAYERS[B.layer] - carry; B.trail = LAYERS[B.layer]; B.stagger = 1.4;
-    cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.2, 0)), 'info', ARENA.onLayer(B.layer)); $('boss-name').textContent = ARENA.name();
+    cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.2, 0)), 'info', ARENA.onLayer(B.layer)); $('boss-name').textContent = ARENA.name(); KS.fx('break'); if (revealed()) { KS.fx('reveal'); KS.play('maker'); }
     flash(ARENA.hitColor, 7, bossCenter, .7); shake(.22, .5);
     const c = $('b-count'); c.classList.add('pop'); setTimeout(() => c.classList.remove('pop'), 250);
   }
@@ -134,10 +134,10 @@ function hurt(u, n, cls = 'taken') {
   let left = Math.round(n * FX.guard * rnd(.92, 1.08));
   if (u.shield > 0) { const used = Math.min(u.shield, left); u.shield -= used; left -= used; if (used) popText(u.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), 'block', '막음 ' + fmt(used)); }
   if (left <= 0) return;
-  u.hp -= left; u.hitT = .18; if (u.hp > 0) u.ch.play('hit'); popText(u.pos.clone().add(new THREE.Vector3(.3, 2.3, 0)), cls, '-' + fmt(left));
-  if (u.hp <= 0) { u.hp = 0; u.dead = true; u.ch.set('down'); u.ring.visible = false; if (!alive().length) finish(false); }
+  u.hp -= left; u.hitT = .18; if (u.hp > 0) { u.ch.play('hit'); KS.fx('ouch'); } popText(u.pos.clone().add(new THREE.Vector3(.3, 2.3, 0)), cls, '-' + fmt(left));
+  if (u.hp <= 0) { u.hp = 0; u.dead = true; u.ch.set('down'); KS.fx('down'); u.ring.visible = false; if (!alive().length) finish(false); }
 }
-function heal(u, n) { if (u.dead) return; if (u.sleep > 0) wakeUnit(u, '깼다!'); if (n > 0) u.ch.face('happy', .8); const v = Math.min(u.max - u.hp, Math.round(n)); u.hp += v; popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', '+' + fmt(v)); flash('#7dff9e', 2.4, u.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), .6); }
+function heal(u, n) { if (u.dead) return; if (u.sleep > 0) wakeUnit(u, '깼다!'); if (n > 0) { u.ch.face('happy', .8); KS.fx('heal'); } const v = Math.min(u.max - u.hp, Math.round(n)); u.hp += v; popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', '+' + fmt(v)); flash('#7dff9e', 2.4, u.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), .6); }
 
 /* ───────── 날아가는 것 ───────── */
 function bolt(from, to, color, dur, done, size = .55, arc = 0) {
@@ -256,13 +256,14 @@ function shockwave(at, color, size = 4) { const ring = new THREE.Mesh(new THREE.
 
 // 스킬 실행: 연출 → 맞을 때 피해 → 끝나면 보스 효과
 function castSkill(u, big) {
+  KS.fx('cast');
   if (big) speak(u.id, (SKILL_SPEC[u.id] || {}).say || u.st.skill);
   const base = SKILL_SPEC[u.id] || ROLE_SPEC[u.st.role], s = Object.assign({}, base, { sc: big ? 2.4 : 1.6 });
   const teamSkill = !s.dmg && !s.after;
   if (big) startUlt(teamSkill);
   if (s.say) popText(u.pos.clone().add(new THREE.Vector3(0, 3.2, 0)), 'say', s.say);
   // 팀 효과는 바로
-  if (s.shield) alive().forEach(x => { x.shield = Math.max(x.shield, s.shield); x.shieldT = 6; });
+  if (s.shield) KS.fx('shield'); if (s.shield) alive().forEach(x => { x.shield = Math.max(x.shield, s.shield); x.shieldT = 6; });
   if (s.taunt) { B.taunt = s.taunt; B.tauntBy = u; }
   if (s.heal) alive().forEach(x => heal(x, x.max * s.heal * FX.heal));
   if (s.hot) alive().forEach(x => { x.hot = x.max * s.hot * FX.heal / 5; x.hotT = 5; });
@@ -271,7 +272,7 @@ function castSkill(u, big) {
   if (s.gauge) alive().forEach(x => { if (x !== u) x.gauge = Math.min(1, x.gauge + s.gauge); });
   if (s.veil) veilT = Math.max(veilT, s.veil);
   const bossFx = sp => {
-    if (sp.stun) { B.stun = Math.max(B.stun, sp.stun); cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '기절!'); }
+    if (sp.stun) { KS.fx('stun'); B.stun = Math.max(B.stun, sp.stun); cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '기절!'); }
     if (sp.sleep) { B.stun = Math.max(B.stun, sp.sleep); cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.4, 0)), 'info', '쿨쿨…'); const z = iconSprite('zzz', 1); z.position.copy(bossCenter).add(new THREE.Vector3(.6, 2, 1)); tween(sp.sleep, k => { z.position.y += .004; z.material.opacity = 1 - k * .6; }, () => scene.remove(z)); }
     if (sp.burn) { B.burn = Math.max(B.burn, sp.burn); }
     if (sp.weak) { weakT = Math.max(weakT, sp.weak); popText(bossCenter.clone().add(new THREE.Vector3(0, 1.8, 0)), 'info', '약해졌다!'); }
@@ -300,6 +301,7 @@ function castBanner(id) { const el = $('cast'); el.innerHTML = `<b>${STATS[id].s
 let pendingCast = null;
 const CUT = Object.fromEntries(Object.entries(STATS).map(([id, s]) => [id, [s.skill, s.who, s.c1]]));
 function cutIn(id) {
+  KS.fx('cutin');
   const role = STATS[id].role, svg = kitHeadSVG(id, { pose: role === 'healer' ? 'hold' : role === 'striker' ? 'cheer' : 'v' });
   const el = $('cutin'), [nm, who, c1] = CUT[id];
   $('cut-img').src = CUT_IMG[id] || 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
@@ -387,7 +389,7 @@ function stepBombs(dt) {
     if (b.axis === 'x') b.disc.scale.set(1, k, 1); else if (b.axis === 'z') b.disc.scale.set(k, 1, 1); else b.disc.scale.set(k, k, 1);
     b.ring.material.opacity = .55 + Math.sin(b.t * 18) * .35;
     if (k >= 1) {
-      scene.remove(b.ring, b.disc); bombs.splice(i, 1);
+      scene.remove(b.ring, b.disc); bombs.splice(i, 1); KS.fx(b.axis ? 'laser' : 'boom');
       const c = b.color || '#ff8a3c';
       if (b.axis) { const s = new THREE.Mesh(new THREE.PlaneGeometry(b.axis === 'x' ? 26 : b.w, b.axis === 'x' ? b.w : 26), zoneMat(c, 1)); s.rotation.x = -Math.PI / 2; s.position.copy(b.at); s.position.y = .06; scene.add(s); tween(.4, q => { s.material.opacity = 1 - q; s.scale.set(b.axis === 'z' ? 1 + q : 1, b.axis === 'x' ? 1 + q : 1, 1); }, () => scene.remove(s)); flash(c, 4, bossCenter.clone().add(new THREE.Vector3(0, 1, 1)), .4); }
       else { flash(c, 5, b.at.clone().add(new THREE.Vector3(0, .8, 0)), .6); flash('#ffe28a', 2.6, b.at.clone().add(new THREE.Vector3(0, .6, 0))); }
@@ -400,20 +402,21 @@ function stepBombs(dt) {
 }
 // 챕터 특수 공격: 보스가 기절하면 끊긴다
 function special() {
-  if (CH === 2) { B.glareT = 1.5; sayBoss('번쩍 준비…', 1.4); return; }
+  if (CH === 2) { B.glareT = 1.5; KS.fx('charge'); sayBoss('번쩍 준비…', 1.4); return; }
   if (CH === 3) {
-    if ((B.spN = (B.spN || 0) + 1) % 2) { B.vanish = 4.5; sayBoss('사라졌다…', 1.4); flash('#8aa0ff', 6, bossCenter, .6); }
+    if ((B.spN = (B.spN || 0) + 1) % 2) { B.vanish = 4.5; KS.fx('vanish'); sayBoss('사라졌다…', 1.4); flash('#8aa0ff', 6, bossCenter, .6); }
     else { const pool = alive().filter(u => !u.sleep), t = pool.find(u => u.st.role !== 'healer' && Math.random() < .6) || pool[0]; if (t) sleepUnit(t, 4.5); }
     return;
   }
-  if (revealed()) { B.nerf = 4; sayBoss('밸런스 패치 · 공격 -30%', 1.4); screenFlash('#5dff8a', .35); flash('#5dff8a', 8, bossCenter, .8); }
+  if (revealed()) { B.nerf = 4; KS.fx('glitch'); sayBoss('밸런스 패치 · 공격 -30%', 1.4); screenFlash('#5dff8a', .35); flash('#5dff8a', 8, bossCenter, .8); }
 }
-function fireGlare() { ARENA.glare && ARENA.glare(0); B.blind = 3; screenFlash('#ffffff', .95); shake(.15, .3); sayBoss('눈부셔!', 1.4); }
+function fireGlare() { KS.fx('flash'); ARENA.glare && ARENA.glare(0); B.blind = 3; screenFlash('#ffffff', .95); shake(.15, .3); sayBoss('눈부셔!', 1.4); }
 function sleepUnit(u, t) {
+  KS.fx('sleep');
   u.sleep = t; u.ch.set('sleep'); u.zzz = u.zzz || iconSprite('zzz', .8); u.zzz.visible = true; scene.add(u.zzz);
   popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'block', '가위눌림');
 }
-function wakeUnit(u, txt) { if (!u.sleep) return; u.sleep = 0; if (!u.dead) u.ch.set('idle'); if (u.zzz) u.zzz.visible = false; if (txt) popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', txt); }
+function wakeUnit(u, txt) { if (!u.sleep) return; u.sleep = 0; KS.fx('wake'); if (!u.dead) u.ch.set('idle'); if (u.zzz) u.zzz.visible = false; if (txt) popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', txt); }
 let revealTO = 0;
 function showReveal() {
   const el = $('reveal'); if (!el) return;
@@ -462,13 +465,14 @@ function speak(id, text) {
     synth.speak(u);
   } catch (e) {}
 }
+KS.bind($('b-music'));
 $('b-voice').onclick = () => { voiceOn = !voiceOn; $('b-voice').innerHTML = drawIcon(voiceOn ? 'sound' : 'mute', 20); try { localStorage.setItem('yangil.kingdom.voice', voiceOn ? '1' : '0'); } catch (e) {} };
 $('b-voice').innerHTML = drawIcon(voiceOn ? 'sound' : 'mute', 20); $('b-pause').innerHTML = drawIcon('pause', 18);
 
 /* ───────── 진행 ───────── */
 let started = false, over = false, paused = false, speed = 1, clockT = TIME_LIMIT, introT = 1.6;
 function finish(win) {
-  if (over) return; over = true;
+  if (over) return; over = true; KS.jingle(win);
   const left = alive().length, stars = win ? (left === 5 ? 3 : left >= 3 ? 2 : 1) : 0;
   const base = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6 } : { know: 5, snack: 3, power: 0 };
   const rw = Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.round(v * SM.reward)]));
@@ -489,7 +493,7 @@ function finish(win) {
   }, win ? 1300 : 800);
   if (win) { flash('#ffd27a', 10, bossCenter, 1.2); shake(.3, .6); tween(1.2, k => { boss.rotation.z = -k * .35; boss.position.y = -k * .8; }); }
 }
-$('go').onclick = () => { $('start').hidden = true; started = true; units.forEach((u, i) => setTimeout(() => sayLine(u, 'start'), 900 + i * 300)); };
+$('go').onclick = () => { KS.play(['', 'ginkgo', 'neon', 'ghost', 'storm'][CH]); KS.fx('click'); $('start').hidden = true; started = true; units.forEach((u, i) => setTimeout(() => sayLine(u, 'start'), 900 + i * 300)); };
 $('r-retry').onclick = () => location.reload();
 $('r-camp').onclick = () => { location.href = './'; };
 $('b-auto').onclick = () => { auto = !auto; $('b-auto').classList.toggle('on', auto); };
@@ -514,7 +518,7 @@ function step(dt) {
       B.slamT = 2.6; const tgt = (B.taunt > 0 && B.tauntBy && !B.tauntBy.dead) ? B.tauntBy : alive().sort((a, b) => b.pos.x - a.pos.x)[0];
       if (tgt) { arms.forEach(a => tween(.32, k => { a.rotation.z = a.userData.side * (-1.05 + Math.sin(k * Math.PI) * .7); a.rotation.x = -.25 + Math.sin(k * Math.PI) * .6; })); tween(.18, null, () => { if (B.miss > 0) { B.miss--; popText(tgt.pos.clone().add(new THREE.Vector3(0, 2.6, 0)), 'block', '빗나감!'); return; } hurt(tgt, (300 + B.layer * 60) * SM.dmg); flash('#ffb070', 2.2, tgt.pos.clone().add(new THREE.Vector3(0, 1.4, 0))); shake(.07); }); }
     }
-    if (B.bombT <= 0 && !bombs.length) { B.bombT = rnd(8.5, 10.5); startBombs(); }
+    if (B.bombT <= 0 && !bombs.length) { B.bombT = rnd(8.5, 10.5); startBombs(); KS.fx('warn'); }
     if (B.glareT > 0) { B.glareT -= dt; ARENA.glare(1 - B.glareT / 1.5); if (B.glareT <= 0) fireGlare(); }
     else if ((CH !== 4 || revealed()) && (B.spT -= dt * haste) <= 0) { B.spT = rnd(11, 13.5); special(); }
   }
@@ -535,8 +539,8 @@ function step(dt) {
     if (u.atkT <= 0) {
       u.atkT = u.st.rate / (hasteT > 0 ? 1.6 : 1);
       const atk = u.st.atk * (buffT > 0 ? 1.4 : 1) * (B.nerf > 0 ? .7 : 1);
-      if (u.st.melee) { u.lunge = .3; u.ch.play('attack'); tween(.12, null, () => damageBoss(atk, { normal: true })); }
-      else { u.ch.play('throw'); } if (!u.st.melee) bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk, { normal: true }), .45, .6);
+      if (u.st.melee) { u.lunge = .3; u.ch.play('attack'); KS.fx('swing'); tween(.12, null, () => damageBoss(atk, { normal: true })); }
+      else { u.ch.play('throw'); KS.fx('throw'); } if (!u.st.melee) bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk, { normal: true }), .45, .6);
     }
   });
   if (auto && cutLock <= 0 && ultT <= 0) autoSkills();

@@ -13,6 +13,8 @@ const ICON_PATHS = {
   play: '<path d="M7 4.5v15l12-7.5z" fill="' + INK + '"/>',
   sound: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="#ffd23f"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
   mute: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="#d8d0c0"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/>',
+  music: '<path d="M9 17V5l10-2v12" /><circle cx="6.5" cy="17.5" r="2.8" fill="#ffd23f"/><circle cx="16.5" cy="15" r="2.8" fill="#ffd23f"/>',
+  musicOff: '<path d="M9 17V5l10-2v12" /><circle cx="6.5" cy="17.5" r="2.8" fill="#d8d0c0"/><circle cx="16.5" cy="15" r="2.8" fill="#d8d0c0"/><path d="M3 3l18 18" stroke-width="2.6"/>',
   lock: '<rect x="5" y="10.5" width="14" height="10" rx="2" fill="#ffd23f"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><path d="M12 14.5v2.5"/>',
   heart: '<path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.6 4.2 4.2 0 0 1 19.5 10C19.5 15.4 12 20 12 20z" fill="#ff6b8b"/>',
   heartOff: '<path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.6 4.2 4.2 0 0 1 19.5 10C19.5 15.4 12 20 12 20z" fill="#fffaf0" stroke-dasharray="2.5 2.5"/>',

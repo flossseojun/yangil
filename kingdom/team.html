@@ -116,10 +116,11 @@
   .pf .art .spin { display: none; position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); pointer-events: none; }
   .pf .art:has(canvas) .spin { display: block; }
   .slot img, .card img { transition: opacity .2s; }
+  .sbtn.mus { background: var(--paper); }
 </style>
 </head>
 <body>
-<div class="top"><a href="./" id="back">캠퍼스</a><h1>팀 편성</h1><div class="res" id="res"></div><div class="stage"><button class="sbtn" id="st-prev" aria-label="이전 스테이지">◀</button><span>STAGE <b id="st-n">1-1</b><small id="st-rec"></small></span><button class="sbtn" id="st-next" aria-label="다음 스테이지">▶</button></div></div>
+<div class="top"><a href="./" id="back">캠퍼스</a><h1>팀 편성</h1><button class="sbtn mus" id="b-music" aria-label="소리 켜고 끄기"></button><div class="res" id="res"></div><div class="stage"><button class="sbtn" id="st-prev" aria-label="이전 스테이지">◀</button><span>STAGE <b id="st-n">1-1</b><small id="st-rec"></small></span><button class="sbtn" id="st-next" aria-label="다음 스테이지">▶</button></div></div>
 <div class="chaps" id="chaps"></div>
 <div class="wrap">
   <section class="panel">
@@ -144,6 +145,7 @@
 <script src="roster.js"></script>
 <script src="kits.js"></script>
 <script src="ui.js"></script>
+<script src="audio.js"></script>
 <script src="profiles.js"></script>
 <script src="team.js"></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>

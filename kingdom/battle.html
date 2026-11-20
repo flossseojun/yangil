@@ -203,7 +203,7 @@
 <body>
 <canvas id="c"></canvas>
 <div class="stage glass"><span id="stg">1-1</span> · <span id="st-place">은행나무길</span><b id="timer">1:30</b></div>
-<div class="ctl"><button class="glass" id="b-auto">AUTO</button><button class="glass" id="b-speed">×1</button><button class="glass" id="b-pause" aria-label="일시정지">❚❚</button><button class="glass" id="b-voice" aria-label="목소리 켜고 끄기">🔊</button></div>
+<div class="ctl"><button class="glass" id="b-auto">AUTO</button><button class="glass" id="b-speed">×1</button><button class="glass" id="b-pause" aria-label="일시정지">❚❚</button><button class="glass" id="b-music" aria-label="소리 켜고 끄기"></button><button class="glass" id="b-voice" aria-label="목소리 켜고 끄기">🔊</button></div>
 <div class="boss"><div class="bmain"><div class="bname"><b id="boss-name">은행왕</b><i>보스</i></div><div class="bbar"><div class="layer next" id="b-next"></div><div class="trail" id="b-trail"></div><div class="layer now" id="b-now"></div><span class="shine"></span></div></div><div class="bcount" id="b-count">×3</div></div>
 <div class="syn glass" id="syn"></div>
 <div class="skills" id="skills"></div>
@@ -223,6 +223,7 @@
 <script src="roster.js"></script>
 <script src="kits.js"></script>
 <script src="ui.js"></script>
+<script src="audio.js"></script>
 <script src="profiles.js"></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module" src="battle.js"></script>

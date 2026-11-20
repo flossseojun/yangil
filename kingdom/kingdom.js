@@ -177,6 +177,7 @@ function syncBubble(b, now) {
   if (s) { const m = meshes.get(b); s.position.set(m.position.x, d.h + 1.6 + Math.sin(now / 300 + b.x) * .08, m.position.z); }
 }
 function collect(b) {
+  KS.fx('coin');
   const [k, n] = BUILD[b.t].prod; G.res[k] += n; b.at = Date.now(); save(); hud();
   const m = meshes.get(b); floatText(`+${n}${drawIcon(k, 20)}`, new THREE.Vector3(m.position.x, BUILD[b.t].h + 1.4, m.position.z));
 }
@@ -227,6 +228,7 @@ const toScreen = v => { const p = v.clone().project(camera); return [(p.x + 1) /
 function floatText(text, v) { const [x, y] = toScreen(v), el = document.createElement('div'); el.className = 'float'; el.innerHTML = text; el.style.left = x + 'px'; el.style.top = y + 'px'; document.body.appendChild(el); setTimeout(() => el.remove(), 1000); }
 let talk = null;
 function say(p) {
+  KS.fx('pop');
   if (talk) talk.el.remove();
   const f = rosterOf(p.id), el = document.createElement('div'); el.className = 'bubble';
   const own = typeof PROFILES !== 'undefined' && PROFILES[p.id] && PROFILES[p.id].lines.length ? PROFILES[p.id].lines : LINES;
@@ -269,16 +271,19 @@ function confirmPlace() {
   if (!canPay(d.cost)) { toast('자원이 모자라요'); return; }
   Object.entries(d.cost || {}).forEach(([k, n]) => { G.res[k] -= n; });
   b.at = Date.now(); G.b.push(b); addMesh(b); cancelPlace();
-  if (d.recruit) recruit(); else toast(`${d.name}을(를) 지었어요!`);
+  KS.fx('build'); if (d.recruit) recruit(); else toast(`${d.name}을(를) 지었어요!`);
   save(); hud();
 }
 function recruit() {
+  setTimeout(() => KS.fx('fanfare'), 500);
   const pool = ROSTER.filter(f => !G.friends.includes(f.id));
   if (!pool.length) { toast('모든 친구가 캠퍼스에 모였어요!'); return; }
   const f = pool[Math.floor(Math.random() * pool.length)]; G.friends.push(f.id); const p = addPerson(f.id);
   toast(`동아리방 완성 · ${f.name} 합류`); setTimeout(() => say(p), 600);
 }
-$('cards').addEventListener('click', e => { const c = e.target.closest('.bcard'); if (c) startPlace(c.dataset.t); });
+$('cards').addEventListener('click', e => { const c = e.target.closest('.bcard'); if (c) { KS.fx('click'); startPlace(c.dataset.t); } });
+KS.play('campus'); KS.bind($('b-music'));
+document.querySelectorAll('.rbtn, .pbtn').forEach(b => b.addEventListener('click', () => KS.fx('click')));
 $('p-no').onclick = cancelPlace; $('p-ok').onclick = confirmPlace;
 $('p-rot').onclick = () => { if (ghost) { ghost.b.r = (ghost.b.r + 1) % 4; updateGhost(); } };
 function showInfo(b) {

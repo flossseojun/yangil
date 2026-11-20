@@ -102,7 +102,7 @@ function openProfile(id) {
 $('pf').addEventListener('click', e => {
   if (e.target === $('pf') || e.target.closest('[data-close]')) { $('pf').hidden = true; window.closeViewer && window.closeViewer(); return; }
   const up = e.target.closest('[data-up]');
-  if (up) { const id = up.dataset.up, lv = lvOf(G, id), cost = upCost(lv); if (Object.entries(cost).every(([x, n]) => (G.res[x] || 0) >= n)) { Object.entries(cost).forEach(([x, n]) => { G.res[x] -= n; }); G.lv[id] = lv + 1; saveCampus(G); render(); openProfile(id); } return; }
+  if (up) { const id = up.dataset.up, lv = lvOf(G, id), cost = upCost(lv); if (Object.entries(cost).every(([x, n]) => (G.res[x] || 0) >= n)) { Object.entries(cost).forEach(([x, n]) => { G.res[x] -= n; }); G.lv[id] = lv + 1; saveCampus(G); KS.fx('levelup'); render(); openProfile(id); } return; }
   const tg = e.target.closest('[data-toggle]'); if (tg) { toggle(tg.dataset.toggle); openProfile(tg.dataset.toggle); }
 });
 addEventListener('keydown', e => { if (e.key === 'Escape') { $('pf').hidden = true; window.closeViewer && window.closeViewer(); } });
@@ -114,4 +114,5 @@ $('st-prev').onclick = () => { stage = Math.max(1, stage - 1); save(); render();
 $('st-next').onclick = () => { stage = Math.min(Math.min(MAX_STAGE, progOf(G, ch)), stage + 1); save(); render(); };
 $('auto').onclick = autoPick;
 $('go').onclick = () => { save(); location.href = 'battle.html'; };
+if (typeof KS !== 'undefined') { KS.play('campus'); KS.bind($('b-music')); document.addEventListener('click', e => { if (e.target.closest('button, .card, .slot, .ch')) KS.fx('click'); }, true); }
 render();
