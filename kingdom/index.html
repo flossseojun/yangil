@@ -182,6 +182,15 @@
     .cards-lab { font-size: 12px; padding: 5px 3px; }
     .info, .place { bottom: 92px; } .info { padding: 6px 10px; } .info .bi { width: 38px; height: 38px; } .info small { font-size: 11px; line-height: 1.4; }
   }
+  /* 꾸미기 접기 */
+  button.cards-lab { cursor: pointer; display: flex; align-items: center; gap: 4px; font: inherit; font-family: Jua, sans-serif; }
+  .cards-lab i { font-style: normal; writing-mode: horizontal-tb; display: inline-block; transition: transform .2s cubic-bezier(.22,1,.36,1); }
+  .bar { transition: transform .25s cubic-bezier(.22,1,.36,1); }
+  .bar.closed { pointer-events: none; background: none; }
+  .bar.closed .bcard { display: none; }
+  .bar.closed .cards-lab { pointer-events: auto; writing-mode: horizontal-tb; padding: 6px 12px; }
+  .bar.closed .cards-lab i { transform: rotate(180deg); }
+  .bar.closed ~ .info, .bar.closed ~ .place { bottom: 70px; }
 </style>
 </head>
 <body>
@@ -210,18 +219,19 @@
 <div class="toast" id="toast"></div>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
 
-<script src="../avatar.js?v=1795162413"></script>
-<script src="../avatar2.js?v=1795162413"></script>
-<script src="../avatar3.js?v=1795162413"></script>
-<script src="../scene.js?v=1795162413"></script>
-<script src="../fullbody.js?v=1795162413"></script>
-<script src="roster.js?v=1795162413"></script>
-<script src="kits.js?v=1795162413"></script>
-<script src="profiles.js?v=1795162413"></script>
-<script src="ui.js?v=1795162413"></script>
-<script src="audio.js?v=1795162413"></script>
+<script src="../avatar.js?v=1795180930"></script>
+<script src="../avatar2.js?v=1795180930"></script>
+<script src="../avatar3.js?v=1795180930"></script>
+<script src="../scene.js?v=1795180930"></script>
+<script src="../fullbody.js?v=1795180930"></script>
+<script src="roster.js?v=1795180930"></script>
+<script src="yangpyeong.js?v=1795180930"></script>
+<script src="kits.js?v=1795180930"></script>
+<script src="profiles.js?v=1795180930"></script>
+<script src="ui.js?v=1795180930"></script>
+<script src="audio.js?v=1795180930"></script>
 <script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
-<script type="module" src="kingdom.js?v=1795162413"></script>
+<script type="module" src="kingdom.js?v=1795180930"></script>
 </body>
 </html>

@@ -99,21 +99,21 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadow
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#bfe3f5');
-scene.fog = new THREE.Fog('#bfe3f5', 60, 120);
+scene.fog = null;
 
-const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 300);
+const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 1, 2000);
 let camAngle = Math.PI / 4;
-const camDist = 40, camH = 34;
+const camDist = 400, camH = 340;   // 직교 카메라라 멀리 둬도 크기는 같다 (멀리 볼 때 앞쪽이 잘리지 않게)
 const controls = new OrbitControls(camera, canvas);
 controls.enableRotate = false; controls.screenSpacePanning = false; controls.enableDamping = true; controls.dampingFactor = .12;
 controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
 controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
-controls.minZoom = .6; controls.maxZoom = 3; controls.zoomSpeed = 1.2;
+controls.minZoom = .1; controls.maxZoom = 3; controls.zoomSpeed = 1.2;
 controls.target.set(N / 2, 0, N / 2 + 1);
 function placeCamera() { const t = controls.target; camera.position.set(t.x + Math.cos(camAngle) * camDist, camH, t.z + Math.sin(camAngle) * camDist); camera.lookAt(t); controls.update(); }
 function resize() { const w = innerWidth, h = innerHeight, a = w / h, view = a < 1 ? 15 : 11.5; camera.left = -view * a; camera.right = view * a; camera.top = view; camera.bottom = -view; camera.updateProjectionMatrix(); renderer.setSize(w, h, false); }
 addEventListener('resize', resize); resize(); camera.zoom = innerWidth / innerHeight < 1 ? 1.15 : 1.05; camera.updateProjectionMatrix(); placeCamera();
-controls.addEventListener('change', () => { const t = controls.target, cx = THREE.MathUtils.clamp(t.x, -12, N + 12), cz = THREE.MathUtils.clamp(t.z, -12, N + 4); if (cx !== t.x || cz !== t.z) { const dx = cx - t.x, dz = cz - t.z; t.x = cx; t.z = cz; camera.position.x += dx; camera.position.z += dz; } });
+controls.addEventListener('change', () => { const t = controls.target, cx = THREE.MathUtils.clamp(t.x, -260, 360), cz = THREE.MathUtils.clamp(t.z, -220, 320); if (cx !== t.x || cz !== t.z) { const dx = cx - t.x, dz = cz - t.z; t.x = cx; t.z = cz; camera.position.x += dx; camera.position.z += dz; } });
 
 scene.add(new THREE.HemisphereLight('#fff7e0', '#7fa86a', 1.15));
 const sun = new THREE.DirectionalLight('#fff3d6', 1.7);
@@ -155,22 +155,47 @@ const ground = new THREE.Mesh(new THREE.BoxGeometry(N, .4, N), [toon('#b9895a'),
 ground.position.set(N / 2, -.2, N / 2); ground.receiveShadow = true; scene.add(ground);
 
 const outside = new THREE.Group(); scene.add(outside);
-{ // 바깥 잔디 · 도로 · 횡단보도 · 인도
-  const o = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), toon('#a7d690')); o.rotation.x = -Math.PI / 2; o.position.set(N / 2, -.41, N / 2); o.receiveShadow = true; outside.add(o);
-  const roadT = canvasTex(512, 64, (g, w, h) => { g.fillStyle = '#5b6068'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2f2e8'; for (let x = 0; x < w; x += 40) g.fillRect(x, h / 2 - 2, 22, 4); }); roadT.wrapS = THREE.RepeatWrapping; roadT.repeat.set(8, 1);
-  const road = new THREE.Mesh(new THREE.PlaneGeometry(140, 3.2), new THREE.MeshToonMaterial({ map: roadT, gradientMap: gradMap() })); road.rotation.x = -Math.PI / 2; road.position.set(N / 2, -.38, N + 3.2); road.receiveShadow = true; outside.add(road);
-  const walk = new THREE.Mesh(new THREE.BoxGeometry(140, .12, 1.2), toon('#d9d2c2')); walk.position.set(N / 2, -.34, N + 1); walk.receiveShadow = true; outside.add(walk);
-  for (let i = 0; i < 6; i++) { const s = new THREE.Mesh(new THREE.PlaneGeometry(.35, 3), toon('#ffffff')); s.rotation.x = -Math.PI / 2; s.position.set(10.6 + i * .55, -.37, N + 3.2); outside.add(s); }
-  // 동네 집 · 아파트
-  const winT = canvasTex(64, 128, (g, w, h) => { g.fillStyle = '#eee6d6'; g.fillRect(0, 0, w, h); for (let y = 6; y < h; y += 16) for (let x = 6; x < w; x += 20) { g.fillStyle = Math.random() < .3 ? '#ffe8a0' : '#9cc6dd'; g.fillRect(x, y, 10, 9); } });
-  const house = (x, z, w, d, h, roof) => { const b = mesh(new THREE.BoxGeometry(w, h, d), [toon('#eee6d6'), toon('#eee6d6'), toon('#d8cfbe'), toon('#d8cfbe'), new THREE.MeshToonMaterial({ map: winT, gradientMap: gradMap() }), new THREE.MeshToonMaterial({ map: winT, gradientMap: gradMap() })], x, h / 2 - .4, z); outside.add(b); if (roof) { const r = mesh(new THREE.ConeGeometry(Math.max(w, d) * .75, 1, 4), toon(roof), x, h - .4 + .5, z); r.rotation.y = Math.PI / 4; r.scale.z = d / w; outside.add(r); } };
-  [[-19, -6, 4, 4, 9], [-19, 4, 4, 4, 12], [-20, 14, 4, 4, 8], [-6, -19, 4, 4, 11], [4, -20, 5, 4, 13], [14, -19, 4, 4, 10], [24, -20, 4, 4, 12], [34, -18, 4, 4, 9]].forEach(a => house(...a));
-  [[-2, -16, 3, 3, 2.4, '#c9643c'], [10, -16, 4, 3, 2.6, '#2f8f6b'], [20, -16, 3, 3, 2.3, '#c9643c'], [-16, 20, 3, 3, 2.4, '#e0573b'], [-4, N + 7, 3, 3, 1.8, '#e0573b'], [3, N + 7, 4, 3, 1.8, '#3f7fb8'], [N + 16, 2, 3, 3, 1.8, '#2f8f6b'], [N + 16, 10, 3, 3, 1.8, '#8a5a34']].forEach(a => house(...a));
-  // 바깥 나무
-  const leaf = toon('#5fae4e'), leaf2 = toon('#4c9a40'), trunk = toon('#7a5233');
-  for (let i = 0; i < 64; i++) { const a = i / 64 * Math.PI * 2, r = 30 + (i % 3) * 2.5, x = N / 2 + Math.cos(a) * r * 1.1, z = N / 2 - 4 + Math.sin(a) * r; if (z > N && z < N + 5) continue; if (x > -15 && x < N + 15 && z > -15 && z < N + 1) continue; const t = new THREE.Group(); t.add(mesh(new THREE.CylinderGeometry(.15, .2, 1, 6), trunk, 0, .1, 0)); const s = .9 + (i % 4) * .2; t.add(mesh(new THREE.IcosahedronGeometry(s, 0), i % 2 ? leaf : leaf2, 0, 1.2 + s * .4, 0)); t.position.set(x, -.4, z); outside.add(t); }
-  bake(outside);
+/* ───────── 바깥: 양평읍 실제 지도 (OpenStreetMap · yangpyeong.js) ───────── */
+const mapLabels = [];
+{
+  const M = typeof YP_MAP !== 'undefined' ? YP_MAP : { B: [], R: [], RL: [], W: [], WL: [], L: [], P: [] };
+  const base = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), toon('#b9dca0')); base.rotation.x = -Math.PI / 2; base.position.set(N / 2, -.42, N / 2); base.receiveShadow = true; outside.add(base);
+  const shapeOf = f => { const s = new THREE.Shape(); for (let i = 0; i < f.length; i += 2) i ? s.lineTo(f[i], -f[i + 1]) : s.moveTo(f[i], -f[i + 1]); return s; };
+  const flatGroup = (list, color, y) => { const geos = list.map(f => { try { const g = new THREE.ShapeGeometry(shapeOf(f)); g.rotateX(-Math.PI / 2); g.translate(0, y, 0); return g; } catch (e) { return null; } }).filter(Boolean); if (!geos.length) return; const g = mergeGeometries(geos.map(x => x.index ? x.toNonIndexed() : x)); const m = new THREE.Mesh(g, toon(color)); m.receiveShadow = true; outside.add(m); };
+  const LC = { park: '#8fcf6a', grass: '#a3d684', wood: '#5f9a48', farm: '#d8cf8a', pitch: '#7fbf5a', platform: '#cfc8bb' };
+  Object.keys(LC).forEach(k => flatGroup(M.L.filter(l => l[0] === k).map(l => l[1]), LC[k], -.405 + (k === 'platform' ? .02 : 0)));
+  flatGroup(M.W, '#6fb8e6', -.4);
+  // 길: 칸 단위 폭의 띠 (교차로는 동그라미로 메운다)
+  const W = { 3: 2.3, 2: 1.35, 1: .75, 0: .45 }, RC = { 3: '#6b7078', 2: '#8d9198', 1: '#b5b0a6', 0: '#d8c6a0' };
+  [0, 1, 2, 3].forEach(cls => {
+    const pos = [], w = W[cls] / 2, y = -.395 + cls * .003;
+    const quad = (ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz) || 1, nx = -dz / L * w, nz = dx / L * w; pos.push(ax + nx, y, az + nz, bx + nx, y, bz + nz, bx - nx, y, bz - nz, ax + nx, y, az + nz, bx - nx, y, bz - nz, ax - nx, y, az - nz); };
+    const disc = (x, z) => { for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, b = (k + 1) / 8 * Math.PI * 2; pos.push(x, y, z, x + Math.cos(b) * w, y, z + Math.sin(b) * w, x + Math.cos(a) * w, y, z + Math.sin(a) * w); } };
+    M.R.filter(r => r[0] === cls).forEach(r => { const p = r[2]; for (let i = 0; i + 3 < p.length; i += 2) quad(p[i], p[i + 1], p[i + 2], p[i + 3]); if (cls >= 1) for (let i = 0; i < p.length; i += 2) disc(p[i], p[i + 1]); });
+    if (!pos.length) return; const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, toon(RC[cls], { side: THREE.DoubleSide })); m.receiveShadow = true; outside.add(m);
+  });
+  // 큰길 가운데 노란 선
+  { const pos = []; M.R.filter(r => r[0] === 3).forEach(r => { const p = r[2]; for (let i = 0; i + 3 < p.length; i += 2) pos.push(p[i], -.385, p[i + 1], p[i + 2], -.385, p[i + 3]); }); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); outside.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: '#ffd23f' }))); }
+  // 철도 (중앙선): 자갈 띠 + 레일
+  { const pos = [], w = .55, y = -.39; M.RL.forEach(p => { for (let i = 0; i + 3 < p.length; i += 2) { const ax = p[i], az = p[i + 1], bx = p[i + 2], bz = p[i + 3], dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz) || 1, nx = -dz / L * w, nz = dx / L * w; pos.push(ax + nx, y, az + nz, bx + nx, y, bz + nz, bx - nx, y, bz - nz, ax + nx, y, az + nz, bx - nx, y, bz - nz, ax - nx, y, az - nz); } });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); outside.add(new THREE.Mesh(g, toon('#9a8a78', { side: THREE.DoubleSide })));
+    const lp = []; M.RL.forEach(p => { for (let i = 0; i + 3 < p.length; i += 2) lp.push(p[i], -.37, p[i + 1], p[i + 2], -.37, p[i + 3]); }); const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3)); outside.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: '#3a3f4a' }))); }
+  // 건물: 실제 윤곽을 층수만큼 올린다 (한 층 ≈ 3m ≈ .66칸)
+  { const geos = [], PAL = ['#efe6d6', '#e6dccb', '#f3ece0', '#dcd3c4', '#e9e2d8', '#d9e2e6', '#f0e2d0'];
+    M.B.forEach(([lv, f], i) => { if (f.length < 6) return; try { const g = new THREE.ExtrudeGeometry(shapeOf(f), { depth: Math.max(.6, lv * .66), bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.4, 0); const ng = g.toNonIndexed(), n = ng.attributes.position.count, col = new THREE.Color(lv >= 8 ? '#f1ead9' : PAL[i % PAL.length]), cols = new Float32Array(n * 3), nrm = ng.attributes.normal; for (let k = 0; k < n; k++) { const top = nrm.getY(k) > .5, c = top ? col.clone().multiplyScalar(lv >= 8 ? .9 : .82).lerp(new THREE.Color(lv >= 8 ? '#8a9aa8' : '#b0705a'), .35) : col; cols.set([c.r, c.g, c.b], k * 3); } ng.setAttribute('color', new THREE.BufferAttribute(cols, 3)); ng.deleteAttribute('uv'); geos.push(ng); g.dispose(); } catch (e) {} });
+    if (geos.length) { const g = mergeGeometries(geos); const m = new THREE.Mesh(g, new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: gradMap() })); m.castShadow = true; m.receiveShadow = true; outside.add(m); } }
+  // 이름표: 양평역 · 시장 · 남한강 · 군청 · 학교들
+  const seen = new Set();
+  M.P.forEach(([kind, name, x, z]) => {
+    if (seen.has(name) || /상인회|별관|마을회관/.test(name)) return; seen.add(name);
+    const big = kind === 'station' || kind === 'market' || kind === 'river';
+    const t = canvasTex(320, 96, (g, w, h) => { g.font = `${big ? 40 : 30}px Jua, sans-serif`; const tw = Math.min(w - 16, g.measureText(name).width + 40); g.fillStyle = kind === 'river' ? '#dff1fb' : kind === 'station' ? '#ffd23f' : kind === 'market' ? '#ffb4a0' : '#fffaf0'; g.beginPath(); g.roundRect((w - tw) / 2, 8, tw, 64, 14); g.fill(); g.lineWidth = 5; g.strokeStyle = INK; g.stroke(); g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name, w / 2, 42); g.beginPath(); g.moveTo(w / 2 - 10, 72); g.lineTo(w / 2, 90); g.lineTo(w / 2 + 10, 72); g.closePath(); g.fillStyle = INK; g.fill(); });
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); sp.renderOrder = 13; sp.position.set(x, kind === 'river' ? 1 : 6, z); sp.userData.base = big ? 1.35 : 1; outside.add(sp); mapLabels.push(sp);
+  });
 }
+// 이름표는 멀리 볼수록 크게 (화면에서 비슷한 크기로)
+function stepLabels() { const k = 1 / camera.zoom; mapLabels.forEach(s => { const b = s.userData.base * 5.2 * k; s.scale.set(b, b * .3, 1); s.visible = camera.zoom < 1.4 || s.userData.base > 1; }); }
 // 담장 · 산울타리 · 정문
 const fixed = new THREE.Group(); scene.add(fixed);
 {
@@ -585,7 +610,7 @@ function hud() {
   document.querySelectorAll('.bcard').forEach(c => c.classList.toggle('off', !canPay(DECO[c.dataset.t].cost)));
   refreshReqBadge();
 }
-$('cards').innerHTML = `<span class="cards-lab">꾸미기</span>` + DECO_ORDER.map(t => `<button class="bcard" data-t="${t}"><span class="bi">${drawIcon(t, 32)}</span><b>${DECO[t].name}</b><small class="cost">${resText(DECO[t].cost, 13)}</small></button>`).join('');
+$('cards').innerHTML = `<button class="cards-lab" id="deco-tog" aria-expanded="true">꾸미기<i>▾</i></button>` + DECO_ORDER.map(t => `<button class="bcard" data-t="${t}"><span class="bi">${drawIcon(t, 32)}</span><b>${DECO[t].name}</b><small class="cost">${resText(DECO[t].cost, 13)}</small></button>`).join('');
 
 /* ───────── 꾸미기 놓기 ───────── */
 let ghost = null;
@@ -608,6 +633,11 @@ function confirmPlace() {
   G.b.push(b); const m = addDeco(b); pop(m); cancelPlace(); bump('deco'); KS.fx('build');
   save(); hud();
 }
+// 꾸미기 줄 접기 · 펴기 (저장)
+let decoOpen = true; try { decoOpen = localStorage.getItem('yangil.kingdom.deco') !== '0'; } catch (e) {}
+function setDeco(v) { decoOpen = v; document.querySelector('.bar').classList.toggle('closed', !v); $('deco-tog').setAttribute('aria-expanded', v); $('deco-tog').setAttribute('aria-label', v ? '꾸미기 접기' : '꾸미기 펴기'); try { localStorage.setItem('yangil.kingdom.deco', v ? '1' : '0'); } catch (e) {} if (!v) cancelPlace(); }
+setDeco(decoOpen);
+$('deco-tog').addEventListener('click', e => { e.stopPropagation(); KS.fx('click'); setDeco(!decoOpen); });
 $('cards').addEventListener('click', e => { const c = e.target.closest('.bcard'); if (c) { KS.fx('click'); startPlace(c.dataset.t); } });
 $('p-no').onclick = cancelPlace; $('p-ok').onclick = confirmPlace;
 $('p-rot').onclick = () => { if (ghost) { ghost.b.r = (ghost.b.r + 1) % 4; updateGhost(); } };
@@ -793,7 +823,7 @@ function perfCheck() {
 }
 function loop() {
   const dt = Math.min(clock.getDelta(), .05), now = Date.now(), t = performance.now() / 1000;
-  controls.update(); stepPeople(dt); stepGifts(dt); perfCheck(); stepAnimated(dt, t); stepLeaves(dt, t); stepSky(dt, t);
+  controls.update(); stepLabels(); stepPeople(dt); stepGifts(dt); perfCheck(); stepAnimated(dt, t); stepLeaves(dt, t); stepSky(dt, t);
   for (let i = tweens.length - 1; i >= 0; i--) { const w = tweens[i]; w.t += dt; const k = Math.min(1, w.t / w.dur); w.f(k); if (k >= 1) { tweens.splice(i, 1); w.done && w.done(); } }
   FAC_ORDER.forEach(f => syncBubble(f, now));
   if (talk) { if (performance.now() > talk.until) { talk.el.remove(); talk = null; } else { const [x, y] = toScreen(talk.p.spr.position.clone().add(new THREE.Vector3(0, 2.1, 0))); talk.el.style.left = x + 'px'; talk.el.style.top = y + 'px'; } }
