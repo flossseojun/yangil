@@ -54,7 +54,7 @@ function stepTut() {
   if (G.tut == null) G.tut = 0;
   if (G.tut >= TUT.length) return;
   const s = TUT[G.tut];
-  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || ($('fr') && !$('fr').hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
+  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
   if (tutStarted !== G.tut) { tutStarted = G.tut; s.start && s.start(); tutEl.querySelector('p').innerHTML = `<b class="n">${G.tut + 1}/${TUT.length}</b> ${s.text}`; }
   tutEl.hidden = false;
   if (s.done()) { nextTut(); return; }
@@ -374,5 +374,88 @@ const frBtn = document.createElement('button'); frBtn.className = 'rbtn'; frBtn.
 frBtn.innerHTML = drawIcon('club', 24); nbBtn.after(frBtn);
 frBtn.onclick = () => { KS.fx('click'); openFR(); };
 
+/* ───────── 8. 친구 얻기: 시설 복구 합류 · 동아리실 뽑기 ───────── */
+// 시설을 처음 복구하면 그 시설과 어울리는 친구가 합류한다 (tag: 동아리, role: 역할)
+const FAC_FRIEND = {
+  main: {}, lab: { tag: 'chem', role: 'blaster' }, library: { role: 'mage' }, store: { role: 'support' }, cafe: { role: 'healer' },
+  field: { tag: 'sport' }, gym: { tag: 'sport' }, comp: { tag: 'sona', role: 'mage' }, broadcast: { tag: 'zec', role: 'support' },
+  health: { tag: 'medi', role: 'healer' }, farm: { tag: 'squid', role: 'tank' }, greenhouse: { role: 'mage' }, pavilion: { role: 'support' },
+  dorm: { tag: 'zec', role: 'tank' }, pool: { tag: 'sport', role: 'striker' }, hall: { role: 'blaster' },
+};
+const FAC_LINE = { main: '본관에 불이 켜진 걸 보고 왔어!', lab: '과학실 다시 열렸다며? 실험하러 왔어!', library: '도서관 자리 맡으러 왔어.', store: '매점 열었다길래 바로 왔지!', cafe: '급식 냄새 맡고 왔어.',
+  field: '운동장에서 공 찰 사람!', gym: '다목적관 다시 쓸 수 있대서 왔어!', comp: '컴퓨터실 생겼다며? 코딩하러 왔어.', broadcast: '아침 방송은 내가 맡을게!', health: '보건실은 내가 지킬게.',
+  farm: '텃밭 가꾸는 거 도와줄게!', greenhouse: '온실 식물 구경하러 왔어.', pavilion: '정자에서 쉬다 가도 돼?', dorm: '기숙사 방 하나 줘!', pool: '수영장 열었다며? 물놀이 가자!', hall: '강당에서 공연해도 돼?' };
+G.joinFac = G.joinFac || null;
+if (!G.joinFac) { G.joinFac = {}; K.FAC_ORDER.forEach(t => { if (K.lvOfFac(t)) G.joinFac[t] = 1; }); }   // 이미 복구한 시설은 지난 일로 친다
+function pickFor(t) {
+  const want = FAC_FRIEND[t] || {}, pool = ROSTER.filter(f => !G.friends.includes(f.id) && f.id !== 'seojun');
+  const byTag = want.tag ? pool.filter(f => kitOf(f.id).tag === want.tag) : [], byRole = want.role ? pool.filter(f => kitOf(f.id).role === want.role) : [];
+  return byTag.length ? byTag : byRole.length ? byRole : pool;
+}
+let joinT = 0;
+K.HOOK.tick.push(dt => {
+  if ((joinT += dt) < 1) return; joinT = 0;
+  const t = K.FAC_ORDER.find(x => x !== 'club' && K.lvOfFac(x) && !G.joinFac[x]); if (!t) return;
+  G.joinFac[t] = 1; const pool = pickFor(t); if (!pool.length) { K.save(); return; }
+  const f = pool[Math.floor(Math.random() * pool.length)];
+  setTimeout(() => { const got = K.recruit(f.id, t, `${K.FAC[t].name} 복구`); if (!got) return; K.save(); K.hud(); showJoin(got.id, `${K.FAC[t].name} 복구`, FAC_LINE[t]); }, 1400);
+});
+// 새 친구 카드 (뽑기 · 시설 합류 공용)
+const jn = document.createElement('div'); jn.className = 'modal join'; jn.hidden = true; document.body.appendChild(jn);
+function joinCard(id, sub, line) {
+  const f = K.rosterOf(id), k = kitOf(id), r = ROLES[k.role];
+  return `<div class="jc" style="--rc:${r.color}"><small class="jc-sub">${sub}</small><div class="jc-art"><img src="${faceSVG(id)}" alt=""></div>
+    <b>${f.name}</b><span class="jc-role">${roleIcon(k.role, 14)} ${r.name} · ${k.skill}</span><p>“${line || '잘 부탁해!'}”</p></div>`;
+}
+function showJoin(id, sub, line) {
+  if (!jn.hidden) return;
+  jn.innerHTML = `<div class="jbox">${joinCard(id, sub + ' · 새 친구 합류!', line)}<div class="sv-row"><button class="claim alt" data-jfr>친구들 보기</button><button class="claim" data-close>좋아!</button></div></div>`;
+  jn.hidden = false;
+}
+jn.addEventListener('click', e => { if (e.target.closest('[data-jfr]')) { jn.hidden = true; openFR(); return; } if (e.target === jn || e.target.closest('[data-close]')) jn.hidden = true; });
+
+// 뽑기 창 (친구들 창과 같은 모양)
+const ga = document.createElement('div'); ga.className = 'modal'; ga.id = 'ga'; ga.hidden = true; document.body.appendChild(ga);
+let gaLast = null;
+const gaBlock = () => { const left = ROSTER.filter(f => !G.friends.includes(f.id)).length; if (!left) return '모든 친구가 모였어요'; if (G.friends.length >= K.recruitCap()) return `동아리실 Lv.${K.lvOfFac('club') + 1}이 필요해요`; return G.freePull ? '' : canPay(K.recruitCost()) ? '' : '자원이 모자라요'; };
+function openGacha() {
+  const left = ROSTER.filter(f => !G.friends.includes(f.id)), why = gaBlock(), free = G.freePull > 0;
+  const byRole = ROLE_ORDER.map(r => [r, left.filter(f => kitOf(f.id).role === r).length]).filter(x => x[1]);
+  ga.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="친구 뽑기"><div class="sh-top"><b>친구 뽑기</b><span class="nbres">${resText(G.res, 14)}</span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
+    <p class="fr-sum">동아리실 Lv.${K.lvOfFac('club')} · 친구 <b>${G.friends.length}</b> / ${Math.min(K.recruitCap(), ROSTER.length)}명까지<br><small>아직 못 만난 친구 중 한 명이 와요. 시설을 처음 복구해도 어울리는 친구가 와요.</small></p>
+    <div class="ga-stage">${gaLast ? joinCard(gaLast.id, '방금 뽑은 친구', gaLast.line) : `<div class="jc ga-empty"><div class="jc-art"><i>?</i></div><b>누가 올까?</b><span class="jc-role">아래 버튼을 눌러 뽑아요</span></div>`}</div>
+    <button class="claim ga-go" data-pull ${why ? 'disabled' : ''}>${why || (free ? '무료로 뽑기!' : `1번 뽑기 <span>${resText(K.recruitCost(), 13)}</span>`)}</button>
+    <h3 class="ga-h">못 만난 친구 ${left.length}명</h3>
+    <div class="ga-roles">${byRole.map(([r, n]) => `<span style="--rc:${ROLES[r].color}">${roleIcon(r, 13)} ${ROLES[r].name} ${n}</span>`).join('') || '<span>모두 만났어요!</span>'}</div>
+    <div class="dex ga-dex">${left.map(() => '<div class="dx no"><i>?</i><span>???</span></div>').join('')}</div></div>`;
+  ga.hidden = false;
+}
+ga.addEventListener('click', e => {
+  if (e.target === ga || e.target.closest('[data-close]')) { ga.hidden = true; gaLast = null; return; }
+  const b = e.target.closest('[data-pull]'); if (!b || b.disabled || gaBlock()) return;
+  if (G.freePull > 0) G.freePull--; else Object.entries(K.recruitCost()).forEach(([k, n]) => { G.res[k] -= n; });
+  const f = K.recruit(null, 'club', '동아리실 뽑기'); if (!f) return;
+  const pf = typeof PROFILES !== 'undefined' && PROFILES[f.id];
+  gaLast = { id: f.id, line: pf && pf.lines && pf.lines[0] };
+  K.save(); K.hud(); openGacha(); const c = ga.querySelector('.ga-stage .jc'); if (c) c.classList.add('flip');
+});
+const gaBtn = document.createElement('button'); gaBtn.className = 'rbtn'; gaBtn.id = 'b-gacha'; gaBtn.setAttribute('aria-label', '친구 뽑기');
+gaBtn.innerHTML = drawIcon('star', 24) + '<i class="badge" id="ga-n" hidden>!</i>'; frBtn.after(gaBtn);
+gaBtn.onclick = () => { KS.fx('click'); G.gachaSeen = 1; openGacha(); };
+// 동아리실이 생기면 뽑기 버튼이 나타나고 알려 준다
+let gaT = 0;
+function syncGacha() {
+  const on = K.lvOfFac('club') > 0; gaBtn.hidden = !on;
+  const n = $('ga-n'); if (n) n.hidden = !(on && (G.freePull > 0 || !G.gachaSeen));
+  if (on && !G.gachaTold) {
+    if (storyOpen() || !jn.hidden) return; G.gachaTold = 1; K.save();
+    showQ([{ t: '뽑기 버튼이 생겼어요!', p: '동아리실이 다시 열려서 <b>친구 뽑기</b>를 할 수 있어요.<br>오른쪽 <b>별 버튼</b>을 눌러 보세요. 첫 뽑기는 <b>무료</b>예요!', art: 'mile', btn: '뽑으러 가기' }], () => { G.gachaSeen = 1; openGacha(); });
+  }
+}
+K.HOOK.tick.push(dt => { if ((gaT += dt) > .8) { gaT = 0; syncGacha(); } });
+syncGacha();
+if (K.lvOfFac('club') && G.gachaTold == null && G.friends.length > 5) G.gachaTold = 1;   // 이미 동아리실이 있던 친구는 짧게 알려 준다
+if (G.gachaTold === 1 && !G.gachaSeen && K.lvOfFac('club')) setTimeout(() => K.toast('동아리실 친구 모집이 별 버튼(뽑기)으로 바뀌었어요!'), 2500);
+
 K.save();
-Object.assign(K, { openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });
+Object.assign(K, { openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });

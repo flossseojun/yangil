@@ -239,6 +239,23 @@
   .fr-c .claim { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 76px; } .fr-c .claim small { display: flex; gap: 3px; font-size: 11px; }
   .fr-det { flex-basis: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 13px; border-top: 2px dashed #d9cfb8; padding-top: 6px; }
   .fr-det div:nth-child(n+3) { grid-column: span 2; display: flex; align-items: center; gap: 4px; } .fr-det b { font-family: Jua, sans-serif; font-weight: 400; margin-right: 4px; } .fr-det em { font-style: normal; color: #2f8f4e; font-weight: 700; }
+  .ga-stage { display: grid; place-items: center; margin: 4px 0 10px; perspective: 600px; }
+  .jc { width: min(240px, 100%); text-align: center; background: #fff; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 5px 0 var(--ink); padding: 10px 12px 12px; border-top: 10px solid var(--rc, var(--yellow)); }
+  .jc.flip { animation: jflip .6s cubic-bezier(.22,1,.36,1); } @keyframes jflip { from { transform: rotateY(90deg) scale(.8); opacity: .3; } }
+  .jc-sub { display: block; font-family: Jua, sans-serif; font-size: 13px; color: #c0392b; }
+  .jc-art { width: 110px; height: 110px; margin: 6px auto; background: #cfe3ff; border: 2.5px solid var(--ink); border-radius: 14px; display: grid; place-items: center; overflow: hidden; }
+  .jc-art img { width: 104px; height: 104px; } .jc-art i { font-style: normal; font-family: Jua, sans-serif; font-size: 52px; color: #8a7a64; }
+  .ga-empty .jc-art { background: #e6dcc6; }
+  .jc > b { display: block; font-family: Jua, sans-serif; font-weight: 400; font-size: 22px; }
+  .jc-role { display: flex; justify-content: center; align-items: center; gap: 4px; font-size: 13px; color: var(--sub); }
+  .jc p { margin: 6px 0 0; font-size: 13px; line-height: 1.5; }
+  .ga-go { display: flex; width: 100%; justify-content: center; align-items: center; gap: 8px; font-size: 18px; padding: 11px; } .ga-go span { display: flex; gap: 5px; font-size: 14px; }
+  .ga-h { font-family: Jua, sans-serif; font-weight: 400; font-size: 17px; margin: 14px 0 6px; }
+  .ga-roles { display: flex; flex-wrap: wrap; gap: 6px; } .ga-roles span { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; background: #fff; border: 2px solid var(--ink); border-left: 6px solid var(--rc); border-radius: 8px; padding: 2px 7px; }
+  .ga-dex .dx.no { padding: 2px; } .ga-dex .dx.no i { width: 36px; height: 36px; font-size: 18px; }
+  .ga-dex { grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); }
+  .modal.join { z-index: 45; } .jbox { display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(300px, 100%); animation: pageIn .3s ease; } .jbox .jc { width: 100%; } .jbox .sv-row { width: 100%; }
+  #b-gacha { position: relative; background: #fff3c4; } #b-gacha[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -268,20 +285,20 @@
 <a class="osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">지도 © OpenStreetMap</a>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
 
-<script src="../avatar.js?v=1795186325"></script>
-<script src="../avatar2.js?v=1795186325"></script>
-<script src="../avatar3.js?v=1795186325"></script>
-<script src="../scene.js?v=1795186325"></script>
-<script src="../fullbody.js?v=1795186325"></script>
-<script src="roster.js?v=1795186325"></script>
-<script src="yangpyeong.js?v=1795186325"></script>
-<script src="kits.js?v=1795186325"></script>
-<script src="profiles.js?v=1795186325"></script>
-<script src="ui.js?v=1795186325"></script>
-<script src="audio.js?v=1795186325"></script>
+<script src="../avatar.js?v=1795186580"></script>
+<script src="../avatar2.js?v=1795186580"></script>
+<script src="../avatar3.js?v=1795186580"></script>
+<script src="../scene.js?v=1795186580"></script>
+<script src="../fullbody.js?v=1795186580"></script>
+<script src="roster.js?v=1795186580"></script>
+<script src="yangpyeong.js?v=1795186580"></script>
+<script src="kits.js?v=1795186580"></script>
+<script src="profiles.js?v=1795186580"></script>
+<script src="ui.js?v=1795186580"></script>
+<script src="audio.js?v=1795186580"></script>
 <script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
-<script type="module" src="kingdom.js?v=1795186325"></script>
-<script type="module" src="notebook.js?v=1795186325"></script>
+<script type="module" src="kingdom.js?v=1795186580"></script>
+<script type="module" src="notebook.js?v=1795186580"></script>
 </body>
 </html>

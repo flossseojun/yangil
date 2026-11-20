@@ -690,10 +690,10 @@ function showFac(t) {
   el.innerHTML = `<span class="bi">${drawIcon(t === 'field' ? 'gym' : t === 'cafe' ? 'snack' : t === 'main' ? 'school' : t, 32)}</span>
     <span class="txt"><b>${d.name} <span class="stars">${stars}</span></b><small>${lv ? d.desc : '폐교 뒤 무너진 채 남아 있어요. 복구하면 · ' + d.desc}</small><small>${lines.join('<br>')}</small></span>
     <span class="acts">${lv >= MAX_LV ? '<span class="max">최고 레벨</span>' : `<button id="i-up" class="up" ${up.ok ? '' : 'disabled'}>${lv ? `Lv.${next}로` : '복구하기'}<small>${up.ok || up.why === '자원 부족' ? resText(cost, 12) : up.why}</small></button>`}
-    ${d.recruit && lv ? `<button id="i-rec" class="up rec" ${canPay(recruitCost()) && G.friends.length < Math.min(recruitCap(), ROSTER.length) ? '' : 'disabled'}>친구 모집<small>${G.friends.length >= recruitCap() ? '레벨업 필요' : resText(recruitCost(), 12)}</small></button>` : ''}</span>`;
+    ${d.recruit && lv ? `<button id="i-rec" class="up rec">친구 뽑기<small>${G.friends.length >= recruitCap() ? '레벨업 필요' : '뽑기 열기'}</small></button>` : ''}</span>`;
   el.classList.add('show');
   const ub = $('i-up'); if (ub) ub.onclick = () => doUpgrade(t);
-  const rb = $('i-rec'); if (rb) rb.onclick = () => { const c = recruitCost(); if (!canPay(c)) return; Object.entries(c).forEach(([k, n]) => { G.res[k] -= n; }); recruit(); save(); hud(); showFac(t); };
+  const rb = $('i-rec'); if (rb) rb.onclick = () => { hideInfo(); window.__kingdom.openGacha && window.__kingdom.openGacha(); };
 }
 function doUpgrade(t) {
   const up = upgradeBlock(t); if (!up.ok) { toast(up.why); return; }
@@ -703,7 +703,7 @@ function doUpgrade(t) {
   animated.splice(0, animated.length, ...animated.filter(a => a.g !== old && (!a.obj || !isChild(a.obj, old))));
   const m = addFac(t); pop(m); KS.fx(G.fac[t] === 1 ? 'build' : 'levelup');
   floatText(G.fac[t] === 1 ? `${FAC[t].name} 복구!` : `${FAC[t].name} Lv.${G.fac[t]}!`, m.position.clone().add(new THREE.Vector3(0, (m.userData.h || 2) + .8, 0)));
-  if (t === 'club' && G.fac[t] === 1) setTimeout(recruit, 700);
+  if (t === 'club' && G.fac[t] === 1) G.freePull = (G.freePull || 0) + 1;   // 첫 뽑기는 무료 (notebook.js가 알려 준다)
   if (G.fac[t] === 1) firstRestore(t);
   refreshDecay(); save(); hud(); showFac(t); checkMilestone();
 }
@@ -746,13 +746,15 @@ function unlockZone(k) {
   }
 }
 
-function recruit() {
+// 친구 합류: pick이 없으면 아직 없는 친구 중 무작위, at은 나타날 시설
+function recruit(pick, at = 'club', why = '동아리실 뽑기') {
   setTimeout(() => KS.fx('fanfare'), 300);
   const pool = ROSTER.filter(f => !G.friends.includes(f.id));
-  if (!pool.length) { toast('모든 친구가 캠퍼스에 모였어요!'); return; }
-  const f = pool[Math.floor(Math.random() * pool.length)]; G.friends.push(f.id); bump('recruit'); const p = addPerson(f.id);
-  p.spr.position.set(FAC.club.at[0] + 2, 0, FAC.club.at[1] + 4.3);
-  toast(`동아리실 모집 · ${f.name} 합류`); setTimeout(() => say(p), 600);
+  if (!pool.length) { toast('모든 친구가 캠퍼스에 모였어요!'); return null; }
+  const f = (pick && pool.find(x => x.id === pick)) || pool[Math.floor(Math.random() * pool.length)]; G.friends.push(f.id); bump('recruit'); const p = addPerson(f.id);
+  const F = FAC[at] || FAC.club; p.spr.position.set(F.at[0] + F.size[0] / 2, 0, F.at[1] + F.size[1] + .6);
+  toast(`${why} · ${f.name} 합류`); setTimeout(() => say(p), 600);
+  return f;
 }
 
 /* ───────── 친구 의뢰 게시판 ───────── */
@@ -907,4 +909,4 @@ if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
