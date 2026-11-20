@@ -126,6 +126,32 @@
   .req .rw { display: flex; gap: 8px; margin-top: 4px; font-family: Jua, sans-serif; font-size: 13px; }
   .claim { flex: 0 0 auto; background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 8px 10px; font-family: Jua, sans-serif; font-size: 15px; cursor: pointer; color: var(--ink); }
   .claim:disabled { background: #e6dcc6; color: #7a6d5c; box-shadow: none; border-color: #b8ab92; cursor: default; }
+  /* ── 재건 이야기 ── */
+  .title .rbar2 { display: block; height: 8px; margin: 3px 0 2px; border-radius: 4px; background: rgba(255,255,255,.25); border: 1.5px solid rgba(0,0,0,.35); overflow: hidden; }
+  .title .rbar2 i { display: block; height: 100%; background: var(--yellow); }
+  .story { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px; background: rgba(20,16,12,.72); }
+  .story[hidden] { display: none; }
+  .story .page { width: min(440px, 100%); text-align: center; background: var(--paper) repeating-linear-gradient(transparent 0 23px, rgba(91,141,239,.18) 23px 24px); background-color: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 6px 0 var(--ink); padding: 18px 20px 16px; animation: pageIn .35s cubic-bezier(.22,1,.36,1); }
+  @keyframes pageIn { from { transform: translateY(14px) rotate(-1deg); opacity: 0; } }
+  .story h2 { font-family: Jua, sans-serif; font-weight: 400; font-size: 26px; margin: 10px 0 6px; }
+  .story p { font-size: 15px; line-height: 1.7; margin: 0 0 10px; }
+  .story p b { font-family: Jua, sans-serif; font-weight: 400; color: #c0392b; }
+  .story .art { height: 110px; display: grid; place-items: center; border: 2.5px solid var(--ink); border-radius: 12px; position: relative; overflow: hidden; }
+  .story .art.ruin { background: linear-gradient(#8a8f9a, #b8b0a0); filter: saturate(.6); }
+  .story .art.ruin .ico { transform: rotate(-8deg); opacity: .8; }
+  .story .art.ruin i { position: absolute; bottom: 8px; width: 10px; height: 26px; background: #5f9a3e; border-radius: 6px 6px 0 0; }
+  .story .art.ruin i:nth-of-type(1) { left: 20%; } .story .art.ruin i:nth-of-type(2) { left: 70%; height: 18px; } .story .art.ruin i:nth-of-type(3) { left: 82%; }
+  .story .art.boss { background: #2a1d4a; } .story .art.boss span { animation: wob 1s ease-in-out infinite alternate; }
+  @keyframes wob { to { transform: rotate(8deg) scale(1.08); } }
+  .story .art.team { background: #cfe3ff; display: flex; justify-content: center; align-items: flex-end; gap: 2px; }
+  .story .art.team img { width: 76px; height: 76px; margin-bottom: -4px; }
+  .story .art.go { background: linear-gradient(#bfe3f5, #8bcb69); }
+  .story .rw { display: flex; justify-content: center; gap: 10px; font-family: Jua, sans-serif; font-size: 18px; margin-bottom: 10px; }
+  .story .dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 10px; }
+  .story .dots i { width: 8px; height: 8px; border-radius: 50%; background: #d9cfb8; } .story .dots i.on { background: var(--ink); }
+  .story .next { background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 0 4px 0 var(--ink); padding: 10px 28px; font-family: Jua, sans-serif; font-size: 18px; color: var(--ink); cursor: pointer; }
+  .story .next:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  @media (prefers-reduced-motion: reduce) { .story .page, .story .art.boss span { animation: none; } }
 </style>
 </head>
 <body>
@@ -148,6 +174,7 @@
 <div class="place" id="place"><button class="pbtn rot" id="p-rot">돌리기</button><button class="pbtn no" id="p-no">취소</button><button class="pbtn ok" id="p-ok">여기에 놓기</button></div>
 <div class="info" id="info"></div>
 <div class="modal" id="reqs" hidden></div>
+<div class="story" id="story" hidden></div>
 <div class="bar"><div class="cards" id="cards"></div></div>
 <div class="toast" id="toast"></div>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>

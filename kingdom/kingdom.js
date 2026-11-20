@@ -47,7 +47,7 @@ const LINES = ['오늘 캠퍼스 분위기 좋다!', '매점 가자!', '은행�
 let G;
 function fresh() {
   const others = ROSTER.filter(f => f.id !== 'seojun').sort(() => Math.random() - .5);
-  return { res: { know: 40, snack: 20, power: 5 }, fac: { main: 1, store: 1, field: 1 }, facAt: {}, b: [], friends: ['seojun', ...others.slice(0, 4).map(f => f.id)], stat: {}, req: [] };
+  return { res: { know: 40, snack: 20, power: 5 }, fac: {}, facAt: {}, b: [], friends: ['seojun', ...others.slice(0, 4).map(f => f.id)], stat: {}, req: [], story: {} };
 }
 function migrate(g) {
   if (g.fac) return g;
@@ -60,9 +60,10 @@ function migrate(g) {
 }
 function load() { try { const g = JSON.parse(localStorage.getItem(SAVE)); if (g && g.res) return migrate(g); } catch (e) {} return fresh(); }
 function save() { try { localStorage.setItem(SAVE, JSON.stringify(G)); } catch (e) {} }
-G = load(); G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
+G = load(); G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
 const lvOfFac = t => G.fac[t] || 0;
 const campusLv = () => FAC_ORDER.reduce((a, t) => a + lvOfFac(t), 0);
+const restore = () => campusLv() / (FAC_ORDER.length * MAX_LV);   // 재건 정도 0~1
 const bump = (k, n = 1) => { G.stat[k] = (G.stat[k] || 0) + n; };
 
 /* ───────── 장면 ───────── */
@@ -152,10 +153,6 @@ const fixed = new THREE.Group(); scene.add(fixed);
   [[N / 2, .1, N, .25], [.1, N / 2, .25, N], [N - .1, N / 2, .25, N], [5.3, N - .1, 10.6, .25], [18.7, N - .1, 10.6, .25]].forEach(([x, z, w, d]) => { fixed.add(mesh(new THREE.BoxGeometry(w, .5, d), fence, x, .25, z, .04)); });
   [[5.3, N - .55, 10, .55], [18.7, N - .55, 10, .55]].forEach(([x, z, w, d]) => fixed.add(mesh(new THREE.BoxGeometry(w, .55, d), hedge, x, .28, z)));
   [[10.4], [13.6]].forEach(([x]) => fixed.add(mesh(new THREE.BoxGeometry(.5, 1.6, .5), toon('#d9d2c2'), x, .8, N - .2, .04)));
-  const signT = canvasTex(320, 44, (g, w, h) => { g.fillStyle = '#2b4a3c'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffd23f'; g.font = '30px Jua, sans-serif'; g.textAlign = 'center'; g.fillText('양일고등학교', w / 2, 33); });
-  fixed.add(mesh(new THREE.BoxGeometry(3.6, .55, .14), [toon('#2b4a3c'), toon('#2b4a3c'), toon('#2b4a3c'), toon('#2b4a3c'), new THREE.MeshToonMaterial({ map: signT, gradientMap: gradMap() }), new THREE.MeshToonMaterial({ map: signT, gradientMap: gradMap() })], 12, 1.7, N - .2, .03));
-  // 은행나무길 가로수
-  for (let z = 8; z < N - 1; z += 2) [10.5, 13.5].forEach(x => fixed.add(ginkgoTree(x, z, .95 + ((z * 7 + x) % 3) * .08)));
   // 국기 게양대 · 자전거 거치대 · 본관 앞 화단 · 표지석
   [7.5, 8.5, 15.5, 16.5].forEach(x => fixed.add(mesh(new THREE.CylinderGeometry(.03, .04, 3.2, 6), toon('#c9ccd2'), x, 1.6, 7.5)));
   fixed.add(mesh(new THREE.BoxGeometry(.6, .4, .3), toon('#9aa2aa'), 14.5, .2, N - 2.2, .05));
@@ -169,6 +166,29 @@ const fixed = new THREE.Group(); scene.add(fixed);
 const flags = [];
 [[7.5, '#ffffff'], [8.5, '#2b4a3c'], [15.5, '#ffd23f'], [16.5, '#5b8def']].forEach(([x, c]) => { const f = new THREE.Mesh(new THREE.PlaneGeometry(.7, .45, 6, 1), toon(c, { side: THREE.DoubleSide })); f.geometry.translate(.35, 0, 0); f.position.set(x, 2.95, 7.5); scene.add(f); flags.push(f); });
 
+/* ───────── 재건에 따라 바뀌는 것: 정문 간판 · 은행나무길 · 잡초 ───────── */
+const decay = new THREE.Group(); scene.add(decay);
+const treesAlive = () => (G.stage || 1) >= 2 || lvOfFac('main') >= 3;   // 은행왕(1-1)을 물리치면 은행나무길이 살아난다
+function bareTree(x, z, s = 1) {
+  const g = new THREE.Group(), br = toon('#6a4a30');
+  g.add(mesh(new THREE.CylinderGeometry(.08 * s, .14 * s, 1.1 * s, 5), br, 0, .55 * s, 0, .06));
+  [[.5, .3], [-.6, -.2], [.1, 1.2]].forEach(([a, b], i) => { const m = mesh(new THREE.CylinderGeometry(.025, .05, .7 * s, 4), br, Math.sin(b) * .2, (1 + i * .12) * s, Math.cos(b) * .2, .1); m.rotation.set(a * .8, b, a); g.add(m); });
+  g.position.set(x, 0, z); return g;
+}
+let decayKey = '';
+function refreshDecay(force) {
+  const alive = treesAlive(), signOk = lvOfFac('main') >= 1, weeds = Math.round(80 * (1 - restore()) * (1 - restore())), key = [alive, signOk, weeds].join();
+  if (key === decayKey && !force) return; decayKey = key;
+  decay.clear();
+  for (let z = 8; z < N - 1; z += 2) [10.5, 13.5].forEach(x => decay.add(alive ? ginkgoTree(x, z, .95 + ((z * 7 + x) % 3) * .08) : bareTree(x, z, .95)));
+  const signT = canvasTex(320, 44, (g, w, h) => { g.fillStyle = signOk ? '#2b4a3c' : '#5a5a52'; g.fillRect(0, 0, w, h); g.fillStyle = signOk ? '#ffd23f' : '#b8b0a0'; g.font = '30px Jua, sans-serif'; g.textAlign = 'center'; g.fillText('양일고등학교', w / 2, 33); if (!signOk) { g.strokeStyle = '#2a2420'; g.lineWidth = 3; g.beginPath(); g.moveTo(90, 0); g.lineTo(120, 22); g.lineTo(100, 44); g.moveTo(230, 0); g.lineTo(210, 30); g.stroke(); } });
+  const sm = new THREE.MeshToonMaterial({ map: signT, gradientMap: gradMap() }), side = toon(signOk ? '#2b4a3c' : '#5a5a52');
+  const sign = mesh(new THREE.BoxGeometry(3.6, .55, .14), [side, side, side, side, sm, sm], 12, signOk ? 1.7 : 1.5, N - .2, .03); if (!signOk) sign.rotation.z = -.12; decay.add(sign);
+  let sd = 7; const R = () => (sd = (sd * 9301 + 49297) % 233280) / 233280, wm = toon('#5f9a3e'), wm2 = toon('#7ab04a');
+  for (let i = 0, n = 0; n < weeds && i < 600; i++) { const x = 1 + R() * (N - 2), z = 1 + R() * (N - 2), c = Math.floor(x) + ',' + Math.floor(z); if (FAC_CELLS.has(c) || isPath(Math.floor(x), Math.floor(z))) continue; n++; const tuft = new THREE.Group(); for (let k = 0; k < 3; k++) { const b = mesh(new THREE.ConeGeometry(.06, .25 + R() * .2, 4), k % 2 ? wm : wm2, (R() - .5) * .2, .12, (R() - .5) * .2); b.rotation.z = (R() - .5) * .6; tuft.add(b); } tuft.position.set(x, 0, z); decay.add(tuft); }
+  bake(decay);
+  if (typeof leafPts !== 'undefined') leafPts.visible = alive;
+}
 function ginkgoTree(x, z, s = 1) {
   const g = new THREE.Group(), leafM = toon('#f2c12e'), leafM2 = toon('#e8a91c');
   g.add(mesh(new THREE.CylinderGeometry(.1 * s, .15 * s, .8 * s, 6), toon('#7a5233'), 0, .4 * s, 0));
@@ -208,19 +228,34 @@ function building(d, lv, floors, door = true) {
   g.userData.h = .25 + h + (d.arch ? D * .3 : .22); return g;
 }
 function shadeHex(hex, k) { const c = new THREE.Color(hex); c.offsetHSL(0, 0, k); return '#' + c.getHexString(); }
+// 폐허: 무너진 벽 · 깨진 창 · 잔해 · 잡초 (시설마다 모양이 조금씩 다르게)
 function construction(d) {
-  const [sx, sz] = d.size, g = new THREE.Group();
-  g.add(mesh(new THREE.BoxGeometry(sx - .3, .06, sz - .3), toon('#c9a36a'), 0, .03, 0));
-  const post = toon('#e8e2d4'), tape = toon('#ffd23f');
-  const px = (sx - .5) / 2, pz = (sz - .5) / 2;
-  [[-px, -pz], [px, -pz], [-px, pz], [px, pz]].forEach(([x, z]) => g.add(mesh(new THREE.CylinderGeometry(.05, .05, .6, 6), post, x, .3, z, .1)));
-  [[0, -pz, sx - .5, .04], [0, pz, sx - .5, .04], [-px, 0, .04, sz - .5], [px, 0, .04, sz - .5]].forEach(([x, z, w, dd]) => g.add(mesh(new THREE.BoxGeometry(w, .1, dd), tape, x, .45, z)));
-  [[-px * .5, pz * .3], [px * .4, -pz * .4]].forEach(([x, z]) => { g.add(mesh(new THREE.ConeGeometry(.16, .4, 8), toon('#ff8a3c'), x, .2, z, .08)); g.add(mesh(new THREE.CylinderGeometry(.13, .13, .06, 8), toon('#ffffff'), x, .2, z)); });
-  g.add(mesh(new THREE.BoxGeometry(.5, .3, .4), toon('#a5774b'), px * .2, .15, -pz * .2, .05));
-  const sT = canvasTex(256, 96, (c, w, h) => { c.fillStyle = '#fffaf0'; c.fillRect(0, 0, w, h); c.strokeStyle = INK; c.lineWidth = 6; c.strokeRect(3, 3, w - 6, h - 6); c.fillStyle = INK; c.font = '30px Jua, sans-serif'; c.textAlign = 'center'; c.fillText(d.name, w / 2, 42); c.fillStyle = '#e5484d'; c.font = '24px Jua, sans-serif'; c.fillText('공사 예정 · 눌러서 짓기', w / 2, 78); });
-  const board = mesh(new THREE.BoxGeometry(1.8, .7, .06), [toon('#fffaf0'), toon('#fffaf0'), toon('#fffaf0'), toon('#fffaf0'), new THREE.MeshToonMaterial({ map: sT, gradientMap: gradMap() }), toon('#fffaf0')], 0, .9, pz - .1, .03); g.add(board);
-  [-.7, .7].forEach(x => g.add(mesh(new THREE.BoxGeometry(.06, .7, .06), toon('#8a6440'), x, .35, pz - .12)));
-  g.userData.h = 1.4; return g;
+  const [sx, sz] = d.size, g = new THREE.Group(); let seed = 0; for (const ch of d.name) seed = (seed * 31 + ch.charCodeAt(0)) % 9973; const R = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const W = sx - .5, D = sz - .6, wallM = toon('#' + new THREE.Color(d.wall || '#e8e0d0').lerp(new THREE.Color('#9a948a'), .6).getHexString()), dark = toon('#3a3530'), stoneM = toon('#9a9286'), weedM = toon('#5f9a3e'), weedM2 = toon('#7ab04a');
+  if (d.ground) {
+    g.add(mesh(new THREE.BoxGeometry(sx - .2, .05, sz - .2), toon('#b89a72'), 0, .03, 0));
+    for (let i = 0; i < 40; i++) { const x = (R() - .5) * (sx - 1), z = (R() - .5) * (sz - 1); g.add(mesh(new THREE.ConeGeometry(.08 + R() * .08, .25 + R() * .3, 4), R() < .5 ? weedM : weedM2, x, .15, z)); }
+    const goal = new THREE.Group(), gm = toon('#c9ccd2'); [-.7, .7].forEach(x => goal.add(mesh(new THREE.CylinderGeometry(.04, .04, .7, 6), gm, x, .35, 0))); const bar = mesh(new THREE.CylinderGeometry(.04, .04, 1.4, 6), gm, 0, .7, 0); bar.rotation.z = Math.PI / 2; goal.add(bar);
+    goal.position.set(0, 0, -(sz / 2 - 1.6)); goal.rotation.x = -1.2; g.add(goal);
+    for (let i = 0; i < 5; i++) g.add(mesh(new THREE.IcosahedronGeometry(.15 + R() * .15, 0), stoneM, (R() - .5) * (sx - 2), .1, (R() - .5) * (sz - 2), .08));
+  } else {
+    g.add(mesh(new THREE.BoxGeometry(W + .2, .12, D + .2), stoneM, 0, .06, 0, .03));
+    // 뒷벽 · 옆벽: 들쭉날쭉 무너진 조각
+    const seg = Math.max(3, Math.round(W / .8)), sw = W / seg;
+    for (let i = 0; i < seg; i++) { const h = .3 + R() * (R() < .3 ? .4 : 1.6); g.add(mesh(new THREE.BoxGeometry(sw * .96, h, .22), wallM, -W / 2 + sw / 2 + i * sw, .12 + h / 2, -D / 2 + .11, .03)); if (h > 1 && R() < .6) { g.add(mesh(new THREE.BoxGeometry(sw * .5, .35, .02), dark, -W / 2 + sw / 2 + i * sw, .12 + h * .6, -D / 2 + .23)); } }
+    const sseg = Math.max(2, Math.round(D / .8)), ss = D / sseg;
+    for (let i = 0; i < sseg; i++) { const h = .2 + R() * 1.1; g.add(mesh(new THREE.BoxGeometry(.22, h, ss * .96), wallM, -W / 2 + .11, .12 + h / 2, -D / 2 + ss / 2 + i * ss, .03)); }
+    // 판자로 막은 창 · 쓰러진 기둥
+    const px = -W / 2 + sw * 1.5; [-.5, .5].forEach(a => { const pl = mesh(new THREE.BoxGeometry(.9, .1, .03), toon('#a57a4a'), px, .9, -D / 2 + .25); pl.rotation.z = a; g.add(pl); });
+    const beam = mesh(new THREE.BoxGeometry(Math.min(W * .7, 3), .2, .2), wallM, W * .1, .35, D * .1, .04); beam.rotation.set(.1, .5, .25); g.add(beam);
+    for (let i = 0; i < 10; i++) g.add(mesh(new THREE.IcosahedronGeometry(.12 + R() * .2, 0), R() < .5 ? stoneM : wallM, (R() - .3) * W * .8, .15, (R() - .3) * D * .8, .06));
+    for (let i = 0; i < 9; i++) g.add(mesh(new THREE.ConeGeometry(.08 + R() * .06, .3 + R() * .3, 4), R() < .5 ? weedM : weedM2, (R() - .5) * W, .25, (R() - .5) * D));
+  }
+  const pz = d.ground ? (sz / 2 - .6) : D / 2 - .1;
+  const sT = canvasTex(256, 96, (c, w, h) => { c.fillStyle = '#e8dcc0'; c.fillRect(0, 0, w, h); c.strokeStyle = INK; c.lineWidth = 6; c.strokeRect(3, 3, w - 6, h - 6); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 2; c.beginPath(); c.moveTo(20, 10); c.lineTo(60, 50); c.lineTo(40, 86); c.stroke(); c.fillStyle = INK; c.font = '28px Jua, sans-serif'; c.textAlign = 'center'; c.fillText('무너진 ' + d.name, w / 2, 42); c.fillStyle = '#e5484d'; c.font = '24px Jua, sans-serif'; c.fillText('눌러서 복구하기', w / 2, 78); });
+  const board = mesh(new THREE.BoxGeometry(1.8, .7, .06), [toon('#e8dcc0'), toon('#e8dcc0'), toon('#e8dcc0'), toon('#e8dcc0'), new THREE.MeshToonMaterial({ map: sT, gradientMap: gradMap() }), toon('#e8dcc0')], 0, .9, pz, .03); board.rotation.z = .06; g.add(board);
+  [-.7, .7].forEach(x => g.add(mesh(new THREE.BoxGeometry(.06, .7, .06), toon('#8a6440'), x, .35, pz - .02)));
+  g.userData.h = 1.6; return g;
 }
 function extrasFor(t, d, lv, g) {
   const [sx, sz] = d.size, W = sx - .5, D = sz - .6, H = g.userData.h, add = (geo, c, x, y, z, line = .05) => { const m = mesh(geo, toon(c), x, y, z, line); g.add(m); return m; };
@@ -345,7 +380,8 @@ const leafTex = canvasTex(32, 32, g => { g.fillStyle = '#ffcf3a'; g.beginPath();
 const LN = 70, leafGeo = new THREE.BufferGeometry(), LP = new Float32Array(LN * 3);
 for (let i = 0; i < LN; i++) { LP[i * 3] = 9 + Math.random() * 6; LP[i * 3 + 1] = Math.random() * 3; LP[i * 3 + 2] = 7 + Math.random() * 17; }
 leafGeo.setAttribute('position', new THREE.BufferAttribute(LP, 3));
-scene.add(new THREE.Points(leafGeo, new THREE.PointsMaterial({ map: leafTex, size: .3, transparent: true, depthWrite: false })));
+const leafPts = new THREE.Points(leafGeo, new THREE.PointsMaterial({ map: leafTex, size: .3, transparent: true, depthWrite: false })); scene.add(leafPts);
+refreshDecay(true);
 function stepLeaves(dt, t) { for (let i = 0; i < LN; i++) { let y = LP[i * 3 + 1] - dt * (.35 + (i % 5) * .05); LP[i * 3] += Math.sin(t + i) * dt * .3; if (y < .05) { y = 2.2 + Math.random(); LP[i * 3] = 9.5 + Math.random() * 5; LP[i * 3 + 2] = 7 + Math.random() * 17; } LP[i * 3 + 1] = y; } leafGeo.attributes.position.needsUpdate = true; }
 function stepSky() {}
 
@@ -442,7 +478,8 @@ const canPay = cost => Object.entries(cost || {}).every(([k, n]) => (G.res[k] ||
 const costText = cost => Object.entries(cost || {}).filter(([, n]) => n).map(([k, n]) => `${RES_NAME[k]} ${n}`).join(' · ');
 function hud() {
   ['know', 'snack', 'power'].forEach(k => { $('r-' + k).textContent = G.res[k] || 0; });
-  $('lv').innerHTML = `양일 캠퍼스<small>Lv.${campusLv()} · 친구 ${G.friends.length}명</small>`;
+  const pct = Math.round(restore() * 100);
+  $('lv').innerHTML = `양일고 재건 ${pct}%<span class="rbar2"><i style="width:${pct}%"></i></span><small>캠퍼스 Lv.${campusLv()} · 친구 ${G.friends.length}명</small>`;
   document.querySelectorAll('.bcard').forEach(c => c.classList.toggle('off', !canPay(DECO[c.dataset.t].cost)));
   refreshReqBadge();
 }
@@ -493,11 +530,11 @@ function showFac(t) {
   const lines = [];
   if (p && lv) { const left = Math.max(0, Math.ceil((p[2] * 1000 - (Date.now() - (G.facAt[t] || Date.now()))) / 1000)); lines.push(`${RES_NAME[p[0]]} ${p[1]}개 / ${p[2]}초${left ? ` · ${left}초 뒤` : ' · 모을 수 있어요'}`); }
   if (d.prod && lv < MAX_LV) lines.push(`다음 레벨: ${RES_NAME[d.prod[0]]} ${d.prod[1] * next}개`);
-  if (bonus) lines.push(`전투 보너스 · ${bonus.text.replace(/\+(\d+)%/, (m, x) => '+' + Math.round(x * .6 * Math.max(1, lv)) + '%')}${lv ? '' : ' (지으면)'}`);
+  if (bonus) lines.push(`전투 보너스 · ${bonus.text.replace(/\+(\d+)%/, (m, x) => '+' + Math.round(x * .6 * Math.max(1, lv)) + '%')}${lv ? '' : ' (복구하면)'}`);
   if (d.recruit) lines.push(`친구 ${G.friends.length} / ${recruitCap()}명까지 모을 수 있어요`);
   el.innerHTML = `<span class="bi">${drawIcon(t === 'field' ? 'gym' : t === 'cafe' ? 'snack' : t === 'main' ? 'school' : t, 32)}</span>
-    <span class="txt"><b>${d.name} <span class="stars">${stars}</span></b><small>${d.desc}</small><small>${lines.join('<br>')}</small></span>
-    <span class="acts">${lv >= MAX_LV ? '<span class="max">최고 레벨</span>' : `<button id="i-up" class="up" ${up.ok ? '' : 'disabled'}>${lv ? `Lv.${next}로` : '짓기'}<small>${up.ok || up.why === '자원 부족' ? resText(cost, 12) : up.why}</small></button>`}
+    <span class="txt"><b>${d.name} <span class="stars">${stars}</span></b><small>${lv ? d.desc : '폐교 뒤 무너진 채 남아 있어요. 복구하면 · ' + d.desc}</small><small>${lines.join('<br>')}</small></span>
+    <span class="acts">${lv >= MAX_LV ? '<span class="max">최고 레벨</span>' : `<button id="i-up" class="up" ${up.ok ? '' : 'disabled'}>${lv ? `Lv.${next}로` : '복구하기'}<small>${up.ok || up.why === '자원 부족' ? resText(cost, 12) : up.why}</small></button>`}
     ${d.recruit && lv ? `<button id="i-rec" class="up rec" ${canPay(recruitCost()) && G.friends.length < Math.min(recruitCap(), ROSTER.length) ? '' : 'disabled'}>친구 모집<small>${G.friends.length >= recruitCap() ? '레벨업 필요' : resText(recruitCost(), 12)}</small></button>` : ''}</span>`;
   el.classList.add('show');
   const ub = $('i-up'); if (ub) ub.onclick = () => doUpgrade(t);
@@ -510,9 +547,10 @@ function doUpgrade(t) {
   const old = meshes.get(t); world.remove(old); const s = bubbles.get(t); if (s) { world.remove(s); bubbles.delete(t); }
   animated.splice(0, animated.length, ...animated.filter(a => a.g !== old && (!a.obj || !isChild(a.obj, old))));
   const m = addFac(t); pop(m); KS.fx(G.fac[t] === 1 ? 'build' : 'levelup');
-  floatText(G.fac[t] === 1 ? `${FAC[t].name} 완공!` : `${FAC[t].name} Lv.${G.fac[t]}!`, m.position.clone().add(new THREE.Vector3(0, (m.userData.h || 2) + .8, 0)));
+  floatText(G.fac[t] === 1 ? `${FAC[t].name} 복구!` : `${FAC[t].name} Lv.${G.fac[t]}!`, m.position.clone().add(new THREE.Vector3(0, (m.userData.h || 2) + .8, 0)));
   if (t === 'club' && G.fac[t] === 1) setTimeout(recruit, 700);
-  save(); hud(); showFac(t);
+  if (G.fac[t] === 1) firstRestore(t);
+  refreshDecay(); save(); hud(); showFac(t); checkMilestone();
 }
 function showDeco(b) {
   const d = DECO[b.t], el = $('info');
@@ -625,6 +663,55 @@ function loop() {
 hud(); loop();
 setInterval(() => { save(); refreshReqBadge(); }, 5000);
 $('loading').remove();
-if (!localStorage.getItem('yangil.kingdom.tut2')) { try { localStorage.setItem('yangil.kingdom.tut2', '1'); } catch (e) {} setTimeout(() => toast('새 양일 캠퍼스! 건물을 눌러 짓고 레벨업해 보세요'), 700); }
+/* ───────── 이야기: 망한 양일고를 다시 세운다 ───────── */
+const BOSS_LIST = ['은행나무길의 <b>은행왕</b>', '다목적관의 <b>LED 스크린</b>', '밤의 교실의 <b>야자의 유령</b>', '그리고 본관 옥상의… <b>?</b>'];
+function storyPages() {
+  const team = G.friends.slice(0, 5);
+  return [
+    { t: '그 후, 양일고는…', p: '학생들이 하나둘 떠나고, 결국 양일고는 문을 닫았다.<br>운동장엔 잡초가 자라고, 본관 유리창은 깨졌다.', art: 'ruin' },
+    { t: '빈 학교에 이상한 것들이 눌러앉았다', p: BOSS_LIST.join('<br>'), art: 'boss' },
+    { t: '그때, 졸업생들이 돌아왔다', p: '“우리 학교, 우리가 다시 세우자!”', art: 'team', team },
+    { t: '양일고 재건 시작', p: '먼저 무너진 <b>본관</b>을 눌러 복구해 보자.<br>자원을 모아 건물을 되살리고, <b>전투</b>로 학교를 차지한 녀석들을 몰아내자!', art: 'go' },
+  ];
+}
+const MILES = [
+  [.25, '본관에 다시 불이 켜졌다', '창문 너머로 수업 종소리가 들린다. 동네 사람들이 하나둘 학교를 기웃거린다.', { know: 60, snack: 40 }],
+  [.5, '점심시간 종이 다시 울린다', '매점 앞이 북적이고, 복도에 떠드는 소리가 가득하다. 양일고가 숨을 쉰다.', { know: 90, snack: 70, power: 30 }],
+  [.75, '운동장에 공 차는 소리', '체육 시간 호루라기 소리, 응원 소리. 이제 아무도 여기를 폐교라고 부르지 않는다.', { know: 140, snack: 100, power: 60 }],
+  [1, '양일고 재건 완료!', '무너졌던 학교가 다시 우리 학교가 됐다. 오늘도 양일고 파이팅!', { know: 300, snack: 200, power: 120 }],
+];
+function showStory(pages, done) {
+  const el = $('story'); let i = 0;
+  const draw = () => {
+    const pg = pages[i], last = i === pages.length - 1;
+    let art = '';
+    if (pg.art === 'ruin') art = `<div class="art ruin">${drawIcon('school', 64)}<i></i><i></i><i></i></div>`;
+    else if (pg.art === 'boss') art = `<div class="art boss"><span>${drawIcon('fight', 52)}</span></div>`;
+    else if (pg.art === 'team') art = `<div class="art team">${pg.team.map(id => `<img src="${faceOf(id)}" alt="">`).join('')}</div>`;
+    else if (pg.art === 'go' || pg.art === 'mile') art = `<div class="art go">${drawIcon(pg.art === 'mile' ? 'star' : 'school', 64)}</div>`;
+    el.innerHTML = `<div class="page">${art}<h2>${pg.t}</h2><p>${pg.p}</p>${pg.reward ? `<div class="rw">${resText(pg.reward, 16)}</div>` : ''}<div class="dots">${pages.length > 1 ? pages.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('') : ''}</div><button class="next">${last ? (pg.btn || '시작!') : '다음'}</button></div>`;
+    el.querySelector('.next').onclick = () => { KS.fx('click'); if (last) { el.hidden = true; done && done(); } else { i++; draw(); } };
+  };
+  el.hidden = false; draw();
+}
+function firstRestore(t) {
+  const who = people[Math.floor(Math.random() * people.length)];
+  const line = { main: '본관이 다시 섰다! 내 자리 아직 있으려나?', store: '매점 부활! 오늘은 내가 쏜다.', field: '운동장 잡초 다 뽑았다. 공 차러 가자!', lab: '과학실 냄새… 이거 그리웠어.', library: '도서관 조용한 거 그대로네.', club: '동아리실 열렸다! 신입 모집하자!', cafe: '급식실 냄새 난다… 오늘 메뉴 뭐야?', gym: '다목적관 LED가 다시 켜졌어!' }[t];
+  if (who && line) setTimeout(() => sayText(who, line), 900);
+}
+function checkMilestone() {
+  const r = restore();
+  for (const [th, title, text, reward] of MILES) {
+    const key = 'm' + Math.round(th * 100);
+    if (r >= th - 1e-9 && !G.story[key]) {
+      G.story[key] = 1; Object.entries(reward).forEach(([k, n]) => { G.res[k] = (G.res[k] || 0) + n; }); save(); hud();
+      setTimeout(() => { KS.fx('fanfare'); showStory([{ t: title, p: text, art: 'mile', reward, btn: '좋아!' }]); }, 1200);
+      break;
+    }
+  }
+}
+if (!G.story.intro) { G.story.intro = 1; save(); setTimeout(() => showStory(storyPages()), 500); }
+if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
+checkMilestone();
 save();
-window.__kingdom = { G, FAC, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs };
+window.__kingdom = { G, FAC, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
