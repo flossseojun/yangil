@@ -927,6 +927,12 @@ button.polaroid:focus-visible { outline: 3px solid var(--board); outline-offset:
 .unmet-toggle { display: block !important; padding: 4px 0 0; }
 .unmet-toggle .link { font-size: 13px; color: var(--muted); }
 .menu-foot a.sfx-btn { text-decoration: none; }
+/* 오락실(허브)로 돌아가기 */
+.arcade-link { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; white-space: nowrap; }
+.arcade-link .ar { font-family: var(--f-disp); font-size: 13px; line-height: 1; transform: translateY(-.5px); }
+.topbar .arcade-link { border-style: dashed; opacity: .92; }
+.topbar .arcade-link:hover { background: rgba(255, 255, 255, .16); opacity: 1; }
+.menu-foot .arcade-link:hover { border-color: var(--board-text); color: var(--board-text); }
 @media (max-width: 760px) {
   .lockers .locker:first-child { grid-column: auto; min-height: 0; grid-template-rows: none; }
   .lockers .locker:first-child .vents { display: block; }
