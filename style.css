@@ -449,7 +449,7 @@ h1, h2, h3 { font-family: var(--f-disp); font-weight: 400; line-height: 1.2; tex
 
 .sfx-btn { border: 1px solid rgba(255, 255, 255, .35); background: none; color: var(--chalk); border-radius: 99px; padding: 3px 10px; font-size: 12px; cursor: pointer; }
 .sfx-btn.light { border-color: var(--line); color: var(--muted); background: var(--card); }
-.menu-foot { display: flex; justify-content: center; }
+.menu-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .statline { display: none; flex-basis: 100%; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, .15); font-variant-numeric: tabular-nums; }
 .statline b { font-family: var(--f-disp); font-weight: 400; font-size: 15px; color: var(--marker); }
 .statline .warn b { color: #ffb34d; } .statline .danger b { color: #ff8a8a; }
