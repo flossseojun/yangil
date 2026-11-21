@@ -124,8 +124,9 @@ const HOOK = { tick: [], tap: [] };   // notebook.js 같은 덧붙이는 모듈�
 /* ───────── 장면 ───────── */
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const GFX = (typeof getSettings === 'function' ? getSettings() : { gfx: 'mid' }).gfx;   // 설정 창: 그래픽 낮음 · 보통 · 높음
+renderer.setPixelRatio(Math.min(devicePixelRatio, GFX === 'high' ? 2 : GFX === 'low' ? 1 : 1.5));
+renderer.shadowMap.enabled = GFX !== 'low'; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#bfe3f5');
@@ -654,8 +655,38 @@ const stockOf = (t, now = Date.now()) => { const p = prodOf(t); if (!p || !G.fac
 function collect(t) {
   const p = prodOf(t); if (!p) return; const now = Date.now(), n = Math.max(1, stockOf(t, now)); KS.fx('coin');
   G.res[p[0]] += p[1] * n; G.facAt[t] = n >= STOCK_MAX ? now : G.facAt[t] + n * p[2] * 1000; bump('col_' + p[0], p[1] * n); bump('col'); save(); hud();
-  const m = meshes.get(t); floatText(`+${p[1] * n}${drawIcon(p[0], 20)}${n > 1 ? ` <small>×${n}</small>` : ''}`, new THREE.Vector3(m.position.x, (m.userData.h || 2) + 1.2, m.position.z));
+  const m = meshes.get(t), v = new THREE.Vector3(m.position.x, (m.userData.h || 2) + 1.2, m.position.z); floatText(`+${p[1] * n}${drawIcon(p[0], 20)}${n > 1 ? ` <small>×${n}</small>` : ''}`, v); const [sx, sy] = toScreen(v); flyRes(p[0], p[1] * n, sx, sy);
 }
+
+/* ───────── 손맛: 자원이 위로 날아가기 · 공사 먼지 · 반짝이 ───────── */
+function flyRes(k, n, x, y) {
+  const el = $('r-' + k); if (!el || !n) return; const chip = el.closest('.res') || el, r = chip.getBoundingClientRect(), tx = r.left + 14, ty = r.top + r.height / 2;
+  const cnt = Math.min(8, 3 + Math.floor(Math.log2(1 + n)));
+  for (let i = 0; i < cnt; i++) {
+    const d = document.createElement('div'); d.className = 'flyres'; d.innerHTML = drawIcon(k, 22);
+    d.style.left = (x + (Math.random() - .5) * 70) + 'px'; d.style.top = (y + (Math.random() - .5) * 40) + 'px'; document.body.appendChild(d);
+    setTimeout(() => { d.style.left = tx + 'px'; d.style.top = ty + 'px'; d.classList.add('go'); }, 40 + i * 45);
+    setTimeout(() => { d.remove(); chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump'); }, 640 + i * 45);
+  }
+}
+const puffTex = canvasTex(64, 64, g => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.6, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); });
+function dust(x, z, w, d) {
+  for (let i = 0; i < 16; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: '#d9cdb8', transparent: true, depthWrite: false })), sc = .6 + Math.random() * .9, vx = (Math.random() - .5) * 2, vz = (Math.random() - .5) * 2;
+    sp.position.set(x + (Math.random() - .5) * w, .2, z + (Math.random() - .5) * d); sp.scale.setScalar(sc); world.add(sp);
+    const x0 = sp.position.x, z0 = sp.position.z;
+    tween(.9 + Math.random() * .5, k => { sp.position.set(x0 + vx * k, .2 + k * 1.6, z0 + vz * k); sp.scale.setScalar(sc * (1 + k * 1.6)); sp.material.opacity = .9 * (1 - k); }, () => world.remove(sp));
+  }
+}
+function sparkle(x, y, z, n = 22) {
+  for (let i = 0; i < n; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: ['#ffd23f', '#fff3b0', '#ffffff', '#ff9a3c'][i % 4], transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })), a = Math.random() * Math.PI * 2, v = 1.5 + Math.random() * 2.5, up = 2 + Math.random() * 3;
+    sp.scale.setScalar(.35 + Math.random() * .3); sp.position.set(x, y, z); world.add(sp);
+    tween(.9 + Math.random() * .4, k => { sp.position.set(x + Math.cos(a) * v * k, y + up * k - 3 * k * k, z + Math.sin(a) * v * k); sp.material.opacity = 1 - k; }, () => world.remove(sp));
+  }
+}
+// 건물이 아래에서 쑥 올라온다 (탕탕 망치 소리)
+function rise(m) { m.scale.set(1, .02, 1); [0, 160, 320].forEach(d => setTimeout(() => KS.fx('hit'), d)); tween(.75, k => { const e = k < .7 ? k / .7 * 1.12 : 1.12 - (k - .7) / .3 * .12; m.scale.set(1 + Math.sin(k * Math.PI) * .05, Math.max(.02, e), 1 + Math.sin(k * Math.PI) * .05); }); }
 
 /* ───────── 친구들 ───────── */
 const people = [];
@@ -710,7 +741,7 @@ function takeGift(p) {
   }
   const k = ['know', 'snack', 'power', 'coin'][Math.floor(Math.random() * 4)], n = Math.round((4 + Math.floor(campusLv() * 1.2 + Math.random() * 5)) * (k === 'coin' ? .5 : 1));
   G.res[k] += n; bump('gift'); G.bond = G.bond || {}; save(); hud(); KS.fx('coin');
-  floatText(`+${n}${drawIcon(k, 20)}`, p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0)));
+  const gv = p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0)); floatText(`+${n}${drawIcon(k, 20)}`, gv); { const [sx, sy] = toScreen(gv); flyRes(k, n, sx, sy); }
   sayText(p, ['이거 너 줄게!', '매점에서 하나 더 샀어. 너 가져!', '오다 주웠다.', '선물이야!'][Math.floor(Math.random() * 4)]);
 }
 
@@ -813,7 +844,7 @@ function doUpgrade(t) {
   G.fac[t] = lvOfFac(t) + 1; if (!G.facAt[t]) G.facAt[t] = Date.now(); bump('up');
   const old = meshes.get(t); world.remove(old); const s = bubbles.get(t); if (s) { world.remove(s); bubbles.delete(t); }
   animated.splice(0, animated.length, ...animated.filter(a => a.g !== old && (!a.obj || !isChild(a.obj, old))));
-  const m = addFac(t); pop(m); KS.fx(G.fac[t] === 1 ? 'build' : 'levelup');
+  const m = addFac(t), d0 = FAC[t]; rise(m); dust(m.position.x, m.position.z, d0.size[0], d0.size[1]); setTimeout(() => { KS.fx(G.fac[t] === 1 ? 'build' : 'levelup'); sparkle(m.position.x, (m.userData.h || 2) + .3, m.position.z, G.fac[t] >= 5 ? 40 : 22); }, 520);
   floatText(G.fac[t] === 1 ? `${FAC[t].name} 복구!` : `${FAC[t].name} Lv.${G.fac[t]}!`, m.position.clone().add(new THREE.Vector3(0, (m.userData.h || 2) + .8, 0)));
   if (t === 'club' && G.fac[t] === 1) G.freePull = (G.freePull || 0) + 1;   // 첫 뽑기는 무료 (notebook.js가 알려 준다)
   if (G.fac[t] === 1) firstRestore(t);
@@ -1021,4 +1052,4 @@ if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { lmAlive, DISTRICTS, DIST_MAX, distLv, distOf, townAlive, campusRestore, refreshTown, distMarks, focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { flyRes, dust, sparkle, GFX, lmAlive, DISTRICTS, DIST_MAX, distLv, distOf, townAlive, campusRestore, refreshTown, distMarks, focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };

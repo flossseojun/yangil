@@ -30,7 +30,8 @@ const introOf = id => (ROSTER.find(f => f.id === id) || { role: '' }).role.split
 /* ───────── 장면 ───────── */
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const GFX = (typeof getSettings === 'function' ? getSettings() : { gfx: 'mid' }).gfx;   // 설정 창의 그래픽
+renderer.setPixelRatio(Math.min(devicePixelRatio, GFX === 'high' ? 2 : GFX === 'low' ? 1 : 1.5)); renderer.shadowMap.enabled = GFX !== 'low'; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 const scene = new THREE.Scene();
 const tex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };

@@ -428,6 +428,28 @@
   .fc-pop { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); font-style: normal; font-family: Jua, sans-serif; font-size: 18px; color: #fff; text-shadow: -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 2px 2px 0 var(--ink); pointer-events: none; animation: fcpop .9s ease-out forwards; }
   @keyframes fcpop { to { transform: translate(-50%, -26px); opacity: 0; } }
   @media (orientation: landscape) and (max-height: 560px) { .sheet .fr-grid.pg:not(.dex) { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important; gap: 5px; } .fc img { width: 38px; height: 38px; } .fc b { font-size: 12px; } }
+  /* ── 손맛: 날아가는 자원 · 자원 칸 통통 ── */
+  .flyres { position: fixed; z-index: 60; pointer-events: none; transform: translate(-50%, -50%); transition: left .55s cubic-bezier(.5,0,.8,.6), top .55s cubic-bezier(.2,.6,.4,1), transform .55s; filter: drop-shadow(0 2px 0 #231c17); }
+  .flyres.go { transform: translate(-50%, -50%) scale(.65); }
+  .res.bump { animation: bump .25s cubic-bezier(.3,1.8,.5,1); } @keyframes bump { 50% { transform: scale(1.15); } }
+  /* ── 설정 ── */
+  .set-row { display: flex; align-items: center; gap: 10px; background: #fff; border: 2.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; }
+  .set-row > b { font-family: Jua, sans-serif; font-weight: 400; font-size: 16px; min-width: 56px; } .set-row small { font-size: 12px; color: var(--sub); }
+  .set-row input[type=range] { flex: 1; accent-color: #2b4a3c; } .set-row > span { font-family: Jua, sans-serif; min-width: 30px; text-align: right; }
+  .seg { flex: 1; display: flex; gap: 6px; } .seg button { flex: 1; display: flex; flex-direction: column; align-items: center; background: #fff; border: 2.5px solid var(--ink); border-radius: 10px; box-shadow: 0 2px 0 var(--ink); font-family: Jua, sans-serif; font-size: 15px; padding: 3px 0; cursor: pointer; color: var(--ink); }
+  .seg button small { font-family: 'Gowun Dodum'; font-size: 10px; } .seg button.on { background: var(--yellow); }
+  .tog { width: 50px; height: 28px; border-radius: 14px; border: 2.5px solid var(--ink); background: #d9d0bd; position: relative; cursor: pointer; padding: 0; } .tog i { position: absolute; top: 2px; left: 2px; width: 19px; height: 19px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); transition: left .15s; } .tog.on { background: #6cd39a; } .tog.on i { left: 23px; }
+  /* ── 로딩 화면 ── */
+  .loading { background: #2b4a3c repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 2px, transparent 2px 6px); }
+  .ld-box { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #fffaf0; text-align: center; padding: 16px; }
+  .ld-title { font-family: Jua, sans-serif; font-weight: 400; font-size: 42px; color: #ffd23f; text-shadow: 0 4px 0 #231c17; transform: rotate(-2deg); }
+  .ld-box > small { font-family: 'Gowun Dodum'; font-size: 15px; opacity: .9; }
+  .ld-faces { display: flex; gap: 4px; height: 64px; } .ld-faces img { width: 60px; height: 60px; background: #cfe3ff; border: 3px solid #231c17; border-radius: 14px; animation: ldHop .9s ease-in-out infinite alternate; }
+  @keyframes ldHop { to { transform: translateY(-8px); } }
+  .ld-bar { width: min(320px, 70vw); height: 16px; border: 3px solid #231c17; border-radius: 9px; background: #fffaf0; overflow: hidden; } .ld-bar i { display: block; height: 100%; width: 4%; background: #ffd23f; transition: width .3s; }
+  .ld-tip { margin: 0; font-family: 'Gowun Dodum'; font-size: 14px; min-height: 20px; color: #fffaf0; }
+  @media (max-height: 480px) { .ld-title { font-size: 32px; } .ld-faces { height: 50px; } .ld-faces img { width: 46px; height: 46px; } }
+  @media (prefers-reduced-motion: reduce) { .ld-faces img { animation: none; } }
 </style>
 </head>
 <body>
@@ -456,22 +478,31 @@
 <div class="bar"><div class="cards" id="cards"></div></div>
 <div class="toast" id="toast"></div>
 <a class="osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">지도 © OpenStreetMap</a>
-<div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
+<div class="loading" id="loading"><div class="ld-box"><b class="ld-title">양일 캠퍼스</b><small>무너진 양평을 다시 세우자!</small><div class="ld-faces" id="ld-faces"></div><div class="ld-bar"><i id="ld-bar"></i></div><p class="ld-tip" id="ld-tip">캠퍼스를 짓는 중…</p></div></div>
 
-<script src="../avatar.js?v=1795234437"></script>
-<script src="../avatar2.js?v=1795234437"></script>
-<script src="../avatar3.js?v=1795234437"></script>
-<script src="../scene.js?v=1795234437"></script>
-<script src="../fullbody.js?v=1795234437"></script>
-<script src="roster.js?v=1795234437"></script>
-<script src="yangpyeong.js?v=1795234437"></script>
-<script src="kits.js?v=1795234437"></script>
-<script src="profiles.js?v=1795234437"></script>
-<script src="ui.js?v=1795234437"></script>
-<script src="audio.js?v=1795234437"></script>
+<script src="../avatar.js?v=1795235617"></script>
+<script src="../avatar2.js?v=1795235617"></script>
+<script src="../avatar3.js?v=1795235617"></script>
+<script src="../scene.js?v=1795235617"></script>
+<script src="../fullbody.js?v=1795235617"></script>
+<script src="roster.js?v=1795235617"></script>
+<script src="yangpyeong.js?v=1795235617"></script>
+<script src="kits.js?v=1795235617"></script>
+<script src="profiles.js?v=1795235617"></script>
+<script src="ui.js?v=1795235617"></script>
+<script src="audio.js?v=1795235617"></script>
+<script>
+// 로딩 화면: 친구 얼굴 · 팁 · 진행 막대 (진짜 화면이 뜨면 kingdom.js가 지운다)
+(function () {
+  const TIPS = ['시설을 레벨업하면 겉모습이 바뀌어요', '잡몹을 연달아 잡으면 스킬 게이지가 차요', '지도에서 무너진 동네를 눌러 다시 세워요', '친구 카드를 누르면 바로 레벨업!', '자원 칸을 누르면 어디서 얻는지 알려 줘요', '기차 원정은 꺼 둔 동안에도 다녀와요', '별 3개로 깬 스테이지는 소탕할 수 있어요', '밤에는 복구한 동네에 불이 켜져요'];
+  try { const ids = ROSTER.map(f => f.id).sort(() => Math.random() - .5).slice(0, 5); document.getElementById('ld-faces').innerHTML = ids.map((id, i) => `<img src="${svgURL(kitHeadSVG(id))}" alt="" style="animation-delay:${i * .12}s">`).join(''); } catch (e) {}
+  let i = Math.floor(Math.random() * TIPS.length), k = 0; const tip = document.getElementById('ld-tip'), bar = document.getElementById('ld-bar');
+  const t = setInterval(() => { if (!document.getElementById('loading')) return clearInterval(t); k++; bar.style.width = Math.min(92, 100 * (1 - Math.exp(-k / 18))) + '%'; if (k % 14 === 1) { tip.textContent = '팁 · ' + TIPS[i++ % TIPS.length]; } }, 120);
+})();
+</script>
 <script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
-<script type="module" src="kingdom.js?v=1795234437"></script>
-<script type="module" src="notebook.js?v=1795234437"></script>
+<script type="module" src="kingdom.js?v=1795235617"></script>
+<script type="module" src="notebook.js?v=1795235617"></script>
 </body>
 </html>

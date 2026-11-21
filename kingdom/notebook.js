@@ -5,7 +5,8 @@ const K = window.__kingdom, G = K.G, THREE = K.THREE;
 const $ = id => document.getElementById(id);
 const L = () => K.campusLv();
 const dayNum = (t = Date.now()) => Math.floor((t - new Date(t).getTimezoneOffset() * 60000) / 864e5);
-const give = rw => { Object.entries(rw).forEach(([k, n]) => { if (n) G.res[k] = (G.res[k] || 0) + n; }); K.save(); K.hud(); refreshBadge(); };
+let lastTap = [innerWidth / 2, innerHeight / 2]; addEventListener('pointerdown', e => { lastTap = [e.clientX, e.clientY]; }, true);
+const give = rw => { Object.entries(rw).forEach(([k, n]) => { if (n) { G.res[k] = (G.res[k] || 0) + n; if (K.flyRes && G.res[k] != null && ['know', 'snack', 'power', 'coin'].includes(k)) K.flyRes(k, n, lastTap[0], lastTap[1]); } }); K.save(); K.hud(); refreshBadge(); };   // 받은 자원은 누른 곳에서 위로 날아간다
 const canPay = c => Object.entries(c).every(([k, n]) => (G.res[k] || 0) >= n);
 const storyOpen = () => !$('story').hidden;
 // 이야기 창이 비면 띄운다 (마일스톤 이야기와 겹치지 않게)
@@ -56,7 +57,7 @@ function stepTut() {
   if (G.tut == null) G.tut = 0;
   if (G.tut >= TUT.length) return;
   const s = TUT[G.tut];
-  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, #ev, #adv, #dist, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
+  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, #ev, #adv, #dist, #set, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
   if (tutStarted !== G.tut) { tutStarted = G.tut; s.start && s.start(); tutEl.querySelector('p').innerHTML = `<b class="n">${G.tut + 1}/${TUT.length}</b> ${s.text}`; }
   tutEl.hidden = false;
   if (s.done()) { nextTut(); return; }
@@ -307,6 +308,7 @@ dsheet.addEventListener('click', e => {
     if (lv) { const st = distStock(d); if (st) give({ [d.res]: st }); }
     Object.entries(cost).forEach(([k, n]) => { G.res[k] -= n; }); G.dist[d.id] = lv + 1; G.distAt[d.id] = Date.now(); G.stat.dist = (G.stat.dist || 0) + 1;
     K.save(); K.refreshTown(); K.hud(); KS.fx(lv ? 'levelup' : 'build');
+    K.dust(d.at[0], d.at[1], 14, 14); K.sparkle(d.at[0], 6, d.at[1], 30);
     if (!lv) { dsheet.hidden = true; const who = G.friends[Math.floor(Math.random() * G.friends.length)]; showQ([{ t: `${d.name}에 다시 불이 켜졌다`, p: `${d.desc}.<br>무너졌던 건물들이 다시 섰다.<br><b>${K.rosterOf(who).name}</b> “${DIST_LINE[Math.floor(Math.random() * DIST_LINE.length)]}”`, art: 'mile', btn: '좋아!' }]); }
     else { K.toast(`${d.name} Lv.${lv + 1}!`); openDist(d.id); }
   }
@@ -351,7 +353,7 @@ let dmT = 0; K.HOOK.tick.push(dt => { if ((dmT += dt) > 20) { dmT = 0; K.refresh
     }
     function rebuild() {
       const r = K.restore(), sig = K.DISTRICTS.map(d => K.distLv(d.id)).join(''); if (sig === R) return; R = sig;
-      const nc = Math.min(MAXC, Math.round(r * 44)), np = Math.min(MAXP, Math.round(r * 50));
+      const ls = K.GFX === 'low' ? .35 : K.GFX === 'high' ? 1.3 : 1, nc = Math.min(MAXC, Math.round(r * 44 * ls)), np = Math.min(MAXP, Math.round(r * 50 * ls));   // 그래픽 설정에 따라 동네 사람 수
       cars.length = 0; peds.length = 0;
       for (let k = 0; k < nc; k++) { const a = spawnRoad(roads, true); if (a) cars.push(a); }
       for (let k = 0; k < np; k++) { const a = spawnRoad(roads, false); if (a) peds.push(a); }
@@ -817,12 +819,34 @@ advBtn.innerHTML = drawIcon('compass', 24) + '<i class="badge" id="adv-n" hidden
 advBtn.onclick = () => { KS.fx('click'); openADV(); };
 let advT = 0; K.HOOK.tick.push(dt => { if ((advT += dt) < 2) return; advT = 0; advBtn.classList.toggle('locked', !expOpen()); const n = advDot(), el = $('adv-n'); if (el) { el.textContent = n; el.hidden = !n; } if (!adv.hidden && advTab === 'exp' && !pickDest) { const sc = adv.querySelector('.sheet').scrollTop; openADV(); adv.querySelector('.sheet').scrollTop = sc; } });
 
+/* ───────── 8⅓. 설정: 그래픽 · 소리 크기 · 진동 ───────── */
+const setEl = document.createElement('div'); setEl.className = 'modal'; setEl.id = 'set'; setEl.hidden = true; document.body.appendChild(setEl);
+function openSet() {
+  const st = getSettings(), G3 = [['low', '낮음', '오래된 폰 · 그림자 끔'], ['mid', '보통', '추천'], ['high', '높음', '선명하게 · 동네 사람 많이']];
+  setEl.innerHTML = `<div class="sheet" role="dialog" aria-label="설정"><div class="sh-top"><b>설정</b><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
+    <div class="set-row"><b>그래픽</b><div class="seg">${G3.map(([k, n, d]) => `<button class="${st.gfx === k ? 'on' : ''}" data-gfx="${k}">${n}<small>${d}</small></button>`).join('')}</div></div>
+    <div class="set-row"><b>음악</b><input type="range" min="0" max="100" value="${Math.round(st.music * 100)}" data-vol="music"><span>${Math.round(st.music * 100)}</span></div>
+    <div class="set-row"><b>효과음</b><input type="range" min="0" max="100" value="${Math.round(st.sfx * 100)}" data-vol="sfx"><span>${Math.round(st.sfx * 100)}</span></div>
+    <div class="set-row"><b>진동</b><button class="tog${st.buzz ? ' on' : ''}" data-buzz><i></i></button><small>${navigator.vibrate ? '레벨업 · 보스 격파 때 짧게' : '이 폰은 진동을 지원하지 않아요'}</small></div>
+    ${st.gfx !== K.GFX ? '<p class="sv warn">그래픽은 화면을 다시 열면 바뀌어요. <button class="mini" data-reload>지금 다시 열기</button></p>' : ''}</div>`;
+  setEl.hidden = false;
+}
+setEl.addEventListener('click', e => {
+  if (e.target === setEl || e.target.closest('[data-close]')) { setEl.hidden = true; return; }
+  const g = e.target.closest('[data-gfx]'); if (g) { KS.fx('click'); setSettings({ gfx: g.dataset.gfx }); openSet(); return; }
+  if (e.target.closest('[data-buzz]')) { const st = setSettings({ buzz: !getSettings().buzz }); if (st.buzz) buzz(30); openSet(); return; }
+  if (e.target.closest('[data-reload]')) { K.save(); location.reload(); }
+});
+setEl.addEventListener('input', e => { const r = e.target.closest('[data-vol]'); if (!r) return; const v = +r.value / 100, st = setSettings({ [r.dataset.vol]: v }); r.nextElementSibling.textContent = r.value; KS.setVol && KS.setVol(st.music, st.sfx); });
+setEl.addEventListener('change', e => { if (e.target.dataset.vol === 'sfx') KS.fx('coin'); });
+
 /* ───────── 8½. 오른쪽 버튼 정리: 자주 안 쓰는 버튼은 '메뉴'로 ───────── */
 {
   const more = document.createElement('button'); more.className = 'rbtn'; more.id = 'b-more'; more.setAttribute('aria-label', '메뉴'); more.setAttribute('aria-expanded', 'false');
   more.innerHTML = '<span class="dots3"><i></i><i></i><i></i></span><span class="more-lab">메뉴</span>';
   const pop = document.createElement('div'); pop.className = 'more-pop'; pop.hidden = true;
-  const LAB = { 'b-rot': '돌리기', 'b-in': '가까이', 'b-out': '멀리', 'b-music': '소리', 'b-full': '전체화면', 'b-back': '원래 게임' };
+  { const sb = document.createElement('button'); sb.className = 'rbtn'; sb.id = 'b-set'; sb.setAttribute('aria-label', '설정'); sb.innerHTML = drawIcon('cog', 24); sb.onclick = () => { KS.fx('click'); openSet(); }; document.querySelector('.side').appendChild(sb); }
+  const LAB = { 'b-set': '설정', 'b-rot': '돌리기', 'b-in': '가까이', 'b-out': '멀리', 'b-music': '소리', 'b-full': '전체화면', 'b-back': '원래 게임' };
   Object.keys(LAB).forEach(id => { const b = $(id); if (!b) return; const row = document.createElement('label'); row.className = 'more-row'; row.append(b); row.insertAdjacentHTML('beforeend', `<span>${LAB[id]}</span>`); pop.append(row); });
   $('b-fight').after(more); document.body.append(pop);
   const place = () => { const r = more.getBoundingClientRect(); pop.style.top = Math.max(8, Math.min(innerHeight - pop.offsetHeight - 8, r.top - 6)) + 'px'; pop.style.right = (innerWidth - r.left + 8) + 'px'; };
