@@ -488,16 +488,16 @@ function finish(win) {
   const left = alive().length, stars = win ? (left === 5 ? 3 : left >= 3 ? 2 : 1) : 0;
   const base = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6, coin: 12 + stars * 6 } : { know: 5, snack: 3, power: 0, coin: 3 };
   const rw = Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.round(v * SM.reward)]));
-  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0, gearGot = null, lvUps = [], xpGain = 0, trainMsg = '', treasureGot = null;
+  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0, gearGot = null, lvUps = [], xpGain = 0, trainMsg = '', treasureGot = null, xpRows = [], trainGear = [];
   if (g && TRAIN) {   // 요일 훈련 결과: 그날 자원만 많이
     const k = TRAIN.kind, m = win ? 1 : .25, R = SM.reward;
     Object.keys(rw).forEach(r => { rw[r] = 0; });
     if (['know', 'snack', 'power', 'coin'].includes(k)) rw[k] = Math.round({ know: 180, snack: 140, power: 110, coin: 110 }[k] * R * m);
     const got = [];
-    if (k === 'gear' && win) { g.items = g.items || {}; for (let i = 0; i < 2; i++) { const t = rollGear(effStage(CH, STAGE) / 2 + 2); g.items[t] = (g.items[t] || 0) + 1; got.push(STATIONERY[t].name); } }
+    if (k === 'gear' && win) { g.items = g.items || {}; for (let i = 0; i < 2; i++) { const t = rollGear(effStage(CH, STAGE) / 2 + 2); g.items[t] = (g.items[t] || 0) + 1; got.push(STATIONERY[t].name); trainGear.push(t); } }
     Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
     xpGain = Math.round(30 * (1 + (effStage(CH, STAGE) - 1) * .15) * (k === 'xp' ? 3 : 1) * m);
-    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const up = addXp(g, id, xpGain); if (up) lvUps.push([id, lvOf(g, id)]); });
+    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const lv0 = lvOf(g, id), xp0 = xpOf(g, id), up = addXp(g, id, xpGain); xpRows.push({ id, lv0, xp0, lv1: lvOf(g, id), xp1: xpOf(g, id), up }); if (up) lvUps.push([id, lvOf(g, id)]); });
     const day = todayNum(); g.train = g.train && g.train.day === day ? g.train : { day, n: 0 }; g.train.n++;
     trainMsg = `요일 훈련 · ${TK.name} ${win ? '성공!' : '아쉽게 실패 (보상 조금)'}${got.length ? `<br><b style="color:#9ad5ff">장비 획득 · ${got.join(', ')}</b>` : ''}<br>함께한 친구들 경험치 +${xpGain}${lvUps.length ? ` · <b style="color:#ffd779">${lvUps.map(([id, l]) => `${nameOf(id)} Lv.${l}`).join(', ')} 레벨 업!</b>` : ''}<br>오늘 남은 훈련 ${Math.max(0, TRAIN_MAX - g.train.n)}번`;
     if (g.train.n >= TRAIN_MAX) try { localStorage.removeItem('yangil.kingdom.train'); } catch (e) {}
@@ -507,7 +507,7 @@ function finish(win) {
     if (win) g.wins = (g.wins || 0) + 1;
     // 경험치: 함께 싸운 친구들이 받는다 (지면 조금)
     xpGain = Math.round((win ? 30 : 10) * (1 + (effStage(CH, IN_TOWER ? 5 + STAGE : STAGE) - 1) * .15));
-    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const up = addXp(g, id, xpGain); if (up) lvUps.push([id, lvOf(g, id)]); });
+    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const lv0 = lvOf(g, id), xp0 = xpOf(g, id), up = addXp(g, id, xpGain); xpRows.push({ id, lv0, xp0, lv1: lvOf(g, id), xp1: xpOf(g, id), up }); if (up) lvUps.push([id, lvOf(g, id)]); });
     if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); const nexts = CHAPTERS.filter(c => prevOf(c.n) === CH0 && c.n !== CH0 && !progOf(g, c.n)).map(c => c.n); if (STAGE >= progOf(g, CH0) && STAGE < maxStageOf(CH0)) { setProg(g, CH0, STAGE + 1); unlocked = true; saveSel(CH0, STAGE + 1); } if (STAGE >= CHAP_UNLOCK) nexts.forEach(n => { setProg(g, n, 1); chapOpen = chapOpen ? [].concat(chapOpen, n) : n; }); }
     // 별: 처음 얻은 별마다 보너스
     if (win) { g.star = g.star || {}; const key = CH0 + '-' + STAGE, had2 = g.star[key] || 0; if (stars > had2) { newStars = stars - had2; g.star[key] = stars; const bk = Math.round(15 * newStars * SM.reward), bs = Math.round(10 * newStars * SM.reward); g.res.know += bk; g.res.snack += bs; rw.know += bk; rw.snack += bs; } }
@@ -524,8 +524,30 @@ function finish(win) {
     $('r-stars').innerHTML = [0, 1, 2].map(i => drawIcon(i < stars ? 'star' : 'starOff', i === 1 ? 46 : 36)).join('');
     $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? [].concat(chapOpen).map(n => `<br><b style="color:#9dffb0">새 챕터 「${CHAPTERS[n - 1].place}」 열림!</b>`).join('') : ''}<br>함께한 친구들 경험치 +${xpGain}${lvUps.length ? ` · <b style="color:#ffd779">${lvUps.map(([id, l]) => `${nameOf(id)} Lv.${l}`).join(', ')} 레벨 업!</b>` : ''}${treasureGot ? `<br><b style="color:#ffd23f">학교 보물 · ${TREASURES[treasureGot].name}! (${TREASURES[treasureGot].desc})</b>` : ''}${gearGot ? `<br><b style="color:#9ad5ff">장비 획득 · ${STATIONERY[gearGot].name}! (${STATIONERY[gearGot].desc})</b>` : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
     $('r-rw').innerHTML = RES_ORDER.filter(k => rw[k]).map(k => `<span class="rs">${drawIcon(k, 20)}+${rw[k]}</span>`).join('');
-    if (TRAIN) { $('r-sub').textContent = 'TRAINING'; $('r-time').innerHTML = trainMsg; }
+    if (TRAIN) { $('r-sub').textContent = 'TRAINING'; $('r-title').textContent = win ? '훈련 성공!' : '훈련 실패…'; }
+    // 그림으로 보여 주는 결과: 기록 칩 · 친구 경험치 바 · 획득 카드 · 보상 숫자
+    const chips = [];
+    if (win && newStars) chips.push(['star', `새 별 ${newStars}개`, '#ffe58a']);
+    if (unlocked) chips.push(['next', IN_TOWER ? `탑 ${STAGE + 1}층 열림` : `${CH0}-${STAGE + 1} 열림`, '#c8f5d2']);
+    [].concat(chapOpen || []).filter(Boolean).forEach(n => chips.push(['lock', `${CHAPTERS[n - 1].place} 열림`, '#c8f5d2']));
+    if (tickets) chips.push(['star', `뽑기권 ×${tickets}`, '#ffe58a']);
+    if (gearGot) chips.push([gearGot, STATIONERY[gearGot].name, '#d6e6ff']);
+    trainGear.forEach(t => chips.push([t, STATIONERY[t].name, '#d6e6ff']));
+    if (treasureGot) chips.push([treasureGot, `보물 ${TREASURES[treasureGot].name}`, '#ffd9a8']);
+    const pct = (lv, xp) => lv >= MAX_LV ? 100 : Math.round(xp / xpNeed(lv) * 100);
+    const team = xpRows.map(r => `<div class="rt-f${r.up ? ' up' : ''}"><img src="${svgURL(kitHeadSVG(r.id))}" alt=""><b>${nameOf(r.id)}</b><span class="rt-lv">Lv.<i data-lv="${r.lv1}">${r.lv0}</i></span><i class="rt-xp"><u style="width:${pct(r.lv0, r.xp0)}%" data-to="${pct(r.lv1, r.xp1)}" data-up="${r.up ? 1 : 0}"></u></i><small>+${xpGain}</small>${r.up ? '<em>LEVEL UP!</em>' : ''}${win && bondUp.includes(r.id) ? `<span class="rt-h">${drawIcon('heart', 12)}+1</span>` : ''}</div>`).join('');
+    $('r-time').innerHTML = `<div class="rt-stat">${win || TRAIN ? `<span><small>걸린 시간</small><b>${Math.round(TIME_LIMIT - clockT)}초</b></span>` : ''}<span><small>남은 친구</small><b>${left} / ${units.length}</b></span>${TRAIN ? `<span><small>오늘 남은 훈련</small><b>${Math.max(0, TRAIN_MAX - ((loadCampus() || {}).train || { n: 0 }).n)}번</b></span>` : ''}</div>
+      ${team ? `<div class="rt-team">${team}</div>` : ''}
+      ${chips.length ? `<div class="rt-chips">${chips.map(([ic, tx, c], i) => `<span style="--c:${c};animation-delay:${.6 + i * .15}s">${drawIcon(ic, 18)}${tx}</span>`).join('')}</div>` : ''}
+      ${!win && !TRAIN ? `<div class="rt-tip">${drawIcon('info', 16)}<span>캠퍼스에서 친구를 레벨업하거나 장비를 끼우면 더 세져요</span></div>` : ''}`;
+    $('r-rw').innerHTML = RES_ORDER.filter(k => rw[k]).map(k => `<span class="rs">${drawIcon(k, 20)}<b data-n="${rw[k]}">+0</b></span>`).join('');
     $('result').hidden = false;
+    setTimeout(() => {   // 숫자 올라가기 · 경험치 바 채우기
+      const t0 = performance.now(), nums = [...document.querySelectorAll('#r-rw [data-n]')];
+      const tick = () => { const k = Math.min(1, (performance.now() - t0) / 900); nums.forEach(el => { el.textContent = '+' + Math.round(+el.dataset.n * (1 - Math.pow(1 - k, 3))); }); if (k < 1) requestAnimationFrame(tick); };
+      tick();
+      document.querySelectorAll('.rt-xp u').forEach(u => { if (u.dataset.up === '1') { u.style.width = '100%'; setTimeout(() => { u.style.transition = 'none'; u.style.width = '0%'; void u.offsetWidth; u.style.transition = ''; u.style.width = u.dataset.to + '%'; const f = u.closest('.rt-f'); f.classList.add('pop'); const l = f.querySelector('[data-lv]'); l.textContent = l.dataset.lv; KS.fx('levelup'); }, 700); } else u.style.width = u.dataset.to + '%'; });
+    }, 350);
   }, win ? 1300 : 800);
   if (win) { flash('#ffd27a', 10, bossCenter, 1.2); shake(.3, .6); tween(1.2, k => { boss.rotation.z = -k * .35; boss.position.y = -k * .8; }); }
 }
