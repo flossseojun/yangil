@@ -412,6 +412,22 @@
     .pg > .req { padding: 4px 8px; } .pg > .req .rq p { display: none; } .req img { width: 40px; height: 40px; } .claim { padding: 5px 9px; font-size: 14px; } .rbar { height: 12px; } .rbar span { line-height: 8px; }
     .req.ach .medal .ico { width: 22px; height: 22px; }
   }
+  /* ── 친구들: 한 화면에 여러 명, 누르면 레벨업 ── */
+  .sheet .fr-grid.pg:not(.dex) { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)) !important; gap: 7px; align-content: start; }
+  .fc { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; background: #fff; border: 2.5px solid var(--ink); border-top: 7px solid var(--rc); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 4px 4px 5px; cursor: pointer; user-select: none; transition: transform .1s; }
+  .fc:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+  .fc img { width: 46px; height: 46px; } .fc b { font-family: Jua, sans-serif; font-weight: 400; font-size: 13px; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .fc-lv { position: absolute; top: 3px; left: 4px; font-family: Jua, sans-serif; font-size: 11px; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 6px; padding: 0 4px; }
+  .fc-g { position: absolute; top: 22px; left: 4px; } .fc-i { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--ink); background: #fff; font-family: Jua, sans-serif; font-size: 11px; line-height: 1; padding: 0; cursor: pointer; color: var(--ink); }
+  .fc-t { font-style: normal; font-size: 10px; background: var(--yellow); border: 1.5px solid var(--ink); border-radius: 4px; padding: 0 3px; margin-right: 2px; }
+  .fc-xp { width: 90%; height: 7px; border: 1.5px solid var(--ink); border-radius: 4px; background: #f1e7d0; overflow: hidden; } .fc-xp u { display: block; height: 100%; background: #6cd39a; }
+  .fc-c { display: flex; align-items: center; gap: 2px; font-family: Jua, sans-serif; font-size: 11px; background: #e6dcc6; border-radius: 6px; padding: 0 5px; color: #7a6d5c; } .fc-c .rs { gap: 1px; }
+  .fc.can .fc-c { background: var(--yellow); color: var(--ink); } .fc.can::after { content: ''; position: absolute; bottom: -5px; right: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--red); border: 2px solid var(--ink); }
+  .fc.awake { box-shadow: 0 0 0 3px #ffd23f, 0 3px 0 var(--ink); background: linear-gradient(160deg, #fff, #fff6e0); }
+  .fc.up { animation: fcup .45s cubic-bezier(.3,1.6,.5,1); } @keyframes fcup { 40% { transform: scale(1.12); } }
+  .fc-pop { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); font-style: normal; font-family: Jua, sans-serif; font-size: 18px; color: #fff; text-shadow: -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 2px 2px 0 var(--ink); pointer-events: none; animation: fcpop .9s ease-out forwards; }
+  @keyframes fcpop { to { transform: translate(-50%, -26px); opacity: 0; } }
+  @media (orientation: landscape) and (max-height: 560px) { .sheet .fr-grid.pg:not(.dex) { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important; gap: 5px; } .fc img { width: 38px; height: 38px; } .fc b { font-size: 12px; } }
 </style>
 </head>
 <body>
@@ -442,20 +458,20 @@
 <a class="osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">지도 © OpenStreetMap</a>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
 
-<script src="../avatar.js?v=1795231747"></script>
-<script src="../avatar2.js?v=1795231747"></script>
-<script src="../avatar3.js?v=1795231747"></script>
-<script src="../scene.js?v=1795231747"></script>
-<script src="../fullbody.js?v=1795231747"></script>
-<script src="roster.js?v=1795231747"></script>
-<script src="yangpyeong.js?v=1795231747"></script>
-<script src="kits.js?v=1795231747"></script>
-<script src="profiles.js?v=1795231747"></script>
-<script src="ui.js?v=1795231747"></script>
-<script src="audio.js?v=1795231747"></script>
+<script src="../avatar.js?v=1795232934"></script>
+<script src="../avatar2.js?v=1795232934"></script>
+<script src="../avatar3.js?v=1795232934"></script>
+<script src="../scene.js?v=1795232934"></script>
+<script src="../fullbody.js?v=1795232934"></script>
+<script src="roster.js?v=1795232934"></script>
+<script src="yangpyeong.js?v=1795232934"></script>
+<script src="kits.js?v=1795232934"></script>
+<script src="profiles.js?v=1795232934"></script>
+<script src="ui.js?v=1795232934"></script>
+<script src="audio.js?v=1795232934"></script>
 <script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
-<script type="module" src="kingdom.js?v=1795231747"></script>
-<script type="module" src="notebook.js?v=1795231747"></script>
+<script type="module" src="kingdom.js?v=1795232934"></script>
+<script type="module" src="notebook.js?v=1795232934"></script>
 </body>
 </html>

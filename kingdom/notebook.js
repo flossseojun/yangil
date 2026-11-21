@@ -402,7 +402,15 @@ function frList() {
       <button class="claim${why === '자원 부족' ? ' lack' : ''}" data-frup="${id}" ${why === '최고 레벨' ? 'disabled' : ''}>${lv >= MAX_LV ? (aw ? '각성 완료' : '최고') : `레벨업<small>${resText(upCost(lv), 11)}</small>`}</button>${det}</div>`;
   }).join('');
   if (solo) return `<button class="mini fr-back" data-frback>◀ 친구 목록</button><div class="fr-list solo">${body}</div>`;
-  return `<div class="fr-tools"><button class="claim alt" data-autogear>알아서 끼우기</button><small>경험치는 전투에 데려가면 쌓여요 · 간식으로 바로 레벨업도 돼요</small></div><div class="nbtabs fr-tabs">${roles.map(([k, n]) => `<button class="${frRole === k ? 'on' : ''}" data-role="${k}">${k === 'all' ? '' : roleIcon(k, 12)}${n}</button>`).join('')}</div><div class="fr-list pg" data-pg="fr-${frRole}">${body}</div>`;
+  const grid = list.map(id => {
+    const f = K.rosterOf(id), k = kitOf(id), r = ROLES[k.role], lv = lvOf(G, id), aw = awakeOf(G, id), gq = G.gear[id], max = lv >= MAX_LV, can = max ? !aw && canPay(AWAKE_COST) : canPay(upCost(lv));
+    return `<div class="fc${can ? ' can' : ''}${aw ? ' awake' : ''}${max ? ' max' : ''}" role="button" tabindex="0" data-tapup="${id}" style="--rc:${r.color}">
+      <span class="fc-lv">Lv.${lv}</span>${gq ? `<span class="fc-g">${gearIcon(gq, 14)}</span>` : ''}<button class="fc-i" data-finfo="${id}" aria-label="${f.name} 자세히">i</button>
+      <img src="${faceSVG(id)}" alt=""><b>${teamIds().includes(id) ? '<i class="fc-t">팀</i>' : ''}${f.name}</b>
+      <span class="fc-xp"><u style="width:${max ? 100 : xpOf(G, id) / xpNeed(lv) * 100}%"></u></span>
+      <span class="fc-c">${max ? (aw ? '각성 완료' : '각성하기') : `${roleIcon(k.role, 10)} ${resText(upCost(lv), 10)}`}</span></div>`;
+  }).join('');
+  return `<div class="fr-tools"><button class="claim alt" data-autogear>알아서 끼우기</button><small>친구를 누르면 바로 레벨업! · <b>i</b>는 자세히 · 전투에 데려가도 경험치가 쌓여요</small></div><div class="nbtabs fr-tabs">${roles.map(([k, n]) => `<button class="${frRole === k ? 'on' : ''}" data-role="${k}">${k === 'all' ? '' : roleIcon(k, 12)}${n}</button>`).join('')}</div><div class="fr-grid pg" data-pg="fr-${frRole}">${grid}</div>`;
 }
 function frShop() {
   const worn = t => Object.values(G.gear).filter(x => x === t).length;
@@ -438,6 +446,18 @@ fr.addEventListener('click', e => {
     K.save(); K.hud(); refreshBadge(); KS.fx('levelup'); K.toast(`${K.rosterOf(id).name} Lv.${lv + 1}!`);
     const p = K.people.find(q => q.id === id); if (p) K.sayText(p, lv + 1 >= MAX_LV ? '최고 레벨! 이제 각성할 수 있대!' : '나 더 강해진 것 같아!');
     frOpen = id; redraw(); return;
+  }
+  const fi = e.target.closest('[data-finfo]'); if (fi) { KS.fx('pop'); frOpen = fi.dataset.finfo; openFR(); return; }
+  const tu = e.target.closest('[data-tapup]');
+  if (tu) {
+    const id = tu.dataset.tapup, lv = lvOf(G, id);
+    if (lv >= MAX_LV) { if (!awakeOf(G, id)) { frOpen = id; openFR(); } else K.toast('최고 레벨 · 각성까지 끝났어요!'); return; }
+    const cost = upCost(lv); if (!canPay(cost)) { lackHint(cost); return; }
+    Object.entries(cost).forEach(([k, n]) => { G.res[k] -= n; }); G.lv[id] = lv + 1; G.xp = G.xp || {}; G.xp[id] = 0; G.stat.lvup = (G.stat.lvup || 0) + 1;
+    K.save(); K.hud(); refreshBadge(); KS.fx('levelup');
+    const p = K.people.find(q => q.id === id); if (p) K.sayText(p, lv + 1 >= MAX_LV ? '최고 레벨! 이제 각성할 수 있대!' : '나 더 강해진 것 같아!');
+    redraw(); const card = fr.querySelector(`[data-tapup="${id}"]`); if (card) { card.classList.add('up'); card.insertAdjacentHTML('beforeend', `<em class="fc-pop">Lv.${lv + 1}!</em>`); }
+    return;
   }
   const c = e.target.closest('[data-fr]'); if (c && !frOpen) { KS.fx('pop'); frOpen = c.dataset.fr; openFR(); }
 });
