@@ -29,6 +29,8 @@
 - **notebook.js(모듈, kingdom.js 다음, `HOOK.tick/tap`으로 붙음):** 처음 안내(G.tut) · 자리 비운 동안 생산(G.seen) · 수첩(출석 · 미션 G.daily, 도감, 업적 G.ach, 저장 코드 YK1:) · 양평 명소(G.town) · 동네 차/사람 · 친구들 창(강화 G.lv, 문구 장비 G.items/G.gear, 각성 G.awake) · 시설 복구 합류(G.joinFac) · 뽑기(G.freePull, 뽑기권 G.ticket, 다 모으면 응원 뽑기) · 낮과 밤(`?hour=21`) · 학교 행사(G.ev, 한정 꾸미기 G.decoUnlock) · 메뉴 버튼.
 - **자원 4개(역할을 나눔, `RES_INFO`):** 지식=시설 · 구역 / 간식=친구 레벨업(빨리) / 체력=꾸미기 · 각성 / 용돈(coin)=뽑기 · 장비(전투 · 의뢰 · 출석 · 미션 · 시장 교환에서 얻음). 친구는 전투 경험치(`addXp`, G.xp)로도 자란다. 모자라면 `lackHint`가 그 자원 나오는 시설로 안내.
 - **모험(notebook.js, 1-5 클리어 후):** 기차 원정(G.exped, 1/4/8시간) · 요일 훈련(`yangil.kingdom.train` 키로 battle.js가 훈련 모드, 하루 3번, G.train) · 소탕(별 3개 스테이지, 하루 10번, G.sweep) · 학교 보물(`TREASURES`, G.treasure → campusBonus). 시설 생산은 3번치까지 쌓임(`stockOf`). 팀 편성 스테이지는 지도(`renderMap`).
+- **가로 전용:** 캠퍼스 · 팀 편성 · 전투는 가로 화면 기준. 세로로 들면 ui.js가 "가로로 돌려 주세요"를 띄우고, manifest는 landscape. 가로 배치 CSS는 `@media (orientation: landscape) and (max-height: 560px)`.
+- **스크롤 없음:** 화면과 창은 한 화면에 맞추고, 긴 목록은 `.pg` 칸 + `paginate`(ui.js, ◀ 1/3 ▶, 옆으로 밀기)로 넘긴다. 팀 편성은 ① 스테이지 고르기 / ② 팀 짜기 탭 + 아래 고정 전투 버튼. 친구 자세히 보기는 목록 대신 한 장으로.
 - **문법 확인:** 모듈 파일은 `node --input-type=module --check < 파일`로 (그냥 `node --check`는 못 잡는 오류가 있음).
 - **장비 `STATIONERY`(kits.js):** 얻는 곳 = 전투 승리 · 친구 선물 · 물맑은시장 문구 좌판 · 문구점. kits.js의 `GEAR`는 옷 그림용이라 이름이 겹치면 안 된다.
 - **저장(localStorage):** `yangil.kingdom.v1`(캠퍼스 G: res, fac, zones, b, friends, lv, bond, stage, chs, wins, story, req) · `.team` · `.chap` · `.stage` · `.voice` · `.sound` · `.deco`.

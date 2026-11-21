@@ -139,38 +139,122 @@
   .smap .nd { cursor: pointer; } .smap .nd.lock { cursor: default; }
   .smap .nd.cur circle.c { animation: ndp 1s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; } @keyframes ndp { to { transform: scale(1.1); } }
   @media (prefers-reduced-motion: reduce) { .smap .nd.cur circle.c { animation: none; } }
+  /* ── 스크롤 없는 한 화면 ── */
+  html, body { height: 100%; overflow: hidden; }
+  body { display: flex; flex-direction: column; height: 100dvh; box-sizing: border-box; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  .top { flex: 0 0 auto; margin-bottom: 8px; }
+  .ttabs { flex: 0 0 auto; display: flex; gap: 8px; margin-bottom: 8px; }
+  .ttabs button { flex: 1; font-family: Jua, sans-serif; font-size: 16px; padding: 7px 0; border: 2.5px solid var(--ink); border-radius: 12px; background: var(--paper); color: var(--ink); box-shadow: 0 3px 0 var(--ink); cursor: pointer; }
+  .ttabs button.on { background: var(--yellow); }
+  .view { display: none; flex: 1 1 auto; min-height: 0; flex-direction: column; gap: 8px; } .view.on { display: flex; }
+  #chaps { flex: 0 0 auto; display: grid !important; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; height: 76px; overflow: hidden; margin: 0; padding: 4px 2px 0; }
+  #chaps .ch { min-height: 64px; height: 66px; padding: 5px 10px; } #chaps .ch.on { transform: none; box-shadow: 0 3px 0 var(--ink); } #chaps .ch.on::after { display: none; }
+  .smap { flex: 1 1 auto; min-height: 0; margin: 0; display: flex; } .smap svg { width: 100%; height: 100%; }
+  .pager { flex: 0 0 auto; display: flex; justify-content: center; align-items: center; gap: 14px; height: 36px; }
+  .pager.one { display: none; }
+  .pager button { width: 44px; height: 32px; border: 2.5px solid var(--ink); border-radius: 10px; background: var(--yellow); box-shadow: 0 3px 0 var(--ink); font-family: Jua, sans-serif; font-size: 15px; color: var(--ink); cursor: pointer; }
+  .pager button:disabled { background: var(--paper2); box-shadow: none; opacity: .5; } .pager span { font-family: Jua, sans-serif; color: #fff; min-width: 50px; text-align: center; }
+  .panel .pager span { color: var(--ink); }
+  #v-team .wrap { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 10px; }
+  #v-team .panel { display: flex; flex-direction: column; min-height: 0; padding: 10px; }
+  .p-list .list { flex: 1 1 auto; min-height: 0; max-height: none !important; overflow: hidden; align-content: start; }
+  .p-list .tabs { margin-bottom: 6px; } .p-list .hint { margin: 4px 2px 0; flex: 0 0 auto; }
+  .syn { margin-top: 8px; } .camp-btn { margin-top: 8px; align-self: flex-start; font-family: Jua, sans-serif; font-size: 13px; background: #fff3c4; border: 2px solid var(--ink); border-radius: 8px; padding: 3px 10px; cursor: pointer; color: var(--ink); }
+  .camp[hidden] { display: none; }
+  .foot.bottom { flex: 0 0 auto; margin-top: 8px; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 0 3px 0 var(--ink); padding: 6px 10px; flex-wrap: nowrap; }
+  .foot.bottom .pow { margin-right: auto; }
+  @media (max-width: 720px) {
+    #v-team .wrap { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+    .field { height: 205px; } .syn { display: none; } .camp-btn { display: none; } .p-field { padding: 6px !important; }
+    .top h1 { font-size: 20px; } .top .res .rs { font-size: 13px; padding: 1px 7px 1px 3px; } .top { gap: 6px; }
+    .list { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)) !important; gap: 8px !important; }
+  }
+  @media (max-height: 480px) { .ttabs button { padding: 3px 0; font-size: 14px; } .field { height: 170px; } .top { margin-bottom: 4px; } }
+  /* 프로필: 한 화면 + 페이지 */
+  .pf { height: min(92vh, 640px); max-height: none !important; overflow: hidden !important; }
+  .pf > div:last-child { display: flex; flex-direction: column; min-height: 0; }
+  .pf .pg { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px; } .pf .pg > * { margin: 0 !important; flex: 0 0 auto; }
+  .pf .pager span { color: var(--ink); }
+  @media (max-width: 560px) { .pf .art { max-width: 110px !important; } .pf { grid-template-rows: auto minmax(0, 1fr); } }
+  .flash { position: fixed; left: 50%; bottom: 90px; transform: translate(-50%, 20px); z-index: 80; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 6px 14px; font-family: Jua, sans-serif; font-size: 15px; color: var(--ink); opacity: 0; pointer-events: none; transition: .25s; } .flash.show { opacity: 1; transform: translate(-50%, 0); }
+  .roles[hidden] { display: none !important; }
+  @media (max-width: 720px) {
+    .top .stage { padding: 2px 4px; } .top .stage b { font-size: 16px; } .top .stage small { display: none; } .top .stage span { min-width: 60px; }
+    .top .res { order: 0; width: auto; } .top .res .rs .ico { width: 14px; height: 14px; } .top .res { gap: 4px; } .top { flex-wrap: wrap; row-gap: 4px; }
+    .ttabs button { font-size: 14px; padding: 5px 0; }
+    .field { height: 172px; } .slot img { height: 112px; width: 54px; } .slot { width: 54px; } .slot .nm { font-size: 11px; }
+    .p-list .tabs { flex-wrap: nowrap; gap: 4px; } .p-list .tabs button { font-size: 12px; padding: 2px 7px; flex: 0 0 auto; } .p-list .tabs { overflow: hidden; }
+    .card::before { height: 40px; } .card img { width: 48px; height: 48px; } .card b { font-size: 13px; margin-top: 6px; } .card .sk { display: none; }
+    .p-list .hint { display: none; }
+    .foot.bottom { padding: 5px 8px; } .foot.bottom .btn { padding: 8px 12px; font-size: 15px; }
+  }
+  .p-list .list { grid-auto-rows: max-content; display: grid !important; } .p-list .list .card { min-height: 92px; }
+  @media (max-width: 720px) { .card b { margin-top: 14px; } .field { height: 188px; } .p-list .tabs button { flex: 1 1 0; min-width: 0; padding: 2px; justify-content: center; font-size: 11px; white-space: nowrap; overflow: hidden; } }
+  .smap svg { background: transparent; }
+  /* ── 가로 화면 (휴대폰 가로) ── */
+  .chapcol { flex: 0 0 auto; display: flex; flex-direction: column; min-height: 0; }
+  @media (orientation: landscape) and (max-height: 560px) {
+    body { padding-top: max(6px, env(safe-area-inset-top)); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+    .top { flex-wrap: nowrap; margin-bottom: 4px; gap: 8px; } .top h1 { font-size: 18px; } .top a { font-size: 13px; padding: 2px 8px 2px 2px; }
+    .top .res { order: 0; width: auto; gap: 4px; } .top .res .rs { font-size: 13px; padding: 0 7px 0 3px; } .top .res .rs .ico { width: 14px; height: 14px; }
+    .top .stage { padding: 1px 4px; } .top .stage b { font-size: 15px; } .top .stage small { display: none; } .top .stage span { min-width: 56px; font-size: 10px; } .top .sbtn { width: 30px; height: 30px; }
+    .ttabs { position: absolute; left: 50%; transform: translateX(-50%); top: max(6px, env(safe-area-inset-top)); width: min(320px, 34vw); margin: 0; z-index: 2; display: none; }
+    .ttabs { display: flex; position: static; transform: none; width: auto; margin-bottom: 4px; } .ttabs button { padding: 2px 0; font-size: 13px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); }
+    #v-stage { flex-direction: row; gap: 10px; }
+    .chapcol { flex: 0 0 30%; }
+    #chaps { flex: 1 1 auto; height: auto !important; grid-template-columns: 1fr !important; grid-auto-rows: 52px; align-content: start; padding: 2px; }
+    #chaps .ch { height: 50px; min-height: 0; padding: 3px 8px; } #chaps .ch small { display: none; } #chaps .ch b { font-size: 15px; } #chaps .ch span { font-size: 11px; }
+    .chapcol .pager { height: 30px; } .chapcol .pager button { height: 26px; width: 38px; }
+    .smap { flex: 1 1 auto; }
+    #v-team .wrap { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; gap: 8px; }
+    #v-team .panel { padding: 6px; }
+    .p-field .field { flex: 1 1 auto; height: auto !important; min-height: 150px; } .syn { display: none; } .camp-btn { display: none; }
+    .slot img { width: 50px !important; height: 104px !important; } .slot { width: 50px !important; } .slot .nm { font-size: 10px; }
+    .p-list .tabs { flex-wrap: nowrap; gap: 3px; overflow: hidden; } .p-list .tabs button { flex: 1 1 0; min-width: 0; padding: 1px 2px; font-size: 11px; justify-content: center; white-space: nowrap; overflow: hidden; }
+    .list { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)) !important; gap: 6px !important; } .card::before { height: 34px; } .card img { width: 42px; height: 42px; } .card b { font-size: 12px; margin-top: 12px; } .card .sk { display: none; } .p-list .list .card { min-height: 80px; }
+    .p-list .hint { display: none; }
+    .foot.bottom { margin-top: 4px; padding: 3px 8px; } .foot.bottom .btn { padding: 5px 12px; font-size: 14px; } .foot.bottom .pow { font-size: 14px; } .foot.bottom .pow small { display: inline; margin-left: 6px; }
+    .pf { height: 94vh; grid-template-columns: 150px minmax(0, 1fr) !important; padding: 10px !important; } .pf h2 { font-size: 22px; } .pf .art { max-width: none !important; }
+    .pager { height: 30px; } .pager button { height: 26px; }
+  }
 </style>
 </head>
 <body>
 <div class="top"><a href="./" id="back">캠퍼스</a><h1>팀 편성</h1><button class="sbtn mus" id="b-music" aria-label="소리 켜고 끄기"></button><div class="res" id="res"></div><div class="stage"><button class="sbtn" id="st-prev" aria-label="이전 스테이지">◀</button><span>STAGE <b id="st-n">1-1</b><small id="st-rec"></small></span><button class="sbtn" id="st-next" aria-label="다음 스테이지">▶</button></div></div>
-<div class="chaps" id="chaps"></div>
-<div class="smap" id="smap"></div>
-<div class="wrap">
-  <section class="panel">
-    <div class="field" id="field"></div>
-    <div class="syn" id="syn"></div>
-    <div class="camp" id="camp"></div>
-    <div class="foot"><span class="pow" id="pow"></span><button class="btn sub" id="auto">자동 편성</button><button class="btn go" id="go">전투 시작</button></div>
-  </section>
-  <section class="panel">
-    <div class="tabs" id="tabs"></div>
-    <div class="list" id="list"></div>
-    <div class="roles" id="roles"></div>
-    <p class="hint" id="hint"></p>
-  </section>
+<div class="ttabs" id="ttabs"><button data-v="stage" class="on">① 스테이지 고르기</button><button data-v="team">② 팀 짜기</button></div>
+<div class="view on" id="v-stage">
+  <div class="chapcol"><div class="chaps pg" id="chaps" data-pg="chaps"></div></div>
+  <div class="smap" id="smap"></div>
 </div>
+<div class="view" id="v-team">
+  <div class="wrap">
+    <section class="panel p-field">
+      <div class="field" id="field"></div>
+      <div class="syn" id="syn"></div>
+      <button class="camp-btn" id="camp-btn">캠퍼스 보너스 보기</button>
+      <div class="camp" id="camp" hidden></div>
+    </section>
+    <section class="panel p-list">
+      <div class="tabs" id="tabs"></div>
+      <div class="list pg" id="list" data-pg="list"></div>
+      <div class="roles" id="roles" hidden></div>
+      <p class="hint" id="hint"></p>
+    </section>
+  </div>
+</div>
+<div class="foot bottom"><span class="pow" id="pow"></span><button class="btn sub" id="auto">자동 편성</button><button class="btn go" id="go">전투 시작</button></div>
 <div class="modal" id="pf" hidden></div>
-<script src="../avatar.js?v=1795227942"></script>
-<script src="../avatar2.js?v=1795227942"></script>
-<script src="../avatar3.js?v=1795227942"></script>
-<script src="../scene.js?v=1795227942"></script>
-<script src="../fullbody.js?v=1795227942"></script>
-<script src="roster.js?v=1795227942"></script>
-<script src="kits.js?v=1795227942"></script>
-<script src="ui.js?v=1795227942"></script>
-<script src="audio.js?v=1795227942"></script>
-<script src="profiles.js?v=1795227942"></script>
-<script src="team.js?v=1795227942"></script>
+<script src="../avatar.js?v=1795231747"></script>
+<script src="../avatar2.js?v=1795231747"></script>
+<script src="../avatar3.js?v=1795231747"></script>
+<script src="../scene.js?v=1795231747"></script>
+<script src="../fullbody.js?v=1795231747"></script>
+<script src="roster.js?v=1795231747"></script>
+<script src="kits.js?v=1795231747"></script>
+<script src="ui.js?v=1795231747"></script>
+<script src="audio.js?v=1795231747"></script>
+<script src="profiles.js?v=1795231747"></script>
+<script src="team.js?v=1795231747"></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module">
 import { shootAll, openViewer, closeViewer } from './chibishot.js';

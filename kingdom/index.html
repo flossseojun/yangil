@@ -372,6 +372,46 @@
   .tr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .tr { background: #e6dcc6; border: 2.5px solid #b8ab92; border-radius: 12px; padding: 8px 4px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .tr span { width: 52px; height: 52px; display: grid; place-items: center; } .tr i { font-style: normal; font-family: Jua, sans-serif; font-size: 28px; color: #8a7a64; } .tr b { font-family: Jua, sans-serif; font-weight: 400; font-size: 14px; } .tr small { font-size: 11px; color: var(--sub); line-height: 1.3; }
   .tr.on { background: linear-gradient(160deg, #fffbe8, #ffe58a); border-color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
+  /* ── 스크롤 없이 페이지로 ── */
+  .sheet:has(.pg) { height: min(90vh, 680px); max-height: none; display: flex; flex-direction: column; overflow: hidden; }
+  .sheet:has(.pg) > *, .sheet:has(.pg) > .nbbody > * { flex: 0 0 auto; }
+  .sheet:has(.pg) > .nbbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .sheet .pg { flex: 1 1 auto !important; min-height: 0; overflow: hidden; align-content: start; }
+  .fr-list.pg, .pg { display: flex; flex-direction: column; gap: 8px; } .dex.pg { display: grid; } .pg > .req { margin-bottom: 0; }
+  .pager { flex: 0 0 auto !important; display: flex; justify-content: center; align-items: center; gap: 14px; height: 40px; margin-top: 6px; }
+  .pager.one, .pager[hidden] { display: none; }
+  .pager button { width: 44px; height: 34px; border: 2.5px solid var(--ink); border-radius: 10px; background: var(--yellow); box-shadow: 0 3px 0 var(--ink); font-family: Jua, sans-serif; font-size: 15px; color: var(--ink); cursor: pointer; }
+  .pager button:disabled { background: var(--paper2); box-shadow: none; opacity: .5; cursor: default; }
+  .pager span { font-family: Jua, sans-serif; font-size: 15px; min-width: 50px; text-align: center; }
+  .fr-back { align-self: flex-start; margin-bottom: 8px; } .fr-list.solo .fr-c { cursor: default; } .fr-list.solo .fr-det { font-size: 14px; }
+  .sheet { overflow-y: auto; }
+  @media (max-height: 480px) { .sheet:has(.pg) { height: 94vh; } .modal { padding: 6px; } }
+  .pg > .req { padding: 6px 9px; } .pg > .req .rq p { margin: 0 0 2px; } .pg > .req .rw { margin-top: 2px; }
+  .fr-list.pg .fr-c { padding: 5px 8px; gap: 8px; } .fr-list.pg .fr-c > img { width: 44px; height: 44px; } .fr-list.pg { gap: 6px; } .fr-tools { margin-bottom: 4px; } .fr-sum { margin-bottom: 4px !important; }
+  /* ── 가로 화면: 창을 넓게, 목록은 두 줄로 ── */
+  @media (orientation: landscape) and (max-height: 560px) {
+    .modal { padding: 6px; }
+    .sheet { width: min(820px, 96vw); max-height: 94vh; padding: 8px 12px !important; }
+    .sheet:has(.pg) { height: 94vh; }
+    .sh-top { margin-bottom: 4px; } .sh-top b { font-size: 19px; } .nbtabs { margin-bottom: 4px; } .nbtabs button { padding: 3px 0; font-size: 14px; }
+    .sheet .pg:not(.dex) { display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px; align-content: start; }
+    .dex.pg { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); } .dx img { width: 42px; height: 42px; }
+    .fr-sum { font-size: 12px; } .nbbody h3 { margin: 4px 0; font-size: 15px; }
+    .atts .att span { display: none; } .atts { margin-bottom: 4px; }
+    .ga-stage { margin: 2px 0 6px; } .ga-machine { transform: scale(.75); margin: -14px 0; } .ga-h, .ga-roles { display: none; } .jc { padding: 6px 10px; } .jc-art { width: 76px; height: 76px; } .jc-art img { width: 72px; height: 72px; }
+    .ev-hero { padding: 4px 8px; } .ev-ic { width: 46px; height: 46px; } .ev-ic .ico { width: 36px; height: 36px; } .ev-bar { margin: 18px 18px 36px; }
+    .tr-grid { grid-template-columns: repeat(6, 1fr); } .tr { padding: 4px 2px; }
+    .pager { height: 32px; margin-top: 4px; } .pager button { height: 28px; }
+    .res-tip.center { top: 50% !important; }
+    .story .page { width: min(560px, 96vw); padding: 10px 16px; } .story .art { height: 70px; } .story h2 { font-size: 20px; margin: 6px 0 4px; } .story p { font-size: 13px; line-height: 1.5; margin-bottom: 6px; }
+  }
+  @media (orientation: landscape) and (max-height: 560px) {
+    .sheet { position: relative; } #fr .fr-sum, .fr-tools small { display: none; } .fr-tools { position: absolute; right: 64px; top: 8px; margin: 0; } .fr-tools .claim { padding: 3px 10px; font-size: 13px; }
+    .fr-list.pg .fr-c { padding: 3px 8px; } .fr-list.pg .fr-c > img { width: 36px; height: 36px; } .fr-c .claim { padding: 3px 8px; min-width: 64px; } .gslot { width: 34px; height: 34px; }
+    .fr-tabs button { padding: 2px 0 !important; font-size: 12px !important; }
+    .pg > .req { padding: 4px 8px; } .pg > .req .rq p { display: none; } .req img { width: 40px; height: 40px; } .claim { padding: 5px 9px; font-size: 14px; } .rbar { height: 12px; } .rbar span { line-height: 8px; }
+    .req.ach .medal .ico { width: 22px; height: 22px; }
+  }
 </style>
 </head>
 <body>
@@ -402,20 +442,20 @@
 <a class="osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">지도 © OpenStreetMap</a>
 <div class="loading" id="loading">양일 캠퍼스 짓는 중…</div>
 
-<script src="../avatar.js?v=1795227942"></script>
-<script src="../avatar2.js?v=1795227942"></script>
-<script src="../avatar3.js?v=1795227942"></script>
-<script src="../scene.js?v=1795227942"></script>
-<script src="../fullbody.js?v=1795227942"></script>
-<script src="roster.js?v=1795227942"></script>
-<script src="yangpyeong.js?v=1795227942"></script>
-<script src="kits.js?v=1795227942"></script>
-<script src="profiles.js?v=1795227942"></script>
-<script src="ui.js?v=1795227942"></script>
-<script src="audio.js?v=1795227942"></script>
+<script src="../avatar.js?v=1795231747"></script>
+<script src="../avatar2.js?v=1795231747"></script>
+<script src="../avatar3.js?v=1795231747"></script>
+<script src="../scene.js?v=1795231747"></script>
+<script src="../fullbody.js?v=1795231747"></script>
+<script src="roster.js?v=1795231747"></script>
+<script src="yangpyeong.js?v=1795231747"></script>
+<script src="kits.js?v=1795231747"></script>
+<script src="profiles.js?v=1795231747"></script>
+<script src="ui.js?v=1795231747"></script>
+<script src="audio.js?v=1795231747"></script>
 <script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
-<script type="module" src="kingdom.js?v=1795227942"></script>
-<script type="module" src="notebook.js?v=1795227942"></script>
+<script type="module" src="kingdom.js?v=1795231747"></script>
+<script type="module" src="notebook.js?v=1795231747"></script>
 </body>
 </html>

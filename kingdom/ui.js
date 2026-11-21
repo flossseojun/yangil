@@ -104,3 +104,54 @@ function showInstallTip() {
   el.innerHTML = `<div class="it-box"><b>주소창 없이 크게 하기</b><p>아이폰: 아래 <b>공유 버튼</b> → <b>홈 화면에 추가</b><br>안드로이드: 오른쪽 위 <b>⋮</b> → <b>홈 화면에 추가</b></p><p>홈 화면 아이콘으로 열면 앱처럼 화면 전체를 써요.</p><button>알겠어요</button></div>`;
   el.hidden = false; el.querySelector('button').onclick = () => { el.hidden = true; };
 }
+// 스크롤 대신 페이지: box(.pg) 안의 아이템을 box 높이에 맞게 나누고 ◀ 1/3 ▶ 로 넘긴다 (옆으로 밀어도 넘어감)
+const PAGE_AT = {};
+function paginate(box, key) {
+  if (!box) return;
+  const old = box.nextElementSibling; if (old && old.classList.contains('pager')) old.remove();
+  const kids = [...box.children]; kids.forEach(k => { k.style.display = ''; });
+  const nav = document.createElement('div'); nav.className = 'pager'; box.after(nav);
+  if (!kids.length || !box.clientHeight) { nav.hidden = true; return; }
+  if (getComputedStyle(box).position === 'static') box.style.position = 'relative';
+  const H = box.clientHeight, pages = []; let s = 0;
+  while (s < kids.length) {
+    kids.forEach((k, i) => { k.style.display = i < s ? 'none' : ''; });
+    const top = kids[s].offsetTop; let e = s + 1;
+    while (e < kids.length && kids[e].offsetTop + kids[e].offsetHeight - top <= H + 1) e++;
+    pages.push([s, e]); s = e;
+  }
+  let p = Math.min(PAGE_AT[key] || 0, pages.length - 1);
+  const show = () => {
+    PAGE_AT[key] = p; kids.forEach((k, i) => { k.style.display = i >= pages[p][0] && i < pages[p][1] ? '' : 'none'; });
+    nav.innerHTML = `<button type="button" data-pg="-1" aria-label="이전 쪽" ${p ? '' : 'disabled'}>◀</button><span>${p + 1} / ${pages.length}</span><button type="button" data-pg="1" aria-label="다음 쪽" ${p < pages.length - 1 ? '' : 'disabled'}>▶</button>`;
+  };
+  if (pages.length < 2) { nav.classList.add('one'); show(); return; }
+  nav.addEventListener('click', e => { const b = e.target.closest('[data-pg]'); e.stopPropagation(); if (!b || b.disabled) return; p += +b.dataset.pg; show(); if (typeof KS !== 'undefined') KS.fx('click'); });
+  let sx = null;
+  box.ontouchstart = e => { sx = e.touches[0].clientX; };
+  box.ontouchend = e => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 50) { const np = p + (dx < 0 ? 1 : -1); if (np >= 0 && np < pages.length) { p = np; show(); } } };
+  show();
+}
+const paginateIn = (root, prefix = '') => { if (root) root.querySelectorAll('.pg').forEach((b, i) => paginate(b, prefix + (b.dataset.pg || i))); };
+
+// 가로 전용: 휴대폰을 세로로 들면 "가로로 돌려 주세요"를 보여 준다
+(function rotateGuard() {
+  const add = () => {
+    if (document.getElementById('rotate')) return;
+    const st = document.createElement('style');
+    st.textContent = `#rotate{position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#2b4a3c;color:#fffaf0;font-family:Jua,sans-serif;text-align:center;padding:24px}
+#rotate .ph{width:70px;height:116px;border:5px solid #fffaf0;border-radius:14px;position:relative;animation:rot 1.8s ease-in-out infinite}
+#rotate .ph::after{content:'';position:absolute;left:50%;bottom:8px;width:14px;height:4px;margin-left:-7px;border-radius:2px;background:#fffaf0}
+#rotate b{font-size:24px;font-weight:400}#rotate small{font-family:'Gowun Dodum',sans-serif;font-size:14px;opacity:.85}
+@keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (max-width:900px){#rotate{display:flex}}`;
+    document.head.appendChild(st);
+    const el = document.createElement('div'); el.id = 'rotate';
+    el.innerHTML = '<div class="ph"></div><b>휴대폰을 가로로 돌려 주세요</b><small>양일 캠퍼스는 가로 화면으로 해요</small>';
+    document.body.appendChild(el);
+    // 화면을 처음 누르면 (지원하는 폰에서) 가로로 고정해 본다
+    const lock = () => { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} };
+    addEventListener('pointerdown', lock, { once: true });
+  };
+  if (document.body) add(); else addEventListener('DOMContentLoaded', add);
+})();
