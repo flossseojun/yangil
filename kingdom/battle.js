@@ -23,7 +23,7 @@ const CH0 = SEL.ch, STAGE = SEL.st, CH = bossChOf(CH0, STAGE), CHD = CHAPTERS[CH
 const SM = TRAIN ? Object.assign({}, stageMulOf(CH0, STAGE), { hp: stageMulOf(CH0, STAGE).hp * .7 }) : stageMulOf(CH0, STAGE), SID = TRAIN ? '요일 훈련' : stageName(CH0, STAGE), PLACE = TRAIN ? `요일 훈련 · ${TK.name}` : IN_TOWER ? `도전의 탑 ${STAGE}층` : CHD.place;
 document.getElementById('stg').textContent = SID; document.getElementById('st-sub').textContent = TRAIN ? 'TRAINING' : 'STAGE ' + SID;
 document.getElementById('st-place').textContent = PLACE; document.getElementById('st-title').textContent = PLACE; document.getElementById('boss-name').textContent = CHD.boss;
-document.getElementById('st-desc').innerHTML = `보스 · ${CHD.boss}${IN_TOWER ? ` · ${CHD.place}에서` : STAGE > 1 ? ` (강화 ${STAGE - 1}단계)` : ''} · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}<br><small>${CHD.desc}</small>`;
+document.getElementById('st-desc').innerHTML = `보스 · ${CHD.boss}${IN_TOWER ? ` · ${CHD.place}에서` : STAGE > 1 ? ` (강화 ${STAGE - 1}단계)` : ''} · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}<br><small>잡몹 웨이브 2번을 물리치면 보스가 깨어나요 · ${CHD.desc}</small>`;
 const nameOf = id => (ROSTER.find(f => f.id === id) || { name: id }).name;
 const introOf = id => (ROSTER.find(f => f.id === id) || { role: '' }).role.split(' · ')[0];
 
@@ -69,7 +69,7 @@ const SKILL_ORDER = ordered;
 document.getElementById('syn').innerHTML = teamSynergy(PICK).filter(x => x.on).map(x => `<b>${x.name}</b>${x.desc}`).join(' · ');
 const SYNERGY = FX.skill;
 const LAYERS = [13000, 13000, 13000].map(x => Math.round(x * SM.hp));     // 보스 체력 3겹
-const TIME_LIMIT = 90;
+const TIME_LIMIT = 120;   // 잡몹 웨이브 2번 + 보스
 
 /* ───────── 작은 도구 ───────── */
 const $ = id => document.getElementById(id);
@@ -117,6 +117,7 @@ const bossCenter = new THREE.Vector3(5.2, 2.6, .4);
 const stunStars = new THREE.Group(); for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(additive('#ffe58a')); s.scale.set(.5, .5, 1); stunStars.add(s); } stunStars.visible = false; stunStars.position.set(5.2, 6.4, -.4); scene.add(stunStars);
 function damageBoss(n, opts = {}) {
   if (B.dead || over) return;
+  if (mobsAlive().length) { damageMob(n, opts); return; }   // 잡몹이 보스를 지킨다
   if (opts.normal && B.blind > 0) { if (Math.random() < .35) popText(bossCenter.clone().add(new THREE.Vector3(rnd(-1, 1), rnd(0, 1.2), 1)), 'block', 'MISS'); return; }
   const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * (B.vanish > 0 ? .5 : 1) * rnd(.92, 1.08));
   B.hp -= dmg; B.flashT = .12; KS.fx(crit ? 'crit' : 'hit');
@@ -127,7 +128,7 @@ function damageBoss(n, opts = {}) {
     if (B.layer >= LAYERS.length - 1) { B.hp = 0; B.dead = true; finish(true); break; }
     B.layer++; const carry = -B.hp; B.hp = LAYERS[B.layer] - carry; B.trail = LAYERS[B.layer]; B.stagger = 1.4;
     cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.2, 0)), 'info', ARENA.onLayer(B.layer)); $('boss-name').textContent = ARENA.name(); KS.fx('break'); if (revealed()) { KS.fx('reveal'); KS.play('maker'); }
-    flash(ARENA.hitColor, 7, bossCenter, .7); shake(.22, .5);
+    flash(ARENA.hitColor, 7, bossCenter, .7); shake(.22, .5); setTimeout(() => { if (!over) { spawnMobs(2); sayBoss('부하들아, 나와라!', 3.4); } }, 900);
     const c = $('b-count'); c.classList.add('pop'); setTimeout(() => c.classList.remove('pop'), 250);
   }
 }
@@ -141,6 +142,70 @@ function hurt(u, n, cls = 'taken') {
   if (u.hp <= 0) { u.hp = 0; u.dead = true; u.ch.set('down'); KS.fx('down'); u.ring.visible = false; if (!alive().length) finish(false); }
 }
 function heal(u, n) { if (u.dead) return; if (u.sleep > 0) wakeUnit(u, '깼다!'); if (n > 0) { u.ch.face('happy', .8); KS.fx('heal'); } const v = Math.min(u.max - u.hp, Math.round(n)); u.hp += v; popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', '+' + fmt(v)); flash('#7dff9e', 2.4, u.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), .6); }
+
+/* ───────── 잡몹: 웨이브 2번을 다 잡으면 보스가 깨어난다 ───────── */
+const MOBS = [], WAVE_SIZE = [3, 4], WAVES = WAVE_SIZE.length;
+let wave = 0, mobKills = 0, firstSpawn = false;
+const mobsAlive = () => MOBS.filter(m => !m.dead);
+const MOB_NAME = { 1: '은행 열매', 2: '고장 난 모니터', 3: '꼬마 유령', 4: '벽돌 졸개', 5: '졸개', 6: '표 검사 로봇', 7: '떡꼬치' };
+const mobName = () => MOB_NAME[CH] || '졸개';
+function makeMob() {
+  const g = new THREE.Group(), M = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .6 }, o)), add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  let eyeY = .55, eyeZ = .38;
+  if (CH === 2) { add(new THREE.BoxGeometry(.9, .62, .2), M('#2a2f3a'), 0, .7, 0); add(new THREE.PlaneGeometry(.76, .48), new THREE.MeshBasicMaterial({ color: '#4ff0ff' }), 0, .7, .11); add(new THREE.BoxGeometry(.1, .3, .1), M('#2a2f3a'), 0, .25, 0); add(new THREE.BoxGeometry(.5, .06, .3), M('#2a2f3a'), 0, .08, 0); eyeY = .72; eyeZ = .13; }
+  else if (CH === 3) { add(new THREE.SphereGeometry(.38, 14, 10), M('#f2f4ff', { transparent: true, opacity: .85 }), 0, .75, 0); add(new THREE.ConeGeometry(.38, .6, 14, 1, true), M('#f2f4ff', { transparent: true, opacity: .75, side: THREE.DoubleSide }), 0, .32, 0).rotation.x = Math.PI; eyeY = .8; eyeZ = .34; }
+  else if (CH === 4) { add(new THREE.BoxGeometry(.8, .55, .45), M('#b8562f'), 0, .32, 0); add(new THREE.BoxGeometry(.82, .04, .47), M('#e9dcc4'), 0, .35, 0); eyeY = .45; eyeZ = .24; }
+  else if (CH === 6) { add(new THREE.BoxGeometry(.6, .7, .5), M('#2f6fb8'), 0, .55, 0); add(new THREE.CylinderGeometry(.18, .18, .52, 12), M('#23262e'), 0, .18, 0).rotation.x = Math.PI / 2; add(new THREE.BoxGeometry(.4, .14, .02), M('#ffd23f'), 0, .5, .26); eyeY = .72; eyeZ = .26; }
+  else if (CH === 7) { add(new THREE.CylinderGeometry(.03, .03, 1.3, 6), M('#c9a06a'), 0, .65, 0); [0, 1, 2].forEach(i => add(new THREE.CylinderGeometry(.16, .16, .32, 12), M('#fff4e0'), 0, .35 + i * .3, 0)); add(new THREE.SphereGeometry(.2, 10, 8), M('#e0321e', { roughness: .3 }), 0, .98, 0); eyeY = .66; eyeZ = .16; }
+  else { add(new THREE.SphereGeometry(.42, 16, 12), M('#f2b720', { emissive: '#7a4a00', emissiveIntensity: .25 }), 0, .45, 0); add(new THREE.ConeGeometry(.14, .3, 6), M('#5fae4e'), .05, .95, 0).rotation.z = -.4; }
+  [-.12, .12].forEach(x => { add(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' }), x, eyeY, eyeZ); add(new THREE.SphereGeometry(.035, 6, 5), new THREE.MeshBasicMaterial({ color: '#231c17' }), x, eyeY, eyeZ + .05); });
+  const bg = new THREE.Mesh(new THREE.PlaneGeometry(.8, .1), new THREE.MeshBasicMaterial({ color: '#231c17', depthTest: false })), fill = new THREE.Mesh(new THREE.PlaneGeometry(.76, .06), new THREE.MeshBasicMaterial({ color: '#ff5a4a', depthTest: false }));
+  bg.position.set(0, 1.45, 0); fill.position.set(0, 1.45, .01); bg.renderOrder = fill.renderOrder = 20; g.add(bg, fill); g.userData.fill = fill;
+  return g;
+}
+function spawnMobs(n) {
+  for (let i = 0; i < n; i++) {
+    const g = makeMob(), pos = new THREE.Vector3(rnd(3.2, 6.2), 0, rnd(-1.6, 1.5)), max = Math.round(1700 * SM.hp);
+    const m = { g, pos, hp: max, max, atkT: rnd(1, 2), dead: false, bob: Math.random() * 6, y: 5 + i * .6 };
+    g.scale.setScalar(1.45); g.position.set(pos.x, m.y, pos.z); scene.add(g); MOBS.push(m);
+  }
+  KS.fx('warn');
+}
+function damageMob(n, opts = {}) {
+  const live = mobsAlive(); if (!live.length) return;
+  const m = live.sort((a, b) => a.pos.x - b.pos.x)[0];   // 맨 앞 잡몹부터
+  const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * rnd(.92, 1.08));
+  m.hp -= dmg; m.flash = .12; KS.fx(crit ? 'crit' : 'hit');
+  popText(m.pos.clone().add(new THREE.Vector3(rnd(-.3, .3), 1.7, .4)), crit ? 'big' : 'mid', fmt(dmg));
+  if (m.hp <= 0) {
+    m.dead = true; mobKills++; flash(ARENA.hitColor, 3.5, m.pos.clone().add(new THREE.Vector3(0, .6, 0)), .45); KS.fx('break');
+    tween(.35, k => { m.g.scale.setScalar(Math.max(.01, 1.45 * (1 - k))); m.g.rotation.y = k * 6; m.g.position.y = k * 1.2; }, () => scene.remove(m.g));
+    if (opts.big && mobsAlive().length) damageMob(Math.round(dmg * .5), { crit: false });   // 큰 기술은 남은 힘이 다음 잡몹에게
+  }
+}
+function stepMobs(dt) {
+  if (!firstSpawn) { firstSpawn = true; spawnMobs(WAVE_SIZE[0]); sayBoss(`${mobName()} 떼가 나타났다!`, 3.4); }
+  MOBS.forEach(m => {
+    if (m.dead) return;
+    if (m.y > 0) { m.y = Math.max(0, m.y - dt * 9); if (!m.y) KS.fx('hit'); }
+    m.bob += dt * 6; m.flash = Math.max(0, (m.flash || 0) - dt);
+    const live = alive(); if (!live.length) return;
+    const tgt = live.reduce((a, u) => u.pos.distanceTo(m.pos) < a.pos.distanceTo(m.pos) ? u : a, live[0]);
+    const d = tgt.pos.clone().sub(m.pos); d.y = 0; const len = d.length();
+    if (len > 1.8 && !m.y) m.pos.add(d.multiplyScalar(Math.min(1, dt * 1.3 / len)));
+    else if (!m.y && (m.atkT -= dt) <= 0) { m.atkT = rnd(1.2, 1.6); m.lunge = .25; hurt(tgt, 110 * SM.dmg); }
+    m.lunge = Math.max(0, (m.lunge || 0) - dt);
+    const lx = m.lunge > 0 ? -Math.sin(m.lunge / .25 * Math.PI) * .3 : 0;
+    m.g.position.set(m.pos.x + lx, m.y + Math.abs(Math.sin(m.bob)) * .12, m.pos.z); m.g.rotation.y = -.5 + Math.sin(m.bob * .5) * .1;
+    m.g.userData.fill.scale.x = Math.max(.01, m.hp / m.max); m.g.userData.fill.position.x = -.38 * (1 - m.hp / m.max);
+  });
+  if (wave < WAVES && !mobsAlive().length && firstSpawn) {
+    wave++;
+    if (wave < WAVES) { spawnMobs(WAVE_SIZE[wave]); sayBoss(`웨이브 ${wave + 1}!`, 3.4); }
+    else { KS.fx('reveal'); sayBoss(`${ARENA.name()}이(가) 깨어났다!`, 3); shake(.25, .5); flash(ARENA.hitColor, 8, bossCenter, .8); B.slamT = 2; B.bombT = 5; }
+  }
+}
+const bossAwake = () => wave >= WAVES;
 
 /* ───────── 날아가는 것 ───────── */
 function bolt(from, to, color, dur, done, size = .55, arc = 0) {
@@ -536,7 +601,7 @@ function finish(win) {
     if (treasureGot) chips.push([treasureGot, `보물 ${TREASURES[treasureGot].name}`, '#ffd9a8']);
     const pct = (lv, xp) => lv >= MAX_LV ? 100 : Math.round(xp / xpNeed(lv) * 100);
     const team = xpRows.map(r => `<div class="rt-f${r.up ? ' up' : ''}"><img src="${svgURL(kitHeadSVG(r.id))}" alt=""><b>${nameOf(r.id)}</b><span class="rt-lv">Lv.<i data-lv="${r.lv1}">${r.lv0}</i></span><i class="rt-xp"><u style="width:${pct(r.lv0, r.xp0)}%" data-to="${pct(r.lv1, r.xp1)}" data-up="${r.up ? 1 : 0}"></u></i><small>+${xpGain}</small>${r.up ? '<em>LEVEL UP!</em>' : ''}${win && bondUp.includes(r.id) ? `<span class="rt-h">${drawIcon('heart', 12)}+1</span>` : ''}</div>`).join('');
-    $('r-time').innerHTML = `<div class="rt-stat">${win || TRAIN ? `<span><small>걸린 시간</small><b>${Math.round(TIME_LIMIT - clockT)}초</b></span>` : ''}<span><small>남은 친구</small><b>${left} / ${units.length}</b></span>${TRAIN ? `<span><small>오늘 남은 훈련</small><b>${Math.max(0, TRAIN_MAX - ((loadCampus() || {}).train || { n: 0 }).n)}번</b></span>` : ''}</div>
+    $('r-time').innerHTML = `<div class="rt-stat">${win || TRAIN ? `<span><small>걸린 시간</small><b>${Math.round(TIME_LIMIT - clockT)}초</b></span>` : ''}<span><small>남은 친구</small><b>${left} / ${units.length}</b></span><span><small>잡몹 처치</small><b>${mobKills}</b></span>${TRAIN ? `<span><small>오늘 남은 훈련</small><b>${Math.max(0, TRAIN_MAX - ((loadCampus() || {}).train || { n: 0 }).n)}번</b></span>` : ''}</div>
       ${team ? `<div class="rt-team">${team}</div>` : ''}
       ${chips.length ? `<div class="rt-chips">${chips.map(([ic, tx, c], i) => `<span style="--c:${c};animation-delay:${.6 + i * .15}s">${drawIcon(ic, 18)}${tx}</span>`).join('')}</div>` : ''}
       ${!win && !TRAIN ? `<div class="rt-tip">${drawIcon('info', 16)}<span>캠퍼스에서 친구를 레벨업하거나 장비를 끼우면 더 세져요</span></div>` : ''}`;
@@ -569,7 +634,7 @@ function step(dt) {
   if (B.burn > 0) { B.burn -= dt; B.burnT += dt; if (B.burnT >= 1) { B.burnT = 0; damageBoss(150, { crit: false }); } }
   if (B.stun > 0) B.stun -= dt;
   else if (B.stagger > 0) B.stagger -= dt;
-  else if (introT <= 0) {
+  else if (introT <= 0 && bossAwake()) {
     const haste = 1 + B.layer * .15;
     B.slamT -= dt * haste; B.bombT -= dt * haste;
     if (B.slamT <= 0 && !bombs.length) {
@@ -581,6 +646,7 @@ function step(dt) {
     else if ((CH !== 4 || revealed()) && (B.spT -= dt * haste) <= 0) { B.spT = rnd(11, 13.5); special(); }
   }
   stepBombs(B.stun > 0 ? 0 : dt);
+  stepMobs(dt);
   // 친구들
   units.forEach(u => {
     if (u.dead) return;
@@ -598,7 +664,7 @@ function step(dt) {
       u.atkT = u.st.rate / (hasteT > 0 ? 1.6 : 1);
       const atk = u.st.atk * (buffT > 0 ? 1.4 : 1) * (B.nerf > 0 ? .7 : 1);
       if (u.st.melee) { u.lunge = .3; u.ch.play('attack'); KS.fx('swing'); tween(.12, null, () => damageBoss(atk, { normal: true })); }
-      else { u.ch.play('throw'); KS.fx('throw'); } if (!u.st.melee) bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk, { normal: true }), .45, .6);
+      else { u.ch.play('throw'); KS.fx('throw'); } if (!u.st.melee) { const mf = mobsAlive().sort((a, b) => a.pos.x - b.pos.x)[0]; bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), mf ? mf.pos.clone().add(new THREE.Vector3(0, .6, .2)) : bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk, { normal: true }), .45, .6); }
     }
   });
   if (auto && cutLock <= 0 && ultT <= 0) autoSkills();
@@ -639,6 +705,9 @@ function frame() {
   $('b-now').style.width = Math.max(0, B.hp / L * 100) + '%'; $('b-trail').style.width = Math.max(0, B.trail / L * 100) + '%';
   $('b-next').style.visibility = B.layer < LAYERS.length - 1 ? 'visible' : 'hidden';
   $('b-count').textContent = '×' + (LAYERS.length - B.layer);
+  if (!bossAwake()) { const live = mobsAlive(), tot = live.reduce((a, m) => a + m.hp, 0), mx = live.reduce((a, m) => a + m.max, 0) || 1; $('b-now').style.width = (tot / mx * 100) + '%'; $('b-trail').style.width = (tot / mx * 100) + '%'; $('boss-name').textContent = `${mobName()} 웨이브 ${Math.min(wave + 1, WAVES)}/${WAVES} · 남은 ${live.length}`; }
+  else if (mobsAlive().length) $('boss-name').textContent = `${ARENA.name()} · 부하 ${mobsAlive().length}`;
+  else if ($('boss-name').textContent.includes('부하') || $('boss-name').textContent.includes('웨이브')) $('boss-name').textContent = ARENA.name();
   if (!over) units.forEach(u => { if (!u.dead && !u.lowSaid && u.hp / u.max < .3) { u.lowSaid = true; sayLine(u, 'low'); } });
   $('timer').textContent = `${Math.floor(clockT / 60)}:${String(Math.floor(clockT % 60)).padStart(2, '0')}`;
   skillUI();
