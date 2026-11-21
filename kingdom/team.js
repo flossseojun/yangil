@@ -28,7 +28,29 @@ function layout(ids) {
   return [...front.map((id, i) => ({ id, p: F[i] || Bk[i] })), ...back.map((id, i) => ({ id, p: Bk[i] }))];
 }
 function teamTagCount(s) { const tags = teamTags(team); return Object.keys(tags).some(t => ({ invent: ['chem', 'eng'], code: ['sona'], city: ['zec'], cheer: ['bcast'], sprout: ['seed'], squid: ['squid'], sport: ['sport'] })[s.id].includes(t)); }
+// 양평 지도 스테이지: 스테이지를 지도 위 길로 보여 준다 (깬 곳은 깃발)
+const MAP_THEME = { 1: ['#f7e7b0', '#e9b949', '#c98a00'], 2: ['#e2dcf7', '#9d86f0', '#6c4fd1'], 3: ['#d3dbef', '#7f90c8', '#3a4a8a'], 4: ['#e9e1d0', '#8fbf8a', '#2b4a3c'], 5: ['#fff0c8', '#ffd23f', '#c98a00'], 6: ['#dceaf7', '#8ab8e8', '#2f6fb8'], 7: ['#ffe4d6', '#ff9a7a', '#e0573b'] };
+function renderMap() {
+  const prog = progOf(G, ch), tower = ch === TOWER, n = 10, start = tower ? Math.max(1, prog - 4) : 1, th = MAP_THEME[ch] || MAP_THEME[1];
+  const W = 600, H = 270, pos = i => { const row = Math.floor(i / 5), col = i % 5, x = 70 + (row ? 4 - col : col) * 115; return [x, row ? 205 : 100]; };
+  let sd = ch * 7 + 3; const rnd = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
+  const deco = Array.from({ length: 18 }, () => { const x = rnd() * W, y = rnd() * H; return `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(6 + rnd() * 10).toFixed(0)}" fill="${th[1]}" opacity=".35"/>`; }).join('');
+  const pts = Array.from({ length: n }, (_, i) => pos(i));
+  const road = 'M' + pts.map(p => p.join(',')).join(' L') ;
+  const nodes = pts.map(([x, y], i) => { const st = start + i, done = st < prog, cur = st === prog, lock = st > prog, sel = st === stage, sn = starsOf(G, ch, st);
+    return `<g class="nd${lock ? ' lock' : ''}${cur ? ' cur' : ''}" data-st="${st}">
+      ${sel ? `<circle cx="${x}" cy="${y}" r="34" fill="none" stroke="#231c17" stroke-width="4" stroke-dasharray="6 5"/>` : ''}
+      <circle class="c" cx="${x}" cy="${y}" r="26" fill="${lock ? '#d9d0bd' : cur ? '#ffd23f' : '#fffaf0'}" stroke="#231c17" stroke-width="4"/>
+      <text x="${x}" y="${y + 8}" text-anchor="middle" font-family="Jua, sans-serif" font-size="${tower ? 18 : 22}" fill="${lock ? '#8a7a64' : '#231c17'}">${tower ? st + '층' : st}</text>
+      ${done ? `<path d="M${x + 14} ${y - 22}v-30" stroke="#231c17" stroke-width="3"/><path d="M${x + 14} ${y - 52}l20 7-20 7z" fill="${th[2]}" stroke="#231c17" stroke-width="2"/>` : ''}
+      ${sn ? `<text x="${x}" y="${y + 46}" text-anchor="middle" font-size="16" fill="#c98a00">${'★'.repeat(sn)}${'☆'.repeat(3 - sn)}</text>` : ''}
+      ${lock && st === prog + 1 ? `<text x="${x}" y="${y + 46}" text-anchor="middle" font-family="Jua, sans-serif" font-size="13" fill="#8a7a64">잠김</text>` : ''}</g>`; }).join('');
+  $('smap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${CHAPTERS[ch - 1].place} 스테이지 지도"><rect width="${W}" height="${H}" fill="${th[0]}"/>${deco}
+    <path d="${road}" fill="none" stroke="#fffaf0" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/><path d="${road}" fill="none" stroke="${th[2]}" stroke-width="4" stroke-dasharray="10 10" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/>
+    <rect x="10" y="10" width="${CHAPTERS[ch - 1].place.length * 22 + 30}" height="34" rx="9" fill="#2b4a3c" stroke="#231c17" stroke-width="3"/><text x="25" y="35" font-family="Jua, sans-serif" font-size="20" fill="#fff">${CHAPTERS[ch - 1].place}</text>${nodes}</svg>`;
+}
 function renderTop() {
+  renderMap(); setTimeout(() => { const on = document.querySelector('.ch.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' }); }, 0);
   $('res').innerHTML = RES_ORDER.map(k => `<span class="rs">${drawIcon(k, 18)}${fmt(G.res[k] || 0)}</span>`).join('');
   const sm = stageMulOf(ch, stage), sn = starsOf(G, ch, stage);
   $('st-n').innerHTML = stageName(ch, stage) + `<span class="st-stars">${[0, 1, 2].map(i => drawIcon(i < sn ? 'star' : 'starOff', 12)).join('')}</span>`; $('st-rec').textContent = `추천 ${fmt(sm.rec)}`;
@@ -110,9 +132,10 @@ $('list').addEventListener('click', e => { const i = e.target.closest('[data-pf]
 $('field').addEventListener('click', e => { const s = e.target.closest('.slot[data-id]'); if (s) openProfile(s.dataset.id); });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
 $('chaps').addEventListener('click', e => { const b = e.target.closest('.ch'); if (!b) return; const n = +b.dataset.ch; if (!progOf(G, n)) { const c = CHAPTERS[n - 1]; $('hint').textContent = `${prevOf(n)}-${CHAP_UNLOCK} 스테이지를 깨면 「${c.place}」${josa(c.place, '이', '가').slice(c.place.length)} 열려요`; $('hint').scrollIntoView({ block: 'nearest' }); return; } ch = n; stage = progOf(G, n); save(); render(); });
+$('smap').addEventListener('click', e => { const g = e.target.closest('[data-st]'); if (!g) return; const st = +g.dataset.st; if (st > progOf(G, ch)) { $('hint').textContent = '앞 스테이지를 먼저 깨야 열려요'; return; } stage = st; save(); render(); });
 $('st-prev').onclick = () => { stage = Math.max(1, stage - 1); save(); render(); };
 $('st-next').onclick = () => { stage = Math.min(Math.min(maxStageOf(ch), progOf(G, ch)), stage + 1); save(); render(); };
 $('auto').onclick = autoPick;
-$('go').onclick = () => { save(); location.href = 'battle.html'; };
+$('go').onclick = () => { save(); try { localStorage.removeItem('yangil.kingdom.train'); } catch (e) {} location.href = 'battle.html'; };
 if (typeof KS !== 'undefined') { KS.play('campus'); KS.bind($('b-music')); document.addEventListener('click', e => { if (e.target.closest('button, .card, .slot, .ch')) KS.fx('click'); }, true); }
 render();
