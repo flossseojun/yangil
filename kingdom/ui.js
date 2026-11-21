@@ -133,3 +133,25 @@ function paginate(box, key) {
   show();
 }
 const paginateIn = (root, prefix = '') => { if (root) root.querySelectorAll('.pg').forEach((b, i) => paginate(b, prefix + (b.dataset.pg || i))); };
+
+// 가로 전용: 휴대폰을 세로로 들면 "가로로 돌려 주세요"를 보여 준다
+(function rotateGuard() {
+  const add = () => {
+    if (document.getElementById('rotate')) return;
+    const st = document.createElement('style');
+    st.textContent = `#rotate{position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#2b4a3c;color:#fffaf0;font-family:Jua,sans-serif;text-align:center;padding:24px}
+#rotate .ph{width:70px;height:116px;border:5px solid #fffaf0;border-radius:14px;position:relative;animation:rot 1.8s ease-in-out infinite}
+#rotate .ph::after{content:'';position:absolute;left:50%;bottom:8px;width:14px;height:4px;margin-left:-7px;border-radius:2px;background:#fffaf0}
+#rotate b{font-size:24px;font-weight:400}#rotate small{font-family:'Gowun Dodum',sans-serif;font-size:14px;opacity:.85}
+@keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (max-width:900px){#rotate{display:flex}}`;
+    document.head.appendChild(st);
+    const el = document.createElement('div'); el.id = 'rotate';
+    el.innerHTML = '<div class="ph"></div><b>휴대폰을 가로로 돌려 주세요</b><small>양일 캠퍼스는 가로 화면으로 해요</small>';
+    document.body.appendChild(el);
+    // 화면을 처음 누르면 (지원하는 폰에서) 가로로 고정해 본다
+    const lock = () => { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} };
+    addEventListener('pointerdown', lock, { once: true });
+  };
+  if (document.body) add(); else addEventListener('DOMContentLoaded', add);
+})();

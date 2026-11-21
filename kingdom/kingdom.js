@@ -862,7 +862,7 @@ $('b-in').onclick = () => { camera.zoom = Math.min(controls.maxZoom, camera.zoom
 $('b-out').onclick = () => { camera.zoom = Math.max(controls.minZoom, camera.zoom / 1.25); camera.updateProjectionMatrix(); };
 $('b-back').onclick = () => { location.href = '../'; };
 $('b-fight').onclick = () => { save(); location.href = 'team.html'; };
-KS.play('campus'); KS.bind($('b-music')); setupFullscreen($('b-full'), false);
+KS.play('campus'); KS.bind($('b-music')); setupFullscreen($('b-full'), true);
 document.querySelectorAll('.rbtn, .pbtn').forEach(b => b.addEventListener('click', () => KS.fx('click')));
 
 /* ───────── 반복 ───────── */

@@ -191,13 +191,39 @@
   .p-list .list { grid-auto-rows: max-content; display: grid !important; } .p-list .list .card { min-height: 92px; }
   @media (max-width: 720px) { .card b { margin-top: 14px; } .field { height: 188px; } .p-list .tabs button { flex: 1 1 0; min-width: 0; padding: 2px; justify-content: center; font-size: 11px; white-space: nowrap; overflow: hidden; } }
   .smap svg { background: transparent; }
+  /* ── 가로 화면 (휴대폰 가로) ── */
+  .chapcol { flex: 0 0 auto; display: flex; flex-direction: column; min-height: 0; }
+  @media (orientation: landscape) and (max-height: 560px) {
+    body { padding-top: max(6px, env(safe-area-inset-top)); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+    .top { flex-wrap: nowrap; margin-bottom: 4px; gap: 8px; } .top h1 { font-size: 18px; } .top a { font-size: 13px; padding: 2px 8px 2px 2px; }
+    .top .res { order: 0; width: auto; gap: 4px; } .top .res .rs { font-size: 13px; padding: 0 7px 0 3px; } .top .res .rs .ico { width: 14px; height: 14px; }
+    .top .stage { padding: 1px 4px; } .top .stage b { font-size: 15px; } .top .stage small { display: none; } .top .stage span { min-width: 56px; font-size: 10px; } .top .sbtn { width: 30px; height: 30px; }
+    .ttabs { position: absolute; left: 50%; transform: translateX(-50%); top: max(6px, env(safe-area-inset-top)); width: min(320px, 34vw); margin: 0; z-index: 2; display: none; }
+    .ttabs { display: flex; position: static; transform: none; width: auto; margin-bottom: 4px; } .ttabs button { padding: 2px 0; font-size: 13px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); }
+    #v-stage { flex-direction: row; gap: 10px; }
+    .chapcol { flex: 0 0 30%; }
+    #chaps { flex: 1 1 auto; height: auto !important; grid-template-columns: 1fr !important; grid-auto-rows: 52px; align-content: start; padding: 2px; }
+    #chaps .ch { height: 50px; min-height: 0; padding: 3px 8px; } #chaps .ch small { display: none; } #chaps .ch b { font-size: 15px; } #chaps .ch span { font-size: 11px; }
+    .chapcol .pager { height: 30px; } .chapcol .pager button { height: 26px; width: 38px; }
+    .smap { flex: 1 1 auto; }
+    #v-team .wrap { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; gap: 8px; }
+    #v-team .panel { padding: 6px; }
+    .p-field .field { flex: 1 1 auto; height: auto !important; min-height: 150px; } .syn { display: none; } .camp-btn { display: none; }
+    .slot img { width: 50px !important; height: 104px !important; } .slot { width: 50px !important; } .slot .nm { font-size: 10px; }
+    .p-list .tabs { flex-wrap: nowrap; gap: 3px; overflow: hidden; } .p-list .tabs button { flex: 1 1 0; min-width: 0; padding: 1px 2px; font-size: 11px; justify-content: center; white-space: nowrap; overflow: hidden; }
+    .list { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)) !important; gap: 6px !important; } .card::before { height: 34px; } .card img { width: 42px; height: 42px; } .card b { font-size: 12px; margin-top: 12px; } .card .sk { display: none; } .p-list .list .card { min-height: 80px; }
+    .p-list .hint { display: none; }
+    .foot.bottom { margin-top: 4px; padding: 3px 8px; } .foot.bottom .btn { padding: 5px 12px; font-size: 14px; } .foot.bottom .pow { font-size: 14px; } .foot.bottom .pow small { display: inline; margin-left: 6px; }
+    .pf { height: 94vh; grid-template-columns: 150px minmax(0, 1fr) !important; padding: 10px !important; } .pf h2 { font-size: 22px; } .pf .art { max-width: none !important; }
+    .pager { height: 30px; } .pager button { height: 26px; }
+  }
 </style>
 </head>
 <body>
 <div class="top"><a href="./" id="back">캠퍼스</a><h1>팀 편성</h1><button class="sbtn mus" id="b-music" aria-label="소리 켜고 끄기"></button><div class="res" id="res"></div><div class="stage"><button class="sbtn" id="st-prev" aria-label="이전 스테이지">◀</button><span>STAGE <b id="st-n">1-1</b><small id="st-rec"></small></span><button class="sbtn" id="st-next" aria-label="다음 스테이지">▶</button></div></div>
 <div class="ttabs" id="ttabs"><button data-v="stage" class="on">① 스테이지 고르기</button><button data-v="team">② 팀 짜기</button></div>
 <div class="view on" id="v-stage">
-  <div class="chaps pg" id="chaps" data-pg="chaps"></div>
+  <div class="chapcol"><div class="chaps pg" id="chaps" data-pg="chaps"></div></div>
   <div class="smap" id="smap"></div>
 </div>
 <div class="view" id="v-team">
@@ -218,17 +244,17 @@
 </div>
 <div class="foot bottom"><span class="pow" id="pow"></span><button class="btn sub" id="auto">자동 편성</button><button class="btn go" id="go">전투 시작</button></div>
 <div class="modal" id="pf" hidden></div>
-<script src="../avatar.js?v=1795229201"></script>
-<script src="../avatar2.js?v=1795229201"></script>
-<script src="../avatar3.js?v=1795229201"></script>
-<script src="../scene.js?v=1795229201"></script>
-<script src="../fullbody.js?v=1795229201"></script>
-<script src="roster.js?v=1795229201"></script>
-<script src="kits.js?v=1795229201"></script>
-<script src="ui.js?v=1795229201"></script>
-<script src="audio.js?v=1795229201"></script>
-<script src="profiles.js?v=1795229201"></script>
-<script src="team.js?v=1795229201"></script>
+<script src="../avatar.js?v=1795231747"></script>
+<script src="../avatar2.js?v=1795231747"></script>
+<script src="../avatar3.js?v=1795231747"></script>
+<script src="../scene.js?v=1795231747"></script>
+<script src="../fullbody.js?v=1795231747"></script>
+<script src="roster.js?v=1795231747"></script>
+<script src="kits.js?v=1795231747"></script>
+<script src="ui.js?v=1795231747"></script>
+<script src="audio.js?v=1795231747"></script>
+<script src="profiles.js?v=1795231747"></script>
+<script src="team.js?v=1795231747"></script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script type="module">
 import { shootAll, openViewer, closeViewer } from './chibishot.js';
