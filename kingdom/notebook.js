@@ -18,7 +18,7 @@ function offline() {
   const now = Date.now(), seen = G.seen; G.seen = now;
   if (!seen || now - seen < 3 * 60 * 1000) return;
   const gain = { know: 0, snack: 0, power: 0 };
-  K.FAC_ORDER.forEach(t => { const p = K.prodOf(t); if (!p || !p[1] || !K.facOpen(t)) return; const n = Math.min(OFF_CAP, Math.floor((now - seen) / (p[2] * 1000))); gain[p[0]] += Math.round(n * p[1] * OFF_RATE); });
+  K.FAC_ORDER.forEach(t => { const p = K.prodOf(t); if (!p || !p[1] || !K.facOpen(t)) return; const n = Math.min(OFF_CAP, Math.max(0, Math.floor((now - seen) / (p[2] * 1000)) - 3)); /* 3번치는 시설에 쌓여 있다 */ gain[p[0]] += Math.round(n * p[1] * OFF_RATE); });
   if (!gain.know && !gain.snack && !gain.power) return;
   const m = Math.round((now - seen) / 60000), away = m >= 60 * 24 ? `${Math.floor(m / 1440)}일` : m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60 ? m % 60 + '분' : ''}` : `${m}분`;
   showQ([{ t: '다녀왔어?', p: `<b>${away}</b> 동안 친구들이 캠퍼스를 지켰어요.<br>창고에 쌓인 자원이에요.<small style="display:block;color:#7a6d5c;font-size:12px;margin-top:4px">시설 레벨이 높을수록 많이 쌓여요 (최대 ${OFF_CAP}번치)</small>`, art: 'mile', reward: gain, btn: '받기' }], () => { give(gain); KS.fx('coin'); });
@@ -56,7 +56,7 @@ function stepTut() {
   if (G.tut == null) G.tut = 0;
   if (G.tut >= TUT.length) return;
   const s = TUT[G.tut];
-  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, #ev, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
+  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, #ev, #adv, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
   if (tutStarted !== G.tut) { tutStarted = G.tut; s.start && s.start(); tutEl.querySelector('p').innerHTML = `<b class="n">${G.tut + 1}/${TUT.length}</b> ${s.text}`; }
   tutEl.hidden = false;
   if (s.done()) { nextTut(); return; }
@@ -630,6 +630,115 @@ syncGacha();
 if (K.lvOfFac('club') && G.gachaTold == null && G.friends.length > 5) G.gachaTold = 1;   // 이미 동아리실이 있던 친구는 짧게 알려 준다
 if (G.gachaTold === 1 && !G.gachaSeen && K.lvOfFac('club')) setTimeout(() => K.toast('동아리실 친구 모집이 별 버튼(뽑기)으로 바뀌었어요!'), 2500);
 
+/* ───────── 8¼. 모험: 기차 원정 · 요일 훈련 · 소탕 · 학교 보물 ───────── */
+G.exped = G.exped || [];
+const DEST = [
+  { id: 'station', name: '양평역 한 바퀴', h: 1, desc: '역 앞 심부름 · 용돈과 간식', rw: m => ({ coin: Math.round((30 + L()) * m), snack: Math.round((30 + L() * 2) * m) }) },
+  { id: 'river', name: '남한강 자전거길', h: 4, desc: '용돈 · 장비 1개 · 가끔 뽑기권', rw: m => ({ coin: Math.round((90 + L() * 3) * m), know: Math.round((60 + L() * 3) * m) }), gear: 1, ticket: .3, treasure: .05 },
+  { id: 'mountain', name: '용문산 캠프', h: 8, desc: '용돈 · 장비 2개 · 뽑기권 · 가끔 학교 보물', rw: m => ({ coin: Math.round((200 + L() * 5) * m), power: Math.round((80 + L() * 3) * m) }), gear: 2, ticket: 1, treasure: .15 },
+];
+const EXP_SLOTS = () => 2 + (K.restore() >= .5 ? 1 : 0);
+const busyIds = () => new Set(G.exped.filter(Boolean).flatMap(e => e.ids));
+const expOpen = () => (typeof progOf === 'function' && progOf(G, 2) > 0) || G.wins >= 3;
+const advDot = () => { if (!expOpen()) return 0; const now = Date.now(); const done = G.exped.filter(e => e && now >= e.end).length, free = EXP_SLOTS() - G.exped.filter(Boolean).length, tr = (G.train && G.train.day === dayNum() ? G.train.n : 0) < TRAIN_MAX ? 1 : 0; return done + (free > 0 ? 1 : 0) + tr; };
+const adv = document.createElement('div'); adv.className = 'modal'; adv.id = 'adv'; adv.hidden = true; document.body.appendChild(adv);
+let advTab = 'exp', pickDest = null, pickIds = [], sweepKey = null;
+const left2 = ms => { const m = Math.max(0, Math.ceil(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분`; };
+function tabExp() {
+  const now = Date.now(), slots = EXP_SLOTS();
+  if (pickDest) {
+    const busy = busyIds(), d = DEST.find(x => x.id === pickDest), sum = pickIds.reduce((a, id) => a + lvOf(G, id), 0), m = 1 + Math.max(0, sum - 3) * .05;
+    return `<h3>${drawIcon('train', 18)} ${d.name} <small>${d.h}시간 · 친구 3명을 골라요</small></h3>
+      <p class="fr-sum"><small>레벨이 높은 친구를 보낼수록 보상이 커져요 (지금 ×${m.toFixed(2)}). 원정 중인 친구도 전투는 할 수 있어요.</small></p>
+      <div class="dex exp-pick">${G.friends.slice().sort((a, b) => lvOf(G, b) - lvOf(G, a)).map(id => busy.has(id) ? `<div class="dx no"><img src="${faceSVG(id)}" alt=""><span>원정 중</span></div>` : `<button class="dx${pickIds.includes(id) ? ' on' : ''}" data-xp="${id}"><img src="${faceSVG(id)}" alt=""><span>${K.rosterOf(id).name} · ${lvOf(G, id)}</span></button>`).join('')}</div>
+      <div class="sv-row sticky"><button class="claim alt" data-xback>뒤로</button><button class="claim" data-xgo ${pickIds.length === 3 ? '' : 'disabled'}>출발! (${pickIds.length}/3)</button></div>`;
+  }
+  const cards = Array.from({ length: slots }, (_, i) => {
+    const e = G.exped[i];
+    if (!e) return `<div class="req exp-slot"><span class="medal">${drawIcon('train', 30)}</span><div class="rq"><b>빈 기차 ${i + 1}</b><p>어디로 보낼까요?</p><div class="exp-dest">${DEST.map(d => `<button class="mini" data-xd="${d.id}" data-slot="${i}">${d.name} · ${d.h}시간</button>`).join('')}</div></div></div>`;
+    const d = DEST.find(x => x.id === e.dest), done = now >= e.end, k = Math.min(1, (now - e.start) / (e.end - e.start));
+    return `<div class="req exp-slot${done ? ' done' : ''}"><span class="medal">${drawIcon('train', 30)}</span><div class="rq"><b>${d.name}</b><div class="exp-faces">${e.ids.map(id => `<img src="${faceSVG(id)}" alt="">`).join('')}</div>${bar(Math.round(k * 100), 100)}<p>${done ? '돌아왔어요!' : `${left2(e.end - now)} 남음`} · ${d.desc}</p></div><button class="claim" data-xget="${i}" ${done ? '' : 'disabled'}>${done ? '보상 받기' : '가는 중'}</button></div>`;
+  }).join('');
+  return `<h3>${drawIcon('train', 18)} 기차 원정 <small>쉬는 친구들을 양평 여기저기로 보내요</small></h3>${cards}${slots < 3 ? '<p class="sv"><small>양평 재건 50%가 되면 기차가 하나 더 생겨요.</small></p>' : ''}`;
+}
+function tabTrain() {
+  const today = new Date().getDay(), tr = G.train && G.train.day === dayNum() ? G.train.n : 0, kind = TRAIN_DAYS[today];
+  const names = ['일', '월', '화', '수', '목', '금', '토'];
+  const week = names.map((n, i) => `<div class="att${i === today ? ' now' : ''}"><small>${n}</small>${i ? drawIcon(TRAIN_DAYS[i] === 'gear' ? 'pencil' : TRAIN_DAYS[i] === 'xp' ? 'star' : TRAIN_DAYS[i], 18) : drawIcon('compass', 18)}<span>${i ? TRAIN_KINDS[TRAIN_DAYS[i]].name : '골라서'}</span></div>`).join('');
+  const go = k => `<button class="claim" data-tgo="${k}" ${tr < TRAIN_MAX ? '' : 'disabled'}>${TRAIN_KINDS[k].name} 훈련 시작</button>`;
+  return `<h3>요일 훈련 <small>오늘 남은 횟수 ${TRAIN_MAX - tr} / ${TRAIN_MAX}</small></h3><div class="atts">${week}</div>
+    <p class="fr-sum"><small>지금 팀으로 짧은 전투를 해요. 이기면 그날 자원을 아주 많이 받아요 (지면 조금). 세기는 지금까지 깬 스테이지에 맞춰져요.</small></p>
+    <div class="sv-row">${kind ? go(kind) : Object.keys(TRAIN_KINDS).map(go).join('')}</div>`;
+}
+function tabSweep() {
+  const sw = G.sweep && G.sweep.day === dayNum() ? G.sweep.n : 0;
+  const list = Object.entries(G.star || {}).filter(([k, v]) => v >= 3 && !k.startsWith(TOWER + '-')).map(([k]) => k.split('-').map(Number)).sort((a, b) => effStage(b[0], b[1]) - effStage(a[0], a[1]));
+  if (!list.length) return `<h3>${drawIcon('sweep', 18)} 소탕</h3><p class="sv">별 3개로 깬 스테이지가 생기면 전투 없이 보상을 받을 수 있어요. 친구를 모두 살려서 이겨 보세요!</p>`;
+  if (!sweepKey || !list.some(([c, st]) => c + '-' + st === sweepKey)) sweepKey = list[0].join('-');
+  const [c, st] = sweepKey.split('-').map(Number), rw = sweepReward(c, st);
+  return `<h3>${drawIcon('sweep', 18)} 소탕 <small>오늘 남은 횟수 ${SWEEP_MAX - sw} / ${SWEEP_MAX}</small></h3>
+    <p class="fr-sum"><small>별 3개로 깬 스테이지는 전투 없이 승리 보상을 받아요. 팀 친구들도 경험치를 조금 받아요.</small></p>
+    <div class="sw-list">${list.slice(0, 12).map(([a, b]) => `<button class="mini${a + '-' + b === sweepKey ? ' on' : ''}" data-swk="${a}-${b}">${a}-${b} ${CHAPTERS[a - 1].place}</button>`).join('')}</div>
+    <div class="req"><div class="rq"><b>${c}-${st} 소탕</b><div class="rw">${resText(rw, 13)} · 경험치 +${sweepXp(c, st)}</div><p>장비가 나올 수도 있어요 (30%)</p></div><button class="claim" data-sw ${sw < SWEEP_MAX ? '' : 'disabled'}>소탕!</button></div>
+    <button class="claim alt wide" data-sw5 ${SWEEP_MAX - sw >= 5 ? '' : 'disabled'}>5번 한꺼번에</button>`;
+}
+const sweepReward = (c, st) => { const R = stageMulOf(c, st).reward; return { know: Math.round(50 * R), snack: Math.round(34 * R), power: Math.round(26 * R), coin: Math.round(30 * R) }; };
+const sweepXp = (c, st) => Math.round(30 * (1 + (effStage(c, st) - 1) * .15) * .6);
+function doSweep(times) {
+  const [c, st] = sweepKey.split('-').map(Number), day = dayNum(); G.sweep = G.sweep && G.sweep.day === day ? G.sweep : { day, n: 0 };
+  times = Math.min(times, SWEEP_MAX - G.sweep.n); if (times <= 0) return;
+  const tot = { know: 0, snack: 0, power: 0, coin: 0 }, gears = [], ups = [];
+  for (let i = 0; i < times; i++) {
+    Object.entries(sweepReward(c, st)).forEach(([k, v]) => { tot[k] += v; });
+    if (Math.random() < .3) { const t = rollGear(effStage(c, st) / 2); G.items[t] = (G.items[t] || 0) + 1; gears.push(STATIONERY[t].name); }
+    teamIds().filter(id => G.friends.includes(id)).forEach(id => { if (addXp(G, id, sweepXp(c, st))) ups.push(K.rosterOf(id).name); });
+    G.sweep.n++; G.wins = (G.wins || 0) + 1;
+  }
+  give(tot); KS.fx('fanfare');
+  K.toast(`소탕 ${times}번 완료!${gears.length ? ` 장비 ${gears.length}개` : ''}${ups.length ? ` · ${[...new Set(ups)].join(', ')} 레벨 업` : ''}`);
+}
+function tabTreasure() {
+  const own = G.treasure || {}, n = TREASURE_ORDER.filter(t => own[t]).length;
+  return `<h3>학교 보물 <small>${n} / ${TREASURE_ORDER.length}개 · 모으면 팀 전체가 세져요</small></h3>
+    <div class="tr-grid">${TREASURE_ORDER.map(t => { const d = TREASURES[t]; return `<div class="tr${own[t] ? ' on' : ''}"><span>${own[t] ? drawIcon(t, 40) : '<i>?</i>'}</span><b>${own[t] ? d.name : '???'}</b><small>${d.desc}</small></div>`; }).join('')}</div>
+    <p class="sv"><small>얻는 곳 · 도전의 탑 10층마다 · 기차 원정(남한강 · 용문산에서 가끔)</small></p>`;
+}
+function openADV(t) {
+  if (t) advTab = t;
+  if (!expOpen()) { K.toast('1-5를 깨면 모험이 열려요!'); return; }
+  const tabs = [['exp', '기차 원정'], ['train', '요일 훈련'], ['sweep', '소탕'], ['tre', '보물']];
+  adv.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="모험"><div class="sh-top"><b>모험</b><span class="nbres">${resText(G.res, 14)}</span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
+    <div class="nbtabs">${tabs.map(([k, n]) => `<button class="${advTab === k ? 'on' : ''}" data-at="${k}">${n}</button>`).join('')}</div>
+    <div class="nbbody">${({ exp: tabExp, train: tabTrain, sweep: tabSweep, tre: tabTreasure })[advTab]()}</div></div>`;
+  adv.hidden = false;
+}
+adv.addEventListener('click', e => {
+  if (e.target === adv || e.target.closest('[data-close]')) { adv.hidden = true; pickDest = null; pickIds = []; return; }
+  const t = e.target.closest('[data-at]'); if (t) { KS.fx('click'); advTab = t.dataset.at; pickDest = null; pickIds = []; openADV(); return; }
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.xd) { KS.fx('click'); pickDest = b.dataset.xd; pickIds = []; adv.dataset.slot = b.dataset.slot; openADV(); return; }
+  if (b.dataset.xp) { KS.fx('pop'); const id = b.dataset.xp; pickIds = pickIds.includes(id) ? pickIds.filter(x => x !== id) : pickIds.length < 3 ? [...pickIds, id] : pickIds; const sc = adv.querySelector('.sheet').scrollTop; openADV(); adv.querySelector('.sheet').scrollTop = sc; return; }
+  if (b.dataset.xback != null) { pickDest = null; pickIds = []; openADV(); return; }
+  if (b.dataset.xgo != null) { const d = DEST.find(x => x.id === pickDest), now = Date.now(); G.exped[+adv.dataset.slot] = { dest: d.id, ids: pickIds.slice(), start: now, end: now + d.h * 3600e3, m: 1 + Math.max(0, pickIds.reduce((a, id) => a + lvOf(G, id), 0) - 3) * .05 }; pickDest = null; pickIds = []; K.save(); KS.fx('throw'); K.toast(`${d.name}(으)로 출발! 칙칙폭폭`); openADV(); return; }
+  if (b.dataset.xget != null) {
+    const i = +b.dataset.xget, ex = G.exped[i]; if (!ex || Date.now() < ex.end) return; const d = DEST.find(x => x.id === ex.dest), got = [];
+    give(d.rw(ex.m || 1));
+    for (let k = 0; k < (d.gear || 0); k++) { const g2 = rollGear(L() / 5 + d.h / 2); G.items[g2] = (G.items[g2] || 0) + 1; got.push(STATIONERY[g2].name); }
+    if (d.ticket && Math.random() < d.ticket) { G.ticket = (G.ticket || 0) + 1; got.push('뽑기권'); }
+    if (d.treasure && Math.random() < d.treasure) { const tr = grantTreasure(G); if (tr) got.push(`학교 보물 ${TREASURES[tr].name}!`); }
+    ex.ids.forEach(id => addXp(G, id, 20 * d.h));
+    G.exped[i] = null; K.save(); KS.fx('fanfare'); K.toast(`원정 보상${got.length ? ' · ' + got.join(', ') : ''} · 친구들 경험치 +${20 * d.h}`); openADV(); return;
+  }
+  if (b.dataset.tgo) { try { localStorage.setItem('yangil.kingdom.train', JSON.stringify({ kind: b.dataset.tgo, day: todayNum() })); } catch (er) {} K.save(); location.href = 'battle.html'; return; }
+  if (b.dataset.swk) { sweepKey = b.dataset.swk; openADV(); return; }
+  if (b.dataset.sw != null) { doSweep(1); openADV(); return; }
+  if (b.dataset.sw5 != null) { doSweep(5); openADV(); return; }
+});
+const advBtn = document.createElement('button'); advBtn.className = 'rbtn'; advBtn.id = 'b-adv'; advBtn.setAttribute('aria-label', '모험');
+advBtn.innerHTML = drawIcon('compass', 24) + '<i class="badge" id="adv-n" hidden>0</i>'; $('b-fight').before(advBtn);
+advBtn.onclick = () => { KS.fx('click'); openADV(); };
+let advT = 0; K.HOOK.tick.push(dt => { if ((advT += dt) < 2) return; advT = 0; advBtn.classList.toggle('locked', !expOpen()); const n = advDot(), el = $('adv-n'); if (el) { el.textContent = n; el.hidden = !n; } if (!adv.hidden && advTab === 'exp' && !pickDest) { const sc = adv.querySelector('.sheet').scrollTop; openADV(); adv.querySelector('.sheet').scrollTop = sc; } });
+
 /* ───────── 8½. 오른쪽 버튼 정리: 자주 안 쓰는 버튼은 '메뉴'로 ───────── */
 {
   const more = document.createElement('button'); more.className = 'rbtn'; more.id = 'b-more'; more.setAttribute('aria-label', '메뉴'); more.setAttribute('aria-expanded', 'false');
@@ -775,4 +884,4 @@ let evT = 0; K.HOOK.tick.push(dt => { if ((evT += dt) > 2) { evT = 0; syncEV(); 
 { const fx = curEvent().E.fx; if (fx) { const box = document.createElement('div'); box.className = 'evfx ' + fx; box.innerHTML = Array.from({ length: 22 }, (_, i) => `<i style="left:${(i * 4.6 + (i % 3) * 7) % 100}%;animation-delay:${-(i * .83) % 9}s;animation-duration:${7 + (i % 5) * 1.3}s"></i>`).join(''); document.body.appendChild(box); } }
 
 K.save();
-Object.assign(K, { openEV, evState, setHour, openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });
+Object.assign(K, { openADV, openEV, evState, setHour, openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });

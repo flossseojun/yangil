@@ -259,7 +259,7 @@ const BUILD_BONUS = {
 };
 const DECO_TYPES = ['ginkgo', 'bench', 'flower', 'lamp', 'vending', 'fountain', 'planter', 'snowman', 'cherry', 'flags', 'parasol', 'booth', 'banner', 'xmas'];
 function campusBonus(g) {
-  const b = { magic: 1, front: 1, charge: 1, heal: 1, mood: 1, list: [] }, cnt = {};
+  const b = { magic: 1, front: 1, charge: 1, heal: 1, mood: 1, atk: 1, list: [] }, cnt = {};
   ((g && g.b) || []).forEach(x => { cnt[x.t] = (cnt[x.t] || 0) + 1; });
   const fac = (g && g.fac) || null;
   Object.entries(BUILD_BONUS).forEach(([t, d]) => {
@@ -268,8 +268,27 @@ function campusBonus(g) {
   });
   const deco = DECO_TYPES.reduce((a, t) => a + (cnt[t] || 0), 0), mood = Math.min(5, Math.floor(deco / 4));
   if (mood) { b.mood += mood * .03; b.list.push(`꾸미기 ${deco}개 · 모든 친구 체력 +${mood * 3}%`); }
+  Object.keys((g && g.treasure) || {}).forEach(t => { const d = TREASURES[t]; if (d) { b[d.key] += d.v; b.list.push(`보물 ${d.name} · ${d.desc}`); } });
   return b;
 }
+// 학교 보물: 모으면 팀 전체가 세진다 (원정 · 도전의 탑 10층마다)
+const TREASURES = {
+  album:   { name: '졸업앨범', key: 'mood', v: .08, desc: '모든 친구 체력 +8%' },
+  trophy:  { name: '우승 트로피', key: 'front', v: .12, desc: '앞줄 친구 체력 +12%' },
+  uniform: { name: '낡은 교복', key: 'heal', v: .12, desc: '회복 +12%' },
+  chalk:   { name: '분필 한 상자', key: 'charge', v: .1, desc: '스킬 충전 +10%' },
+  medal:   { name: '과학 경시 메달', key: 'magic', v: .12, desc: '폭발 · 마법 공격 +12%' },
+  mic:     { name: '방송부 마이크', key: 'atk', v: .06, desc: '모든 친구 공격 +6%' },
+};
+const TREASURE_ORDER = ['album', 'trophy', 'uniform', 'chalk', 'medal', 'mic'];
+function grantTreasure(g) { const left = TREASURE_ORDER.filter(t => !((g.treasure || {})[t])); if (!left.length) return null; const t = left[Math.floor(Math.random() * left.length)]; g.treasure = g.treasure || {}; g.treasure[t] = 1; return t; }
+// 요일 훈련: 요일마다 다른 자원 (일요일은 골라서)
+const todayNum = () => { const t = Date.now(); return Math.floor((t - new Date(t).getTimezoneOffset() * 60000) / 864e5); };
+const TRAIN_DAYS = { 1: 'know', 2: 'snack', 3: 'power', 4: 'coin', 5: 'gear', 6: 'xp' };
+const TRAIN_KINDS = { know: { name: '지식', ch: 1 }, snack: { name: '간식', ch: 7 }, power: { name: '체력', ch: 2 }, coin: { name: '용돈', ch: 6 }, gear: { name: '장비', ch: 3 }, xp: { name: '경험치', ch: 1 } };
+const TRAIN_MAX = 3, SWEEP_MAX = 10;
+function trainStage(g) { let best = 1; CHAPTERS.forEach(c => { if (c.tower) return; const p = progOf(g, c.n); if (p > 1) best = Math.max(best, effStage(c.n, p - 1)); }); return Math.max(1, best - 2); }
+function trainActive(g) { try { const t = JSON.parse(localStorage.getItem('yangil.kingdom.train')); const tr = (g && g.train) || {}; if (t && t.day === todayNum() && TRAIN_KINDS[t.kind] && !(tr.day === t.day && tr.n >= TRAIN_MAX)) return t; } catch (e) {} return null; }
 // 스테이지: 갈수록 은행왕이 강해진다
 const MAX_STAGE = 10;
 const stageMul = st => ({ hp: 1 + (st - 1) * .4, dmg: 1 + (st - 1) * .18, reward: 1 + (st - 1) * .35, rec: Math.round((4200 + (st - 1) * 900) / 10) * 10 });

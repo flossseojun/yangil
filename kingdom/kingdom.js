@@ -561,12 +561,15 @@ function syncBubble(t, now) {
   let s = bubbles.get(t);
   if (ready && !s) { s = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex(p[0]), depthTest: false })); s.scale.set(1.1, 1.28, 1); s.renderOrder = 10; s.userData.fac = t; world.add(s); bubbles.set(t, s); }
   if (!ready && s) { world.remove(s); bubbles.delete(t); s = null; }
-  if (s) { const m = meshes.get(t); s.position.set(m.position.x, (m.userData.h || 2) + 1.4 + Math.sin(now / 300 + m.position.x) * .1, m.position.z); }
+  if (s) { const m = meshes.get(t), n = stockOf(t, now), k = 1 + (n - 1) * .14; s.scale.set(1.1 * k, 1.28 * k, 1); s.position.set(m.position.x, (m.userData.h || 2) + 1.4 + Math.sin(now / 300 + m.position.x) * .1, m.position.z); }
 }
+// 생산 대기열: 최대 3번치까지 쌓인다 (말풍선이 커진다)
+const STOCK_MAX = 3;
+const stockOf = (t, now = Date.now()) => { const p = prodOf(t); if (!p || !G.facAt[t]) return 0; return Math.min(STOCK_MAX, Math.floor((now - G.facAt[t]) / (p[2] * 1000))); };
 function collect(t) {
-  const p = prodOf(t); if (!p) return; KS.fx('coin');
-  G.res[p[0]] += p[1]; G.facAt[t] = Date.now(); bump('col_' + p[0], p[1]); bump('col'); save(); hud();
-  const m = meshes.get(t); floatText(`+${p[1]}${drawIcon(p[0], 20)}`, new THREE.Vector3(m.position.x, (m.userData.h || 2) + 1.2, m.position.z));
+  const p = prodOf(t); if (!p) return; const now = Date.now(), n = Math.max(1, stockOf(t, now)); KS.fx('coin');
+  G.res[p[0]] += p[1] * n; G.facAt[t] = n >= STOCK_MAX ? now : G.facAt[t] + n * p[2] * 1000; bump('col_' + p[0], p[1] * n); bump('col'); save(); hud();
+  const m = meshes.get(t); floatText(`+${p[1] * n}${drawIcon(p[0], 20)}${n > 1 ? ` <small>×${n}</small>` : ''}`, new THREE.Vector3(m.position.x, (m.userData.h || 2) + 1.2, m.position.z));
 }
 
 /* ───────── 친구들 ───────── */
@@ -706,7 +709,7 @@ function showFac(t) {
   const p = prodOf(t), bonus = typeof BUILD_BONUS !== 'undefined' && BUILD_BONUS[t];
   const stars = Array.from({ length: MAX_LV }, (_, i) => drawIcon(i < lv ? 'star' : 'starOff', 15)).join('');
   const lines = [];
-  if (p && lv) { const left = Math.max(0, Math.ceil((p[2] * 1000 - (Date.now() - (G.facAt[t] || Date.now()))) / 1000)); lines.push(`${RES_NAME[p[0]]} ${p[1]}개 / ${p[2]}초${left ? ` · ${left}초 뒤` : ' · 모을 수 있어요'}`); }
+  if (p && lv) { const left = Math.max(0, Math.ceil((p[2] * 1000 - (Date.now() - (G.facAt[t] || Date.now()))) / 1000)); lines.push(`${RES_NAME[p[0]]} ${p[1]}개 / ${p[2]}초 · 쌓인 것 ${stockOf(t)}/${STOCK_MAX}${left ? ` · ${left}초 뒤` : ''}`); }
   if (d.prod && lv < MAX_LV) lines.push(`다음 레벨: ${RES_NAME[d.prod[0]]} ${d.prod[1] * next}개`);
   if (bonus) lines.push(`전투 보너스 · ${bonus.text.replace(/\+(\d+)%/, (m, x) => '+' + Math.round(x * .6 * Math.max(1, lv)) + '%')}${lv ? '' : ' (복구하면)'}`);
   if (d.recruit) lines.push(`친구 ${G.friends.length} / ${recruitCap()}명까지 모을 수 있어요`);

@@ -16,9 +16,12 @@ if (!PICK.length) PICK = DEFAULT_TEAM.slice();
 const CAMP = loadCampus() || { res: { know: 0, snack: 0, power: 0 }, b: [], friends: [] };
 const CB = campusBonus(CAMP);
 const FX = teamFx(PICK); FX.heal *= CB.heal; FX.charge *= CB.charge;
-const SEL = loadSel(CAMP), CH0 = SEL.ch, STAGE = SEL.st, CH = bossChOf(CH0, STAGE), CHD = CHAPTERS[CH - 1], IN_TOWER = CH0 === TOWER;   // CH = 나오는 보스의 챕터
-const SM = stageMulOf(CH0, STAGE), SID = stageName(CH0, STAGE), PLACE = IN_TOWER ? `도전의 탑 ${STAGE}층` : CHD.place;
-document.getElementById('stg').textContent = SID; document.getElementById('st-sub').textContent = 'STAGE ' + SID;
+// 요일 훈련: 캠퍼스 모험 창에서 시작하면 그날 자원을 많이 주는 짧은 전투가 된다
+const TRAIN = trainActive(CAMP), TK = TRAIN && TRAIN_KINDS[TRAIN.kind];
+const SEL = TRAIN ? (() => { const ch = TK.ch, tier = (CHAPTERS[ch - 1].tier || ch); return { ch, st: Math.max(1, trainStage(CAMP) - (tier - 1) * 4) }; })() : loadSel(CAMP);
+const CH0 = SEL.ch, STAGE = SEL.st, CH = bossChOf(CH0, STAGE), CHD = CHAPTERS[CH - 1], IN_TOWER = !TRAIN && CH0 === TOWER;   // CH = 나오는 보스의 챕터
+const SM = TRAIN ? Object.assign({}, stageMulOf(CH0, STAGE), { hp: stageMulOf(CH0, STAGE).hp * .7 }) : stageMulOf(CH0, STAGE), SID = TRAIN ? '요일 훈련' : stageName(CH0, STAGE), PLACE = TRAIN ? `요일 훈련 · ${TK.name}` : IN_TOWER ? `도전의 탑 ${STAGE}층` : CHD.place;
+document.getElementById('stg').textContent = SID; document.getElementById('st-sub').textContent = TRAIN ? 'TRAINING' : 'STAGE ' + SID;
 document.getElementById('st-place').textContent = PLACE; document.getElementById('st-title').textContent = PLACE; document.getElementById('boss-name').textContent = CHD.boss;
 document.getElementById('st-desc').innerHTML = `보스 · ${CHD.boss}${IN_TOWER ? ` · ${CHD.place}에서` : STAGE > 1 ? ` (강화 ${STAGE - 1}단계)` : ''} · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}<br><small>${CHD.desc}</small>`;
 const nameOf = id => (ROSTER.find(f => f.id === id) || { name: id }).name;
@@ -60,7 +63,7 @@ let fi = 0, bi = 0;
 const STATS = Object.fromEntries(ordered.map(id => {
   const k = kitOf(id), r = ROLES[k.role], front = !!r.melee && fi < FRONT.length, home = front ? FRONT[fi++] : BACK[bi++] || [-5, 0];
   const bst = boostOf(CAMP, id), lvm = lvMult(lvOf(CAMP, id)) * bst.skill, lvs = lvMult(lvOf(CAMP, id)), magic = ['blaster', 'mage'].includes(k.role) ? CB.magic : 1, frontB = r.melee ? CB.front : 1;
-  return [id, { lvm, role: k.role, hp: Math.round(r.hp * FX.hp * lvs * bst.hp * frontB * CB.mood), atk: r.atk * (r.melee ? FX.melee : FX.ranged) * lvs * bst.atk * magic, rate: r.rate, melee: front, home, cd: r.cd / FX.charge / bst.charge, awake: awakeOf(CAMP, id), skill: k.skill, who: `${nameOf(id)} · ${introOf(id)}`, c1: CUT_BG[k.role], bg: CUT_BG[k.role], bolt: BOLT[k.role] || '#ffffff', color: r.color }];
+  return [id, { lvm, role: k.role, hp: Math.round(r.hp * FX.hp * lvs * bst.hp * frontB * CB.mood), atk: r.atk * (r.melee ? FX.melee : FX.ranged) * lvs * bst.atk * magic * CB.atk, rate: r.rate, melee: front, home, cd: r.cd / FX.charge / bst.charge, awake: awakeOf(CAMP, id), skill: k.skill, who: `${nameOf(id)} · ${introOf(id)}`, c1: CUT_BG[k.role], bg: CUT_BG[k.role], bolt: BOLT[k.role] || '#ffffff', color: r.color }];
 }));
 const SKILL_ORDER = ordered;
 document.getElementById('syn').innerHTML = teamSynergy(PICK).filter(x => x.on).map(x => `<b>${x.name}</b>${x.desc}`).join(' · ');
@@ -485,8 +488,21 @@ function finish(win) {
   const left = alive().length, stars = win ? (left === 5 ? 3 : left >= 3 ? 2 : 1) : 0;
   const base = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6, coin: 12 + stars * 6 } : { know: 5, snack: 3, power: 0, coin: 3 };
   const rw = Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.round(v * SM.reward)]));
-  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0, gearGot = null, lvUps = [], xpGain = 0;
-  if (g) {
+  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0, gearGot = null, lvUps = [], xpGain = 0, trainMsg = '', treasureGot = null;
+  if (g && TRAIN) {   // 요일 훈련 결과: 그날 자원만 많이
+    const k = TRAIN.kind, m = win ? 1 : .25, R = SM.reward;
+    Object.keys(rw).forEach(r => { rw[r] = 0; });
+    if (['know', 'snack', 'power', 'coin'].includes(k)) rw[k] = Math.round({ know: 180, snack: 140, power: 110, coin: 110 }[k] * R * m);
+    const got = [];
+    if (k === 'gear' && win) { g.items = g.items || {}; for (let i = 0; i < 2; i++) { const t = rollGear(effStage(CH, STAGE) / 2 + 2); g.items[t] = (g.items[t] || 0) + 1; got.push(STATIONERY[t].name); } }
+    Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
+    xpGain = Math.round(30 * (1 + (effStage(CH, STAGE) - 1) * .15) * (k === 'xp' ? 3 : 1) * m);
+    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const up = addXp(g, id, xpGain); if (up) lvUps.push([id, lvOf(g, id)]); });
+    const day = todayNum(); g.train = g.train && g.train.day === day ? g.train : { day, n: 0 }; g.train.n++;
+    trainMsg = `요일 훈련 · ${TK.name} ${win ? '성공!' : '아쉽게 실패 (보상 조금)'}${got.length ? `<br><b style="color:#9ad5ff">장비 획득 · ${got.join(', ')}</b>` : ''}<br>함께한 친구들 경험치 +${xpGain}${lvUps.length ? ` · <b style="color:#ffd779">${lvUps.map(([id, l]) => `${nameOf(id)} Lv.${l}`).join(', ')} 레벨 업!</b>` : ''}<br>오늘 남은 훈련 ${Math.max(0, TRAIN_MAX - g.train.n)}번`;
+    if (g.train.n >= TRAIN_MAX) try { localStorage.removeItem('yangil.kingdom.train'); } catch (e) {}
+    saveCampus(g);
+  } else if (g) {
     Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
     if (win) g.wins = (g.wins || 0) + 1;
     // 경험치: 함께 싸운 친구들이 받는다 (지면 조금)
@@ -498,7 +514,7 @@ function finish(win) {
     if (chapOpen) { const k = [].concat(chapOpen).length * 2; g.ticket = (g.ticket || 0) + k; tickets += k; }   // 챕터를 처음 깨면 뽑기권 2장
     // 장비: 처음 깬 스테이지는 꼭, 다시 깨면 30% (탑은 40%)
     if (win && (unlocked || chapOpen || Math.random() < (IN_TOWER ? .4 : .3))) { gearGot = rollGear(effStage(CH, IN_TOWER ? 5 + STAGE : STAGE) / 2); g.items = g.items || {}; g.items[gearGot] = (g.items[gearGot] || 0) + 1; }
-    if (win && IN_TOWER) { if (STAGE % 5 === 0 && STAGE > (g.towerBest || 0)) { g.ticket = (g.ticket || 0) + 1; tickets += 1; } g.towerBest = Math.max(g.towerBest || 0, STAGE); }   // 탑 5층마다 1장
+    if (win && IN_TOWER) { if (STAGE % 10 === 0 && STAGE > (g.towerBest || 0)) treasureGot = grantTreasure(g); if (STAGE % 5 === 0 && STAGE > (g.towerBest || 0)) { g.ticket = (g.ticket || 0) + 1; tickets += 1; } g.towerBest = Math.max(g.towerBest || 0, STAGE); }   // 탑 5층마다 1장
     saveCampus(g);
   }
   if (win) setTimeout(() => alive().forEach((u, i) => { u.ch.set('cheer'); setTimeout(() => sayLine(u, 'win'), i * 260); }), 500);
@@ -506,8 +522,9 @@ function finish(win) {
     $('r-sub').textContent = win ? 'STAGE CLEAR' : 'STAGE FAILED';
     $('r-title').textContent = win ? '승리!' : clockT <= 0 ? '시간 초과…' : '패배…';
     $('r-stars').innerHTML = [0, 1, 2].map(i => drawIcon(i < stars ? 'star' : 'starOff', i === 1 ? 46 : 36)).join('');
-    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? [].concat(chapOpen).map(n => `<br><b style="color:#9dffb0">새 챕터 「${CHAPTERS[n - 1].place}」 열림!</b>`).join('') : ''}<br>함께한 친구들 경험치 +${xpGain}${lvUps.length ? ` · <b style="color:#ffd779">${lvUps.map(([id, l]) => `${nameOf(id)} Lv.${l}`).join(', ')} 레벨 업!</b>` : ''}${gearGot ? `<br><b style="color:#9ad5ff">장비 획득 · ${STATIONERY[gearGot].name}! (${STATIONERY[gearGot].desc})</b>` : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
-    $('r-rw').innerHTML = RES_ORDER.map(k => `<span class="rs">${drawIcon(k, 20)}+${rw[k]}</span>`).join('');
+    $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? [].concat(chapOpen).map(n => `<br><b style="color:#9dffb0">새 챕터 「${CHAPTERS[n - 1].place}」 열림!</b>`).join('') : ''}<br>함께한 친구들 경험치 +${xpGain}${lvUps.length ? ` · <b style="color:#ffd779">${lvUps.map(([id, l]) => `${nameOf(id)} Lv.${l}`).join(', ')} 레벨 업!</b>` : ''}${treasureGot ? `<br><b style="color:#ffd23f">학교 보물 · ${TREASURES[treasureGot].name}! (${TREASURES[treasureGot].desc})</b>` : ''}${gearGot ? `<br><b style="color:#9ad5ff">장비 획득 · ${STATIONERY[gearGot].name}! (${STATIONERY[gearGot].desc})</b>` : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
+    $('r-rw').innerHTML = RES_ORDER.filter(k => rw[k]).map(k => `<span class="rs">${drawIcon(k, 20)}+${rw[k]}</span>`).join('');
+    if (TRAIN) { $('r-sub').textContent = 'TRAINING'; $('r-time').innerHTML = trainMsg; }
     $('result').hidden = false;
   }, win ? 1300 : 800);
   if (win) { flash('#ffd27a', 10, bossCenter, 1.2); shake(.3, .6); tween(1.2, k => { boss.rotation.z = -k * .35; boss.position.y = -k * .8; }); }

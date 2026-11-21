@@ -28,6 +28,8 @@
 - **전투:** 챕터 1~4(은행왕 · LED 스크린 · 야자의 유령 · 본관→염서준) · 6 양평역(폭주 기관차) · 7 물맑은시장(떡볶이 대왕) · 5 도전의 탑. 열리는 순서는 `after`(4-5 → 탑 · 양평역, 6-5 → 시장), 화면 순서는 `CH_SHOW`.
 - **notebook.js(모듈, kingdom.js 다음, `HOOK.tick/tap`으로 붙음):** 처음 안내(G.tut) · 자리 비운 동안 생산(G.seen) · 수첩(출석 · 미션 G.daily, 도감, 업적 G.ach, 저장 코드 YK1:) · 양평 명소(G.town) · 동네 차/사람 · 친구들 창(강화 G.lv, 문구 장비 G.items/G.gear, 각성 G.awake) · 시설 복구 합류(G.joinFac) · 뽑기(G.freePull, 뽑기권 G.ticket, 다 모으면 응원 뽑기) · 낮과 밤(`?hour=21`) · 학교 행사(G.ev, 한정 꾸미기 G.decoUnlock) · 메뉴 버튼.
 - **자원 4개(역할을 나눔, `RES_INFO`):** 지식=시설 · 구역 / 간식=친구 레벨업(빨리) / 체력=꾸미기 · 각성 / 용돈(coin)=뽑기 · 장비(전투 · 의뢰 · 출석 · 미션 · 시장 교환에서 얻음). 친구는 전투 경험치(`addXp`, G.xp)로도 자란다. 모자라면 `lackHint`가 그 자원 나오는 시설로 안내.
+- **모험(notebook.js, 1-5 클리어 후):** 기차 원정(G.exped, 1/4/8시간) · 요일 훈련(`yangil.kingdom.train` 키로 battle.js가 훈련 모드, 하루 3번, G.train) · 소탕(별 3개 스테이지, 하루 10번, G.sweep) · 학교 보물(`TREASURES`, G.treasure → campusBonus). 시설 생산은 3번치까지 쌓임(`stockOf`). 팀 편성 스테이지는 지도(`renderMap`).
+- **문법 확인:** 모듈 파일은 `node --input-type=module --check < 파일`로 (그냥 `node --check`는 못 잡는 오류가 있음).
 - **장비 `STATIONERY`(kits.js):** 얻는 곳 = 전투 승리 · 친구 선물 · 물맑은시장 문구 좌판 · 문구점. kits.js의 `GEAR`는 옷 그림용이라 이름이 겹치면 안 된다.
 - **저장(localStorage):** `yangil.kingdom.v1`(캠퍼스 G: res, fac, zones, b, friends, lv, bond, stage, chs, wins, story, req) · `.team` · `.chap` · `.stage` · `.voice` · `.sound` · `.deco`.
 - **UI 스타일:** 카툰 + 학교 문구. 잉크 외곽선(#231c17), 종이(#fffaf0), 노랑(#ffd23f), 칠판 초록(#2b4a3c). 이모지 대신 `drawIcon`. 가로 화면은 `@media (max-height: 480px)`.
