@@ -155,8 +155,8 @@ function tabToday() {
     <div class="atts">${days}</div>
     <button class="claim wide" data-att ${D.att ? 'disabled' : ''}>${D.att ? '오늘 출석 완료 · 내일 또 와요' : '출석 도장 찍기 · 뽑기권 1장'}</button>
     <h3>오늘의 미션 <small>밤 12시에 바뀌어요</small></h3>
-    ${D.ms.map((m, i) => { const p = msProg(m), ok = p >= m.n; return `<div class="req${ok && !m.got ? ' done' : ''}"><div class="rq"><b>${MISSIONS[m.k].text(m.n)}</b>${bar(p, m.n)}<div class="rw">${resText(msReward(), 13)}</div></div><button class="claim" data-ms="${i}" ${ok && !m.got ? '' : 'disabled'}>${m.got ? '받음' : '받기'}</button></div>`; }).join('')}
-    <div class="req${done && !D.all ? ' done' : ''}"><div class="rq"><b>미션 3개 모두 하기</b><div class="rw">${resText(allReward(), 13)}<span class="rs">${drawIcon('star', 13)}뽑기권 1</span></div></div><button class="claim" data-all ${done && !D.all ? '' : 'disabled'}>${D.all ? '받음' : '받기'}</button></div>`;
+    <div class="pg" data-pg="ms">${D.ms.map((m, i) => { const p = msProg(m), ok = p >= m.n; return `<div class="req${ok && !m.got ? ' done' : ''}"><div class="rq"><b>${MISSIONS[m.k].text(m.n)}</b>${bar(p, m.n)}<div class="rw">${resText(msReward(), 13)}</div></div><button class="claim" data-ms="${i}" ${ok && !m.got ? '' : 'disabled'}>${m.got ? '받음' : '받기'}</button></div>`; }).join('')}
+    <div class="req${done && !D.all ? ' done' : ''}"><div class="rq"><b>미션 3개 모두 하기</b><div class="rw">${resText(allReward(), 13)}<span class="rs">${drawIcon('star', 13)}뽑기권 1</span></div></div><button class="claim" data-all ${done && !D.all ? '' : 'disabled'}>${D.all ? '받음' : '받기'}</button></div></div>`;
 }
 function tabDex() {
   const own = new Set(G.friends);
@@ -166,12 +166,12 @@ function tabDex() {
     det = `<div class="dex-d"><img src="${faceSVG(pick)}" alt=""><div><b>${f.name}</b><small>${f.role || ''}</small><p>${pf.desc || ''}</p><div class="hearts">친밀도 ${hearts(b)}</div><small>추억 ${Math.min(st.length, b)} / ${st.length}개 열림 · 함께 전투에서 이기면 친밀도가 올라요</small>${st.slice(0, b).map(x => `<p class="mem"><b>${x.title}</b> ${x.text}</p>`).join('')}</div></div>`;
   }
   return `<h3>친구 도감 <small>${own.size} / ${ROSTER.length}명 · 동아리실에서 모집해요</small></h3>${bar(own.size, ROSTER.length)}${det}
-    <div class="dex">${ROSTER.map(f => own.has(f.id) ? `<button class="dx${pick === f.id ? ' on' : ''}" data-dx="${f.id}"><img src="${faceSVG(f.id)}" alt="" loading="lazy"><span>${f.name}</span></button>` : `<div class="dx no"><i>?</i><span>???</span></div>`).join('')}</div>`;
+    <div class="dex pg" data-pg="dex">${ROSTER.map(f => own.has(f.id) ? `<button class="dx${pick === f.id ? ' on' : ''}" data-dx="${f.id}"><img src="${faceSVG(f.id)}" alt="" loading="lazy"><span>${f.name}</span></button>` : `<div class="dx no"><i>?</i><span>???</span></div>`).join('')}</div>`;
 }
 function tabAch() {
   const n = ACH.filter(a => G.ach[a[0]]).length;
-  return `<h3>업적 <small>${n} / ${ACH.length}개 달성</small></h3>` + ACH.map(a => { const [id, name, desc, cur, goal, rw] = a, got = !!G.ach[id], c = cur(), ok = c >= goal;
-    return `<div class="req ach${got ? ' got' : ok ? ' done' : ''}"><span class="medal">${drawIcon(got || ok ? 'star' : 'starOff', 28)}</span><div class="rq"><b>${name}</b><p>${desc}</p>${got ? '' : bar(c, goal)}<div class="rw">${resText(rw, 13)}</div></div><button class="claim" data-ach="${id}" ${ok && !got ? '' : 'disabled'}>${got ? '달성' : '받기'}</button></div>`; }).join('');
+  return `<h3>업적 <small>${n} / ${ACH.length}개 달성</small></h3><div class="pg" data-pg="ach">` + ACH.map(a => { const [id, name, desc, cur, goal, rw] = a, got = !!G.ach[id], c = cur(), ok = c >= goal;
+    return `<div class="req ach${got ? ' got' : ok ? ' done' : ''}"><span class="medal">${drawIcon(got || ok ? 'star' : 'starOff', 28)}</span><div class="rq"><b>${name}</b><p>${desc}</p>${got ? '' : bar(c, goal)}<div class="rw">${resText(rw, 13)}</div></div><button class="claim" data-ach="${id}" ${ok && !got ? '' : 'disabled'}>${got ? '달성' : '받기'}</button></div>`; }).join('') + '</div>';
 }
 function tabSave() {
   return `<h3>저장 백업 <small>폰을 바꾸거나 기록이 지워져도 되살릴 수 있어요</small></h3>
@@ -189,7 +189,7 @@ function openNB(t) {
   nb.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="수첩"><div class="sh-top"><b>수첩</b><span class="nbres">${resText(G.res, 14)}</span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
     <div class="nbtabs">${tabs.map(([k, n]) => `<button class="${tab === k ? 'on' : ''}" data-tab="${k}">${n}${dot(k)}</button>`).join('')}</div>
     <div class="nbbody">${({ today: tabToday, dex: tabDex, ach: tabAch, save: tabSave })[tab]()}</div></div>`;
-  nb.hidden = false; flags.note = true;
+  nb.hidden = false; flags.note = true; paginateIn(nb, 'nb-' + tab + '-');
 }
 const exportCode = () => { K.save(); G.seen = Date.now(); const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('yangil.kingdom')) o[k] = localStorage.getItem(k); } return 'YK1:' + btoa(unescape(encodeURIComponent(JSON.stringify(o)))); };
 function importCode(code) {
@@ -246,10 +246,10 @@ function openLM(kind, name) {
   const news = I.news ? `<div class="req"><div class="rq"><b>양평 소식</b><p>재건 ${Math.round(K.restore() * 100)}% · 캠퍼스 친구 ${G.friends.length}명 · 전투 승리 ${G.wins || 0}번${G.towerBest ? ` · 도전의 탑 ${G.towerBest}층` : ''}</p></div></div>` : '';
   const trades = (I.trades || []).map((t, i) => `<div class="req"><div class="rq"><b>교환</b><div class="rw">${resText(t[0], 14)} → ${resText(t[1], 14)}</div></div><button class="claim" data-tr="${i}" ${canPay(t[0]) ? '' : 'disabled'}>바꾸기</button></div>`).join('');
   lm.innerHTML = `<div class="sheet" role="dialog" aria-label="${name}"><div class="sh-top"><b>${name}</b><small>다시 살아난 양평</small><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
-    <p class="lm-st">${I.story}</p>${news}
+    <p class="lm-st">${I.story}</p><div class="pg" data-pg="lm">${news}
     ${kind === 'market' ? (() => { const gt = G.town.gearDay === dayNum(), t = GEAR_ORDER[dayNum() % 5]; return `<div class="req${gt ? '' : ' done'}"><div class="rq"><b>문구 좌판 · 오늘의 장비</b><p>하루에 한 번 공짜로 하나 받아요</p><div class="rw">${drawIcon(t, 16)} ${STATIONERY[t].name} <small>${STATIONERY[t].desc}</small></div></div><button class="claim" data-gday ${gt ? 'disabled' : ''}>${gt ? '내일 또' : '받기'}</button></div>`; })() : ''}
-    <div class="req${got ? '' : ' done'}"><div class="rq"><b>${I.daily}</b><p>하루에 한 번 받을 수 있어요</p><div class="rw">${resText(rw, 13)}</div></div><button class="claim" data-day ${got ? 'disabled' : ''}>${got ? '내일 또' : '받기'}</button></div>${trades}</div>`;
-  lm.dataset.kind = kind; lm.dataset.name = name; lm.hidden = false;
+    <div class="req${got ? '' : ' done'}"><div class="rq"><b>${I.daily}</b><p>하루에 한 번 받을 수 있어요</p><div class="rw">${resText(rw, 13)}</div></div><button class="claim" data-day ${got ? 'disabled' : ''}>${got ? '내일 또' : '받기'}</button></div>${trades}</div></div>`;
+  lm.dataset.kind = kind; lm.dataset.name = name; lm.hidden = false; paginateIn(lm, 'lm-' + kind + '-');
 }
 lm.addEventListener('click', e => {
   if (e.target === lm || e.target.closest('[data-close]')) { lm.hidden = true; return; }
@@ -378,7 +378,8 @@ function frBlock(id) { const lv = lvOf(G, id); if (lv >= MAX_LV) return '최고 
 const teamIds = () => { try { return JSON.parse(localStorage.getItem(TEAM_KEY)) || []; } catch (e) { return []; } };
 const gearIcon = (t, n = 16) => drawIcon(t, n);
 function frList() {
-  const list = G.friends.filter(id => frRole === 'all' || kitOf(id).role === frRole)
+  const solo = frOpen && G.friends.includes(frOpen);
+  const list = solo ? [frOpen] : G.friends.filter(id => frRole === 'all' || kitOf(id).role === frRole)
     .sort((a, b) => (teamIds().includes(b) - teamIds().includes(a)) || lvOf(G, b) - lvOf(G, a) || ROLE_ORDER.indexOf(kitOf(a).role) - ROLE_ORDER.indexOf(kitOf(b).role));
   const roles = [['all', `전체 ${G.friends.length}`]].concat(ROLE_ORDER.filter(r => G.friends.some(id => kitOf(id).role === r)).map(r => [r, ROLES[r].name]));
   const body = list.map(id => {
@@ -400,11 +401,12 @@ function frList() {
       <button class="gslot${gq ? ' on' : ''}" data-slot="${id}" aria-label="장비 칸">${gq ? gearIcon(gq, 22) : '<i>+</i>'}</button>
       <button class="claim${why === '자원 부족' ? ' lack' : ''}" data-frup="${id}" ${why === '최고 레벨' ? 'disabled' : ''}>${lv >= MAX_LV ? (aw ? '각성 완료' : '최고') : `레벨업<small>${resText(upCost(lv), 11)}</small>`}</button>${det}</div>`;
   }).join('');
-  return `<div class="fr-tools"><button class="claim alt" data-autogear>알아서 끼우기</button><small>경험치는 전투에 데려가면 쌓여요 · 간식으로 바로 레벨업도 돼요</small></div><div class="nbtabs fr-tabs">${roles.map(([k, n]) => `<button class="${frRole === k ? 'on' : ''}" data-role="${k}">${k === 'all' ? '' : roleIcon(k, 12)}${n}</button>`).join('')}</div><div class="fr-list">${body}</div>`;
+  if (solo) return `<button class="mini fr-back" data-frback>◀ 친구 목록</button><div class="fr-list solo">${body}</div>`;
+  return `<div class="fr-tools"><button class="claim alt" data-autogear>알아서 끼우기</button><small>경험치는 전투에 데려가면 쌓여요 · 간식으로 바로 레벨업도 돼요</small></div><div class="nbtabs fr-tabs">${roles.map(([k, n]) => `<button class="${frRole === k ? 'on' : ''}" data-role="${k}">${k === 'all' ? '' : roleIcon(k, 12)}${n}</button>`).join('')}</div><div class="fr-list pg" data-pg="fr-${frRole}">${body}</div>`;
 }
 function frShop() {
   const worn = t => Object.values(G.gear).filter(x => x === t).length;
-  return `<p class="fr-sum"><small>장비는 친구마다 하나씩 낄 수 있어요. 친구를 눌러 펼친 뒤 끼우세요. 빼면 다시 가방으로 돌아와요.<br><b>얻는 곳</b> · 전투 승리(처음 깬 스테이지는 꼭!) · 친구 선물(!) · 물맑은시장 문구 좌판(하루 1개) · 여기 문구점</small></p><div class="fr-list">${GEAR_ORDER.map(t => { const g = STATIONERY[t];
+  return `<p class="fr-sum"><small>장비는 친구마다 하나씩 낄 수 있어요. 친구를 눌러 펼친 뒤 끼우세요. 빼면 다시 가방으로 돌아와요.<br><b>얻는 곳</b> · 전투 승리(처음 깬 스테이지는 꼭!) · 친구 선물(!) · 물맑은시장 문구 좌판(하루 1개) · 여기 문구점</small></p><div class="fr-list pg" data-pg="shop">${GEAR_ORDER.map(t => { const g = STATIONERY[t];
     return `<div class="fr-c shop"><span class="gi-big">${gearIcon(t, 36)}</span><div class="fr-m"><b>${g.name}</b><small>${g.desc} · 가방 ${G.items[t] || 0}개 · 끼운 친구 ${worn(t)}명</small></div><button class="claim${canPay(g.cost) ? '' : ' lack'}" data-buy="${t}">사기<small>${resText(g.cost, 11)}</small></button></div>`; }).join('')}</div>`;
 }
 function openFR() {
@@ -412,15 +414,16 @@ function openFR() {
   const total = G.friends.reduce((a, id) => a + powerOf(G, id), 0);
   fr.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="친구들"><div class="sh-top"><b>친구들</b><span class="nbres">${resText(G.res, 14)}</span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
     <div class="nbtabs"><button class="${frTab === 'list' ? 'on' : ''}" data-frtab="list">친구 강화</button><button class="${frTab === 'shop' ? 'on' : ''}" data-frtab="shop">문구점</button></div>
-    <p class="fr-sum">캠퍼스 친구 ${G.friends.length}명 · 모두의 전투력 <b>${fmt(total)}</b>${frTab === 'list' ? '<br><small>강화할 때마다 체력 · 공격 · 스킬이 8%씩 세져요. Lv.10이 되면 각성할 수 있어요. 친구를 누르면 자세히 보여요.</small>' : ''}</p>
+    ${frOpen && frTab === 'list' ? '' : `<p class="fr-sum">캠퍼스 친구 ${G.friends.length}명 · 모두의 전투력 <b>${fmt(total)}</b></p>`}
     ${frTab === 'list' ? frList() : frShop()}</div>`;
-  fr.hidden = false;
+  fr.hidden = false; paginateIn(fr, 'fr-');
 }
 fr.addEventListener('click', e => {
   if (e.target === fr || e.target.closest('[data-close]')) { fr.hidden = true; return; }
   const keep = fr.querySelector('.sheet') ? fr.querySelector('.sheet').scrollTop : 0, redraw = () => { openFR(); fr.querySelector('.sheet').scrollTop = keep; };
   const tb = e.target.closest('[data-frtab]'); if (tb) { KS.fx('click'); frTab = tb.dataset.frtab; openFR(); return; }
   const rb = e.target.closest('[data-role]'); if (rb) { KS.fx('click'); frRole = rb.dataset.role; frOpen = null; openFR(); return; }
+  if (e.target.closest('[data-frback]')) { KS.fx('click'); frOpen = null; openFR(); return; }
   const sl = e.target.closest('[data-slot]'); if (sl) { KS.fx('pop'); frOpen = sl.dataset.slot; redraw(); return; }
   if (e.target.closest('[data-autogear]')) { const n = autoGear(); KS.fx(n ? 'build' : 'click'); K.toast(n ? `장비 ${n}개를 알아서 끼웠어요` : '끼울 장비가 없어요. 문구점이나 전투에서 얻어요'); redraw(); return; }
   const buy = e.target.closest('[data-buy]'); if (buy) { if (buy.disabled) return; const g = STATIONERY[buy.dataset.buy]; if (!canPay(g.cost)) { lackHint(g.cost); return; } Object.entries(g.cost).forEach(([k, n]) => { G.res[k] -= n; }); G.items[buy.dataset.buy] = (G.items[buy.dataset.buy] || 0) + 1; K.save(); K.hud(); KS.fx('coin'); K.toast(`${g.name}을(를) 샀어요`); redraw(); return; }
@@ -436,7 +439,7 @@ fr.addEventListener('click', e => {
     const p = K.people.find(q => q.id === id); if (p) K.sayText(p, lv + 1 >= MAX_LV ? '최고 레벨! 이제 각성할 수 있대!' : '나 더 강해진 것 같아!');
     frOpen = id; redraw(); return;
   }
-  const c = e.target.closest('[data-fr]'); if (c) { KS.fx('pop'); frOpen = frOpen === c.dataset.fr ? null : c.dataset.fr; redraw(); }
+  const c = e.target.closest('[data-fr]'); if (c && !frOpen) { KS.fx('pop'); frOpen = c.dataset.fr; openFR(); }
 });
 const frBtn = document.createElement('button'); frBtn.className = 'rbtn'; frBtn.id = 'b-friends'; frBtn.setAttribute('aria-label', '친구들');
 frBtn.innerHTML = drawIcon('club', 24); nbBtn.after(frBtn);
@@ -512,7 +515,7 @@ function openGacha() {
       ${mn >= 2 && !why && !cheerMode() ? `<button class="claim ga-go multi" data-pull="${mn}">${mn}번 뽑기${mn >= 5 ? ' <em>10% 할인</em>' : ''} <span>${resText(costN(mn), 12)}</span></button>` : ''}</div>
     <h3 class="ga-h">${cheerMode() ? '친구를 모두 모았어요! 이제 <b class="gold-t">응원 뽑기</b>로 친구가 레벨업해요' : `못 만난 친구 ${left.length}명`}</h3>
     <div class="ga-roles">${byRole.map(([r, n]) => `<span style="--rc:${ROLES[r].color}">${roleIcon(r, 13)} ${ROLES[r].name} ${n}</span>`).join('') || '<span>모두 만났어요!</span>'}</div>
-    <div class="dex ga-dex">${left.map(() => '<div class="dx no"><i>?</i><span>???</span></div>').join('')}</div></div>`;
+    </div>`;
   ga.hidden = false;
 }
 function doPull(n) {
@@ -650,8 +653,8 @@ function tabExp() {
     const busy = busyIds(), d = DEST.find(x => x.id === pickDest), sum = pickIds.reduce((a, id) => a + lvOf(G, id), 0), m = 1 + Math.max(0, sum - 3) * .05;
     return `<h3>${drawIcon('train', 18)} ${d.name} <small>${d.h}시간 · 친구 3명을 골라요</small></h3>
       <p class="fr-sum"><small>레벨이 높은 친구를 보낼수록 보상이 커져요 (지금 ×${m.toFixed(2)}). 원정 중인 친구도 전투는 할 수 있어요.</small></p>
-      <div class="dex exp-pick">${G.friends.slice().sort((a, b) => lvOf(G, b) - lvOf(G, a)).map(id => busy.has(id) ? `<div class="dx no"><img src="${faceSVG(id)}" alt=""><span>원정 중</span></div>` : `<button class="dx${pickIds.includes(id) ? ' on' : ''}" data-xp="${id}"><img src="${faceSVG(id)}" alt=""><span>${K.rosterOf(id).name} · ${lvOf(G, id)}</span></button>`).join('')}</div>
-      <div class="sv-row sticky"><button class="claim alt" data-xback>뒤로</button><button class="claim" data-xgo ${pickIds.length === 3 ? '' : 'disabled'}>출발! (${pickIds.length}/3)</button></div>`;
+      <div class="dex exp-pick pg" data-pg="pick">${G.friends.slice().sort((a, b) => lvOf(G, b) - lvOf(G, a)).map(id => busy.has(id) ? `<div class="dx no"><img src="${faceSVG(id)}" alt=""><span>원정 중</span></div>` : `<button class="dx${pickIds.includes(id) ? ' on' : ''}" data-xp="${id}"><img src="${faceSVG(id)}" alt=""><span>${K.rosterOf(id).name} · ${lvOf(G, id)}</span></button>`).join('')}</div>
+      <div class="sv-row"><button class="claim alt" data-xback>뒤로</button><button class="claim" data-xgo ${pickIds.length === 3 ? '' : 'disabled'}>출발! (${pickIds.length}/3)</button></div>`;
   }
   const cards = Array.from({ length: slots }, (_, i) => {
     const e = G.exped[i];
@@ -659,7 +662,7 @@ function tabExp() {
     const d = DEST.find(x => x.id === e.dest), done = now >= e.end, k = Math.min(1, (now - e.start) / (e.end - e.start));
     return `<div class="req exp-slot${done ? ' done' : ''}"><span class="medal">${drawIcon('train', 30)}</span><div class="rq"><b>${d.name}</b><div class="exp-faces">${e.ids.map(id => `<img src="${faceSVG(id)}" alt="">`).join('')}</div>${bar(Math.round(k * 100), 100)}<p>${done ? '돌아왔어요!' : `${left2(e.end - now)} 남음`} · ${d.desc}</p></div><button class="claim" data-xget="${i}" ${done ? '' : 'disabled'}>${done ? '보상 받기' : '가는 중'}</button></div>`;
   }).join('');
-  return `<h3>${drawIcon('train', 18)} 기차 원정 <small>쉬는 친구들을 양평 여기저기로 보내요</small></h3>${cards}${slots < 3 ? '<p class="sv"><small>양평 재건 50%가 되면 기차가 하나 더 생겨요.</small></p>' : ''}`;
+  return `<h3>${drawIcon('train', 18)} 기차 원정 <small>쉬는 친구들을 양평 여기저기로 보내요</small></h3><div class="pg" data-pg="slots">${cards}</div>${slots < 3 ? '<p class="sv"><small>양평 재건 50%가 되면 기차가 하나 더 생겨요.</small></p>' : ''}`;
 }
 function tabTrain() {
   const today = new Date().getDay(), tr = G.train && G.train.day === dayNum() ? G.train.n : 0, kind = TRAIN_DAYS[today];
@@ -678,7 +681,7 @@ function tabSweep() {
   const [c, st] = sweepKey.split('-').map(Number), rw = sweepReward(c, st);
   return `<h3>${drawIcon('sweep', 18)} 소탕 <small>오늘 남은 횟수 ${SWEEP_MAX - sw} / ${SWEEP_MAX}</small></h3>
     <p class="fr-sum"><small>별 3개로 깬 스테이지는 전투 없이 승리 보상을 받아요. 팀 친구들도 경험치를 조금 받아요.</small></p>
-    <div class="sw-list">${list.slice(0, 12).map(([a, b]) => `<button class="mini${a + '-' + b === sweepKey ? ' on' : ''}" data-swk="${a}-${b}">${a}-${b} ${CHAPTERS[a - 1].place}</button>`).join('')}</div>
+    <div class="sw-list">${list.slice(0, 8).map(([a, b]) => `<button class="mini${a + '-' + b === sweepKey ? ' on' : ''}" data-swk="${a}-${b}">${a}-${b} ${CHAPTERS[a - 1].place}</button>`).join('')}</div>
     <div class="req"><div class="rq"><b>${c}-${st} 소탕</b><div class="rw">${resText(rw, 13)} · 경험치 +${sweepXp(c, st)}</div><p>장비가 나올 수도 있어요 (30%)</p></div><button class="claim" data-sw ${sw < SWEEP_MAX ? '' : 'disabled'}>소탕!</button></div>
     <button class="claim alt wide" data-sw5 ${SWEEP_MAX - sw >= 5 ? '' : 'disabled'}>5번 한꺼번에</button>`;
 }
@@ -710,7 +713,7 @@ function openADV(t) {
   adv.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="모험"><div class="sh-top"><b>모험</b><span class="nbres">${resText(G.res, 14)}</span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
     <div class="nbtabs">${tabs.map(([k, n]) => `<button class="${advTab === k ? 'on' : ''}" data-at="${k}">${n}</button>`).join('')}</div>
     <div class="nbbody">${({ exp: tabExp, train: tabTrain, sweep: tabSweep, tre: tabTreasure })[advTab]()}</div></div>`;
-  adv.hidden = false;
+  adv.hidden = false; paginateIn(adv, 'adv-' + advTab + '-');
 }
 adv.addEventListener('click', e => {
   if (e.target === adv || e.target.closest('[data-close]')) { adv.hidden = true; pickDest = null; pickIds = []; return; }
@@ -861,9 +864,9 @@ function openEV() {
     <div class="ev-hero"><span class="ev-ic">${drawIcon(E.deco, 54)}</span><div><p>${E.desc}</p><small>미션을 하면 행사 포인트를 받아요. <b>100점</b>을 모으면 한정 꾸미기 <b>${K.DECO[E.deco].name}</b>을(를) 받아요!</small></div></div>
     <div class="ev-bar"><i style="width:${pts}%"></i>${EV_STEPS.map(([p, r]) => `<button class="ev-step${pts >= p ? ' on' : ''}${S.rw[p] ? ' got' : ''}" style="left:${p}%" data-evrw="${p}" ${pts >= p && !S.rw[p] ? '' : 'disabled'}><b>${p}</b><span>${evRwText(r, E)}</span></button>`).join('')}</div>
     <h3 class="ga-h">행사 포인트 <b>${pts}</b> / 100</h3>
-    ${S.ms.map(k => { const p = evProg(S, k), ok = p >= EV_M[k].n; return `<div class="req${ok && !S.got[k] ? ' done' : ''}"><div class="rq"><b>${EV_M[k].text}</b>${bar(p, EV_M[k].n)}<div class="rw">행사 포인트 +20</div></div><button class="claim" data-evm="${k}" ${ok && !S.got[k] ? '' : 'disabled'}>${S.got[k] ? '받음' : '받기'}</button></div>`; }).join('')}
+    <div class="pg" data-pg="ev">${S.ms.map(k => { const p = evProg(S, k), ok = p >= EV_M[k].n; return `<div class="req${ok && !S.got[k] ? ' done' : ''}"><div class="rq"><b>${EV_M[k].text}</b>${bar(p, EV_M[k].n)}<div class="rw">행사 포인트 +20</div></div><button class="claim" data-evm="${k}" ${ok && !S.got[k] ? '' : 'disabled'}>${S.got[k] ? '받음' : '받기'}</button></div>`; }).join('')}</div>
     ${G.decoUnlock[E.deco] ? `<p class="sv">${K.DECO[E.deco].name}은(는) 아래 꾸미기 줄 끝에 있어요.</p>` : ''}</div>`;
-  ev.hidden = false;
+  ev.hidden = false; paginateIn(ev, 'ev-');
 }
 ev.addEventListener('click', e => {
   if (e.target === ev || e.target.closest('[data-close]')) { ev.hidden = true; return; }

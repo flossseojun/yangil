@@ -32,7 +32,8 @@ function teamTagCount(s) { const tags = teamTags(team); return Object.keys(tags)
 const MAP_THEME = { 1: ['#f7e7b0', '#e9b949', '#c98a00'], 2: ['#e2dcf7', '#9d86f0', '#6c4fd1'], 3: ['#d3dbef', '#7f90c8', '#3a4a8a'], 4: ['#e9e1d0', '#8fbf8a', '#2b4a3c'], 5: ['#fff0c8', '#ffd23f', '#c98a00'], 6: ['#dceaf7', '#8ab8e8', '#2f6fb8'], 7: ['#ffe4d6', '#ff9a7a', '#e0573b'] };
 function renderMap() {
   const prog = progOf(G, ch), tower = ch === TOWER, n = 10, start = tower ? Math.max(1, prog - 4) : 1, th = MAP_THEME[ch] || MAP_THEME[1];
-  const W = 600, H = 270, pos = i => { const row = Math.floor(i / 5), col = i % 5, x = 70 + (row ? 4 - col : col) * 115; return [x, row ? 205 : 100]; };
+  const box = $('smap'), tall = box.clientHeight > box.clientWidth * .9;   // 세로로 긴 화면이면 길을 세로로
+  const W = tall ? 400 : 600, H = tall ? 620 : 270, pos = i => { if (tall) { const col = Math.floor(i / 5), r = i % 5; return [col ? 285 : 115, 110 + (col ? 4 - r : r) * 110]; } const row = Math.floor(i / 5), col = i % 5, x = 70 + (row ? 4 - col : col) * 115; return [x, row ? 205 : 100]; };
   let sd = ch * 7 + 3; const rnd = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
   const deco = Array.from({ length: 18 }, () => { const x = rnd() * W, y = rnd() * H; return `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(6 + rnd() * 10).toFixed(0)}" fill="${th[1]}" opacity=".35"/>`; }).join('');
   const pts = Array.from({ length: n }, (_, i) => pos(i));
@@ -45,12 +46,13 @@ function renderMap() {
       ${done ? `<path d="M${x + 14} ${y - 22}v-30" stroke="#231c17" stroke-width="3"/><path d="M${x + 14} ${y - 52}l20 7-20 7z" fill="${th[2]}" stroke="#231c17" stroke-width="2"/>` : ''}
       ${sn ? `<text x="${x}" y="${y + 46}" text-anchor="middle" font-size="16" fill="#c98a00">${'★'.repeat(sn)}${'☆'.repeat(3 - sn)}</text>` : ''}
       ${lock && st === prog + 1 ? `<text x="${x}" y="${y + 46}" text-anchor="middle" font-family="Jua, sans-serif" font-size="13" fill="#8a7a64">잠김</text>` : ''}</g>`; }).join('');
+  $('smap').style.background = th[0];
   $('smap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${CHAPTERS[ch - 1].place} 스테이지 지도"><rect width="${W}" height="${H}" fill="${th[0]}"/>${deco}
     <path d="${road}" fill="none" stroke="#fffaf0" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/><path d="${road}" fill="none" stroke="${th[2]}" stroke-width="4" stroke-dasharray="10 10" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/>
     <rect x="10" y="10" width="${CHAPTERS[ch - 1].place.length * 22 + 30}" height="34" rx="9" fill="#2b4a3c" stroke="#231c17" stroke-width="3"/><text x="25" y="35" font-family="Jua, sans-serif" font-size="20" fill="#fff">${CHAPTERS[ch - 1].place}</text>${nodes}</svg>`;
 }
 function renderTop() {
-  renderMap(); setTimeout(() => { const on = document.querySelector('.ch.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' }); }, 0);
+  renderMap();
   $('res').innerHTML = RES_ORDER.map(k => `<span class="rs">${drawIcon(k, 18)}${fmt(G.res[k] || 0)}</span>`).join('');
   const sm = stageMulOf(ch, stage), sn = starsOf(G, ch, stage);
   $('st-n').innerHTML = stageName(ch, stage) + `<span class="st-stars">${[0, 1, 2].map(i => drawIcon(i < sn ? 'star' : 'starOff', 12)).join('')}</span>`; $('st-rec').textContent = `추천 ${fmt(sm.rec)}`;
@@ -81,7 +83,18 @@ function renderList() {
   $('hint').textContent = G.friends.length < 5 ? `캠퍼스 친구가 ${G.friends.length}명이라 체험 친구로 채웠어요. 캠퍼스 동아리실에서 친구를 모집할 수 있어요.` : `카드를 눌러 넣고 빼요. ⓘ를 누르면 친구 프로필 · 레벨업 · 추억 이야기를 볼 수 있어요.`;
 }
 const backEl = document.getElementById('back'); if (backEl) backEl.insertAdjacentHTML('afterbegin', drawIcon('back', 18));
-function render() { renderTop(); renderField(); renderTabs(); renderList(); }
+function render() { renderTop(); renderField(); renderTabs(); renderList(); pages(); }
+// 스크롤 대신 페이지 (보이는 화면만)
+let view = 'stage';
+function pages() {
+  if (view === 'stage') { paginate($('chaps'), 'chaps'); const on = $('chaps').querySelector('.ch.on'), nav = $('chaps').nextElementSibling; for (let k = 0; k < 8 && on && on.style.display === 'none' && nav; k++) { const nx = nav.querySelector('[data-pg="1"]'); if (!nx || nx.disabled) break; nx.click(); } }
+  else paginate($('list'), 'list-' + tab);
+}
+function setView(v) { view = v; document.querySelectorAll('#ttabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); $('v-stage').classList.toggle('on', v === 'stage'); $('v-team').classList.toggle('on', v === 'team'); if (v === 'stage') renderMap(); pages(); }
+$('ttabs').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) setView(b.dataset.v); });
+$('camp-btn').onclick = () => { const c = $('camp'); c.hidden = !c.hidden; $('camp-btn').textContent = c.hidden ? '캠퍼스 보너스 보기' : '캠퍼스 보너스 접기'; pages(); };
+addEventListener('resize', () => { if (view === 'stage') renderMap(); pages(); });
+function flash(msg) { let el = $('flash'); if (!el) { el = document.createElement('div'); el.id = 'flash'; el.className = 'flash'; document.body.appendChild(el); } el.textContent = msg; el.classList.add('show'); clearTimeout(flash.t); flash.t = setTimeout(() => el.classList.remove('show'), 2200); }
 function toggle(id) { const i = team.indexOf(id); if (i >= 0) team.splice(i, 1); else if (team.length < 5) team.push(id); save(); render(); }
 function autoPick() {
   const by = r => owned.filter(id => kitOf(id).role === r).sort((a, b) => powerOf(G, b) - powerOf(G, a));
@@ -108,17 +121,17 @@ function openProfile(id) {
     <div>
       <h2>${nameOf(id)}</h2>
       <div class="sub">${roleIcon(k.role, 13)} ${r.name} · ${introOf(id)} · 칭호 「${titleOf(id)}」</div>
-      <p class="desc">${pf.desc}</p>
+      <div class="pg" data-pg="pf"><p class="desc">${pf.desc}</p>
       <div class="box"><h3>필살기</h3><div class="skn">${k.skill}</div><div class="skd">${skillDesc(id)}</div></div>
       <div class="box"><h3>레벨</h3><div class="lvrow"><b>Lv.${lv}</b><span class="lvbar"><i style="width:${lv / MAX_LV * 100}%"></i></span>
         ${lv >= MAX_LV ? '<span style="font-family:Jua">최고 레벨</span>' : G.friends.includes(id) ? `<a class="up" href="./?friend=${id}" style="text-decoration:none">캠퍼스에서 키우기 ›</a><span style="font-size:12px;color:var(--muted);margin-left:6px">경험치 ${xpOf(G, id)}/${xpNeed(lv)} · 전투에 데려가면 쌓여요</span>` : '<span style="font-size:12px;color:var(--muted)">캠퍼스 친구가 되면 키울 수 있어요</span>'}</div>
         <div class="skd" style="margin-top:4px">체력 · 공격 · 스킬 +${Math.round((lvMult(lv) - 1) * 100)}% · 전투력 ${fmt(powerOf(G, id))}</div><div class="skd" style="margin-top:4px">장비 · ${gearOf(G, id) ? `${drawIcon(G.gear[id], 14)} ${gearOf(G, id).name} (${gearOf(G, id).desc})` : '없음 (캠퍼스 친구들 → 문구점)'}${awakeOf(G, id) ? ' · <b>각성</b> 체력 · 공격 +10%, 스킬 +30%' : lv >= MAX_LV ? ' · 캠퍼스 친구들 창에서 각성할 수 있어요' : ''}</div></div>
-      <div class="box"><h3>친밀도 <span class="hearts">${Array.from({ length: 5 }, (_, i) => drawIcon(i < bond ? 'heart' : 'heartOff', 16)).join('')}</span> · 함께 이길 때마다 +1</h3>
-        <ul class="story">${st.map((x, i) => i < open ? `<li><b>추억 ${i + 1} · ${x.title}</b>${x.text}</li>` : `<li class="lock">${drawIcon('lock', 15)}추억 ${i + 1} · 친밀도 ${i + 1}에 열려요</li>`).join('') || '<li class="lock">아직 이야기가 없어요</li>'}</ul></div>
+      <div class="box"><h3>친밀도 <span class="hearts">${Array.from({ length: 5 }, (_, i) => drawIcon(i < bond ? 'heart' : 'heartOff', 16)).join('')}</span> · 함께 이길 때마다 +1</h3></div>
+      ${st.map((x, i) => `<div class="box"><ul class="story">${i < open ? `<li style="border:0;padding:0"><b>추억 ${i + 1} · ${x.title}</b>${x.text}</li>` : `<li class="lock" style="border:0;padding:0">${drawIcon('lock', 15)}추억 ${i + 1} · 친밀도 ${i + 1}에 열려요</li>`}</ul></div>`).join('')}
       <div class="box"><h3>대사</h3><ul class="lines">${(pf.lines || []).slice(0, Math.max(3, Math.min(9, 3 + bond * 2))).map(l => `<li>${l}</li>`).join('')}</ul></div>
-      <div class="acts"><button class="btn ${inTeam ? 'sub' : 'go'}" data-toggle="${id}" style="margin-left:0">${inTeam ? '팀에서 빼기' : team.length >= 5 ? '팀이 꽉 찼어요' : '팀에 넣기'}</button></div>
+      </div><div class="acts"><button class="btn ${inTeam ? 'sub' : 'go'}" data-toggle="${id}" style="margin-left:0">${inTeam ? '팀에서 빼기' : team.length >= 5 ? '팀이 꽉 찼어요' : '팀에 넣기'}</button></div>
     </div></div>`;
-  $('pf').hidden = false;
+  $('pf').hidden = false; PAGE_AT['pf'] = PAGE_AT['pf-id'] === id ? PAGE_AT['pf'] : 0; PAGE_AT['pf-id'] = id; paginate($('pf').querySelector('.pg'), 'pf');
   if (window.openViewer) try { window.openViewer(id, $('pf').querySelector('.art')); } catch (e) {}
 }
 $('pf').addEventListener('click', e => {
@@ -131,8 +144,8 @@ addEventListener('keydown', e => { if (e.key === 'Escape') { $('pf').hidden = tr
 $('list').addEventListener('click', e => { const i = e.target.closest('[data-pf]'); if (i) { openProfile(i.dataset.pf); return; } const c = e.target.closest('.card'); if (c) toggle(c.dataset.id); });
 $('field').addEventListener('click', e => { const s = e.target.closest('.slot[data-id]'); if (s) openProfile(s.dataset.id); });
 $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
-$('chaps').addEventListener('click', e => { const b = e.target.closest('.ch'); if (!b) return; const n = +b.dataset.ch; if (!progOf(G, n)) { const c = CHAPTERS[n - 1]; $('hint').textContent = `${prevOf(n)}-${CHAP_UNLOCK} 스테이지를 깨면 「${c.place}」${josa(c.place, '이', '가').slice(c.place.length)} 열려요`; $('hint').scrollIntoView({ block: 'nearest' }); return; } ch = n; stage = progOf(G, n); save(); render(); });
-$('smap').addEventListener('click', e => { const g = e.target.closest('[data-st]'); if (!g) return; const st = +g.dataset.st; if (st > progOf(G, ch)) { $('hint').textContent = '앞 스테이지를 먼저 깨야 열려요'; return; } stage = st; save(); render(); });
+$('chaps').addEventListener('click', e => { const b = e.target.closest('.ch'); if (!b) return; const n = +b.dataset.ch; if (!progOf(G, n)) { const c = CHAPTERS[n - 1]; flash(`${prevOf(n)}-${CHAP_UNLOCK} 스테이지를 깨면 「${c.place}」${josa(c.place, '이', '가').slice(c.place.length)} 열려요`); return; } ch = n; stage = progOf(G, n); save(); render(); });
+$('smap').addEventListener('click', e => { const g = e.target.closest('[data-st]'); if (!g) return; const st = +g.dataset.st; if (st > progOf(G, ch)) { flash('앞 스테이지를 먼저 깨야 열려요'); return; } stage = st; save(); render(); flash(`${stageName(ch, st)} 골랐어요 · 이제 ② 팀 짜기`); });
 $('st-prev').onclick = () => { stage = Math.max(1, stage - 1); save(); render(); };
 $('st-next').onclick = () => { stage = Math.min(Math.min(maxStageOf(ch), progOf(G, ch)), stage + 1); save(); render(); };
 $('auto').onclick = autoPick;
