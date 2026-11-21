@@ -25,12 +25,14 @@
 - **공용 일반 스크립트:** roster.js(친구 58명) · kits.js(역할 · 스킬 · 레벨 · 챕터 · 캠퍼스 보너스) · profiles.js(대사 · 추억) · ui.js(손그림 아이콘 `drawIcon`, 전체화면) · audio.js(`KS` 소리) · yangpyeong.js(`YP_MAP`, OpenStreetMap에서 받아 게임 좌표로 바꾼 양평읍 지도, 한 칸 ≈ 4.5m).
 - **모듈:** chibi3d.js(`makeChibi` 3D 친구 · 표정 · 버릇) · chibishot.js(3D 친구 사진 찍기 · 프로필 3D 보기) · bosses.js(챕터별 무대 · 보스 모습).
 - **캠퍼스(kingdom.js):** 시설 `FAC`(레벨 0~5, 0 = 폐허) · 구역 `ZONES`(core/east/back/west, 재건 % · 전투 챕터로 열림) · 꾸미기 `DECO` · 친구 의뢰 · 선물 · 이야기(`showStory`, `MILES`).
-- **전투:** 챕터 1~4(은행왕 · LED 스크린 · 야자의 유령 · 본관→염서준) · 6 양평역(폭주 기관차) · 7 물맑은시장(떡볶이 대왕) · 5 도전의 탑. 열리는 순서는 `after`(4-5 → 탑 · 양평역, 6-5 → 시장), 화면 순서는 `CH_SHOW`.
+- **전투:** 잡몹 웨이브 1번(`MOBS`, `stepMobs`, 챕터마다 다른 모양, 스킬은 잡몹 전부 공격, 연속 처치 콤보로 스킬 게이지 충전, 깬 스테이지는 "바로 보스전") → 보스가 깨어남, 보스 겹이 깨질 때마다 부하 2마리. 잡몹이 살아 있으면 `damageBoss`가 잡몹을 때린다. 챕터 1~4(은행왕 · LED 스크린 · 야자의 유령 · 본관→염서준) · 6 양평역(폭주 기관차) · 7 물맑은시장(떡볶이 대왕) · 5 도전의 탑. 열리는 순서는 `after`(4-5 → 탑 · 양평역, 6-5 → 시장), 화면 순서는 `CH_SHOW`.
 - **notebook.js(모듈, kingdom.js 다음, `HOOK.tick/tap`으로 붙음):** 처음 안내(G.tut) · 자리 비운 동안 생산(G.seen) · 수첩(출석 · 미션 G.daily, 도감, 업적 G.ach, 저장 코드 YK1:) · 양평 명소(G.town) · 동네 차/사람 · 친구들 창(강화 G.lv, 문구 장비 G.items/G.gear, 각성 G.awake) · 시설 복구 합류(G.joinFac) · 뽑기(G.freePull, 뽑기권 G.ticket, 다 모으면 응원 뽑기) · 낮과 밤(`?hour=21`) · 학교 행사(G.ev, 한정 꾸미기 G.decoUnlock) · 메뉴 버튼.
 - **자원 4개(역할을 나눔, `RES_INFO`):** 지식=시설 · 구역 / 간식=친구 레벨업(빨리) / 체력=꾸미기 · 각성 / 용돈(coin)=뽑기 · 장비(전투 · 의뢰 · 출석 · 미션 · 시장 교환에서 얻음). 친구는 전투 경험치(`addXp`, G.xp)로도 자란다. 모자라면 `lackHint`가 그 자원 나오는 시설로 안내.
 - **모험(notebook.js, 1-5 클리어 후):** 기차 원정(G.exped, 1/4/8시간) · 요일 훈련(`yangil.kingdom.train` 키로 battle.js가 훈련 모드, 하루 3번, G.train) · 소탕(별 3개 스테이지, 하루 10번, G.sweep) · 학교 보물(`TREASURES`, G.treasure → campusBonus). 시설 생산은 3번치까지 쌓임(`stockOf`). 팀 편성 스테이지는 지도(`renderMap`).
+- **양평 동네 구역(`DISTRICTS`, kingdom.js):** 11개 동네(학교 앞 골목 · 양평역 앞 · 양근리 · 물맑은시장 · 군청 광장 · …). 지도 표지나 그 동네 땅을 누르면 notebook.js `openDist`(복구 · Lv.3까지 · 시간당 생산 G.dist/G.distAt). 양일고 재건 %(`campusRestore`)로 순서대로 열림. 건물 셰이더는 `aDist`+`uDist`로 동네별로 살아남. `restore()`는 양일고+동네 합친 양평 전체 %. 시설은 `levelLook`으로 레벨마다 겉모습이 바뀜.
+- **손맛 · 설정:** `flyRes`(자원 아이콘이 위 칸으로 날아감, notebook `give`도 사용) · `dust`/`sparkle`/`rise`(복구 · 레벨업 연출) · 진동(ui.js `buzz`, KS.fx에 붙음) · 설정 창(메뉴 → 설정: 그래픽 낮음/보통/높음 · 음악/효과음 크기 · 진동, `getSettings`/`setSettings`, 키 `yangil.kingdom.settings`) · 로딩 화면(친구 얼굴 · 팁 · 진행 막대).
 - **가로 전용:** 캠퍼스 · 팀 편성 · 전투는 가로 화면 기준. 세로로 들면 ui.js가 "가로로 돌려 주세요"를 띄우고, manifest는 landscape. 가로 배치 CSS는 `@media (orientation: landscape) and (max-height: 560px)`.
-- **스크롤 없음:** 화면과 창은 한 화면에 맞추고, 긴 목록은 `.pg` 칸 + `paginate`(ui.js, ◀ 1/3 ▶, 옆으로 밀기)로 넘긴다. 팀 편성은 ① 스테이지 고르기 / ② 팀 짜기 탭 + 아래 고정 전투 버튼. 친구 자세히 보기는 목록 대신 한 장으로.
+- **스크롤 없음:** 화면과 창은 한 화면에 맞추고, 긴 목록은 `.pg` 칸 + `paginate`(ui.js, ◀ 1/3 ▶, 옆으로 밀기)로 넘긴다. 팀 편성은 ① 스테이지 고르기 / ② 팀 짜기 탭 + 아래 고정 전투 버튼. 친구들 창은 한 화면에 카드 여러 장(누르면 바로 레벨업, i는 자세히 한 장).
 - **문법 확인:** 모듈 파일은 `node --input-type=module --check < 파일`로 (그냥 `node --check`는 못 잡는 오류가 있음).
 - **장비 `STATIONERY`(kits.js):** 얻는 곳 = 전투 승리 · 친구 선물 · 물맑은시장 문구 좌판 · 문구점. kits.js의 `GEAR`는 옷 그림용이라 이름이 겹치면 안 된다.
 - **저장(localStorage):** `yangil.kingdom.v1`(캠퍼스 G: res, fac, zones, b, friends, lv, bond, stage, chs, wins, story, req) · `.team` · `.chap` · `.stage` · `.voice` · `.sound` · `.deco`.

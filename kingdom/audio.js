@@ -3,6 +3,7 @@
 const KS = (() => {
   const SAVE = 'yangil.kingdom.sound';
   let on = true; try { on = localStorage.getItem(SAVE) !== '0'; } catch (e) {}
+  let VOL = { m: 1, s: 1 }; try { const st = JSON.parse(localStorage.getItem('yangil.kingdom.settings')) || {}; VOL = { m: st.music ?? 1, s: st.sfx ?? 1 }; } catch (e) {}   // 설정 창의 음악 · 효과음 크기
   let ctx = null, master, music, sfxBus, noiseBuf, timer = null;
   const S = { track: null, want: null, step: 0, next: 0, last: {} };
   const hz = m => 440 * Math.pow(2, (m - 69) / 12);
@@ -13,8 +14,8 @@ const KS = (() => {
     ctx = new C();
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.connect(ctx.destination);
     master = ctx.createGain(); master.gain.value = on ? 1 : 0; master.connect(comp);
-    music = ctx.createGain(); music.gain.value = .5; music.connect(master);
-    sfxBus = ctx.createGain(); sfxBus.gain.value = .75; sfxBus.connect(master);
+    music = ctx.createGain(); music.gain.value = .5 * VOL.m; music.connect(master);
+    sfxBus = ctx.createGain(); sfxBus.gain.value = .75 * VOL.s; sfxBus.connect(master);
     const n = ctx.sampleRate * .5; noiseBuf = ctx.createBuffer(1, n, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
     timer = setInterval(tick, 40);
     if (S.want) start(S.want);
@@ -86,7 +87,7 @@ const KS = (() => {
   }
   function start(name) {
     S.track = name; S.step = 0; S.next = ctx.currentTime + .08;
-    const t = ctx.currentTime; music.gain.cancelScheduledValues(t); music.gain.setValueAtTime(.0001, t); music.gain.linearRampToValueAtTime(.5, t + .6);
+    const t = ctx.currentTime; music.gain.cancelScheduledValues(t); music.gain.setValueAtTime(.0001, t); music.gain.linearRampToValueAtTime(Math.max(.0001, .5 * VOL.m), t + .6);
   }
 
   // ── 효과음 ──
@@ -124,6 +125,7 @@ const KS = (() => {
 
   return {
     get on() { return on; },
+    setVol(m, sv) { VOL = { m, s: sv }; if (ctx) { music.gain.setTargetAtTime(Math.max(.0001, .5 * m), ctx.currentTime, .05); sfxBus.gain.setTargetAtTime(.75 * sv, ctx.currentTime, .05); } },
     get debug() { return { state: ctx && ctx.state, track: S.track, step: S.step }; },
     play(track) { S.want = track; if (!ctx) return; if (S.track !== track) start(track); },
     stop() { S.want = null; S.track = null; },

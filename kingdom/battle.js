@@ -23,14 +23,15 @@ const CH0 = SEL.ch, STAGE = SEL.st, CH = bossChOf(CH0, STAGE), CHD = CHAPTERS[CH
 const SM = TRAIN ? Object.assign({}, stageMulOf(CH0, STAGE), { hp: stageMulOf(CH0, STAGE).hp * .7 }) : stageMulOf(CH0, STAGE), SID = TRAIN ? '요일 훈련' : stageName(CH0, STAGE), PLACE = TRAIN ? `요일 훈련 · ${TK.name}` : IN_TOWER ? `도전의 탑 ${STAGE}층` : CHD.place;
 document.getElementById('stg').textContent = SID; document.getElementById('st-sub').textContent = TRAIN ? 'TRAINING' : 'STAGE ' + SID;
 document.getElementById('st-place').textContent = PLACE; document.getElementById('st-title').textContent = PLACE; document.getElementById('boss-name').textContent = CHD.boss;
-document.getElementById('st-desc').innerHTML = `보스 · ${CHD.boss}${IN_TOWER ? ` · ${CHD.place}에서` : STAGE > 1 ? ` (강화 ${STAGE - 1}단계)` : ''} · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}<br><small>${CHD.desc}</small>`;
+document.getElementById('st-desc').innerHTML = `보스 · ${CHD.boss}${IN_TOWER ? ` · ${CHD.place}에서` : STAGE > 1 ? ` (강화 ${STAGE - 1}단계)` : ''} · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}<br><small>잡몹을 물리치면 보스가 깨어나요 · ${CHD.desc}</small>`;
 const nameOf = id => (ROSTER.find(f => f.id === id) || { name: id }).name;
 const introOf = id => (ROSTER.find(f => f.id === id) || { role: '' }).role.split(' · ')[0];
 
 /* ───────── 장면 ───────── */
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const GFX = (typeof getSettings === 'function' ? getSettings() : { gfx: 'mid' }).gfx;   // 설정 창의 그래픽
+renderer.setPixelRatio(Math.min(devicePixelRatio, GFX === 'high' ? 2 : GFX === 'low' ? 1 : 1.5)); renderer.shadowMap.enabled = GFX !== 'low'; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 const scene = new THREE.Scene();
 const tex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
@@ -69,7 +70,7 @@ const SKILL_ORDER = ordered;
 document.getElementById('syn').innerHTML = teamSynergy(PICK).filter(x => x.on).map(x => `<b>${x.name}</b>${x.desc}`).join(' · ');
 const SYNERGY = FX.skill;
 const LAYERS = [13000, 13000, 13000].map(x => Math.round(x * SM.hp));     // 보스 체력 3겹
-const TIME_LIMIT = 90;
+const TIME_LIMIT = 100;   // 잡몹 웨이브 + 보스
 
 /* ───────── 작은 도구 ───────── */
 const $ = id => document.getElementById(id);
@@ -117,6 +118,7 @@ const bossCenter = new THREE.Vector3(5.2, 2.6, .4);
 const stunStars = new THREE.Group(); for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(additive('#ffe58a')); s.scale.set(.5, .5, 1); stunStars.add(s); } stunStars.visible = false; stunStars.position.set(5.2, 6.4, -.4); scene.add(stunStars);
 function damageBoss(n, opts = {}) {
   if (B.dead || over) return;
+  if (mobsAlive().length) { damageMob(n, opts); return; }   // 잡몹이 보스를 지킨다
   if (opts.normal && B.blind > 0) { if (Math.random() < .35) popText(bossCenter.clone().add(new THREE.Vector3(rnd(-1, 1), rnd(0, 1.2), 1)), 'block', 'MISS'); return; }
   const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * (B.vanish > 0 ? .5 : 1) * rnd(.92, 1.08));
   B.hp -= dmg; B.flashT = .12; KS.fx(crit ? 'crit' : 'hit');
@@ -127,7 +129,7 @@ function damageBoss(n, opts = {}) {
     if (B.layer >= LAYERS.length - 1) { B.hp = 0; B.dead = true; finish(true); break; }
     B.layer++; const carry = -B.hp; B.hp = LAYERS[B.layer] - carry; B.trail = LAYERS[B.layer]; B.stagger = 1.4;
     cancelBombs(); popText(bossCenter.clone().add(new THREE.Vector3(0, 2.2, 0)), 'info', ARENA.onLayer(B.layer)); $('boss-name').textContent = ARENA.name(); KS.fx('break'); if (revealed()) { KS.fx('reveal'); KS.play('maker'); }
-    flash(ARENA.hitColor, 7, bossCenter, .7); shake(.22, .5);
+    flash(ARENA.hitColor, 7, bossCenter, .7); shake(.22, .5); setTimeout(() => { if (!over) { spawnMobs(2); sayBoss('부하들아, 나와라!', 3.4); } }, 900);
     const c = $('b-count'); c.classList.add('pop'); setTimeout(() => c.classList.remove('pop'), 250);
   }
 }
@@ -141,6 +143,81 @@ function hurt(u, n, cls = 'taken') {
   if (u.hp <= 0) { u.hp = 0; u.dead = true; u.ch.set('down'); KS.fx('down'); u.ring.visible = false; if (!alive().length) finish(false); }
 }
 function heal(u, n) { if (u.dead) return; if (u.sleep > 0) wakeUnit(u, '깼다!'); if (n > 0) { u.ch.face('happy', .8); KS.fx('heal'); } const v = Math.min(u.max - u.hp, Math.round(n)); u.hp += v; popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', '+' + fmt(v)); flash('#7dff9e', 2.4, u.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), .6); }
+
+/* ───────── 잡몹: 웨이브 2번을 다 잡으면 보스가 깨어난다 ───────── */
+const MOBS = [], WAVE_SIZE = [4], WAVES = WAVE_SIZE.length;   // 짧고 시원하게: 웨이브 1번
+let wave = 0, mobKills = 0, firstSpawn = false, combo = 0, comboT = 0, bestCombo = 0;
+// 이미 깬 스테이지는 웨이브를 건너뛰고 바로 보스전도 할 수 있다
+const CLEARED = !TRAIN && !IN_TOWER && STAGE < progOf(CAMP, CH0);
+const mobsAlive = () => MOBS.filter(m => !m.dead);
+const MOB_NAME = { 1: '은행 열매', 2: '고장 난 모니터', 3: '꼬마 유령', 4: '벽돌 졸개', 5: '졸개', 6: '표 검사 로봇', 7: '떡꼬치' };
+const mobName = () => MOB_NAME[CH] || '졸개';
+function makeMob() {
+  const g = new THREE.Group(), M = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .6 }, o)), add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  let eyeY = .55, eyeZ = .38;
+  if (CH === 2) { add(new THREE.BoxGeometry(.9, .62, .2), M('#2a2f3a'), 0, .7, 0); add(new THREE.PlaneGeometry(.76, .48), new THREE.MeshBasicMaterial({ color: '#4ff0ff' }), 0, .7, .11); add(new THREE.BoxGeometry(.1, .3, .1), M('#2a2f3a'), 0, .25, 0); add(new THREE.BoxGeometry(.5, .06, .3), M('#2a2f3a'), 0, .08, 0); eyeY = .72; eyeZ = .13; }
+  else if (CH === 3) { add(new THREE.SphereGeometry(.38, 14, 10), M('#f2f4ff', { transparent: true, opacity: .85 }), 0, .75, 0); add(new THREE.ConeGeometry(.38, .6, 14, 1, true), M('#f2f4ff', { transparent: true, opacity: .75, side: THREE.DoubleSide }), 0, .32, 0).rotation.x = Math.PI; eyeY = .8; eyeZ = .34; }
+  else if (CH === 4) { add(new THREE.BoxGeometry(.8, .55, .45), M('#b8562f'), 0, .32, 0); add(new THREE.BoxGeometry(.82, .04, .47), M('#e9dcc4'), 0, .35, 0); eyeY = .45; eyeZ = .24; }
+  else if (CH === 6) { add(new THREE.BoxGeometry(.6, .7, .5), M('#2f6fb8'), 0, .55, 0); add(new THREE.CylinderGeometry(.18, .18, .52, 12), M('#23262e'), 0, .18, 0).rotation.x = Math.PI / 2; add(new THREE.BoxGeometry(.4, .14, .02), M('#ffd23f'), 0, .5, .26); eyeY = .72; eyeZ = .26; }
+  else if (CH === 7) { add(new THREE.CylinderGeometry(.03, .03, 1.3, 6), M('#c9a06a'), 0, .65, 0); [0, 1, 2].forEach(i => add(new THREE.CylinderGeometry(.16, .16, .32, 12), M('#fff4e0'), 0, .35 + i * .3, 0)); add(new THREE.SphereGeometry(.2, 10, 8), M('#e0321e', { roughness: .3 }), 0, .98, 0); eyeY = .66; eyeZ = .16; }
+  else { add(new THREE.SphereGeometry(.42, 16, 12), M('#f2b720', { emissive: '#7a4a00', emissiveIntensity: .25 }), 0, .45, 0); add(new THREE.ConeGeometry(.14, .3, 6), M('#5fae4e'), .05, .95, 0).rotation.z = -.4; }
+  [-.12, .12].forEach(x => { add(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' }), x, eyeY, eyeZ); add(new THREE.SphereGeometry(.035, 6, 5), new THREE.MeshBasicMaterial({ color: '#231c17' }), x, eyeY, eyeZ + .05); });
+  const bg = new THREE.Mesh(new THREE.PlaneGeometry(.8, .1), new THREE.MeshBasicMaterial({ color: '#231c17', depthTest: false })), fill = new THREE.Mesh(new THREE.PlaneGeometry(.76, .06), new THREE.MeshBasicMaterial({ color: '#ff5a4a', depthTest: false }));
+  bg.position.set(0, 1.45, 0); fill.position.set(0, 1.45, .01); bg.renderOrder = fill.renderOrder = 20; g.add(bg, fill); g.userData.fill = fill;
+  return g;
+}
+function spawnMobs(n) {
+  for (let i = 0; i < n; i++) {
+    const g = makeMob(), pos = new THREE.Vector3(rnd(3.2, 6.2), 0, rnd(-1.6, 1.5)), max = Math.round(900 * SM.hp);
+    const m = { g, pos, hp: max, max, atkT: rnd(1, 2), dead: false, bob: Math.random() * 6, y: 5 + i * .6 };
+    g.scale.setScalar(1.45); g.position.set(pos.x, m.y, pos.z); scene.add(g); MOBS.push(m);
+  }
+  KS.fx('warn');
+}
+function damageMob(n, opts = {}) {
+  const live = mobsAlive(); if (!live.length) return;
+  if (!opts.normal && !opts.one && live.length > 1) { live.forEach(m2 => damageMob1(m2, n * .8, Object.assign({}, opts, { one: true }))); return; }   // 스킬은 잡몹 전부를 한 번에
+  damageMob1(live.sort((a, b) => a.pos.x - b.pos.x)[0], n, opts);   // 일반 공격은 맨 앞 잡몹부터
+}
+function damageMob1(m, n, opts) {
+  const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * rnd(.92, 1.08));
+  m.hp -= dmg; m.flash = .12; KS.fx(crit ? 'crit' : 'hit');
+  popText(m.pos.clone().add(new THREE.Vector3(rnd(-.3, .3), 1.7, .4)), crit ? 'big' : 'mid', fmt(dmg));
+  if (m.hp <= 0) {
+    m.dead = true; mobKills++; flash(ARENA.hitColor, 3.5, m.pos.clone().add(new THREE.Vector3(0, .6, 0)), .45); KS.fx('break');
+    tween(.35, k => { m.g.scale.setScalar(Math.max(.01, 1.45 * (1 - k))); m.g.rotation.y = k * 6; m.g.position.y = k * 1.2; }, () => scene.remove(m.g));
+    // 콤보: 연달아 잡을수록 친구들 스킬 게이지가 찬다
+    combo = comboT > 0 ? combo + 1 : 1; comboT = 3; bestCombo = Math.max(bestCombo, combo);
+    alive().forEach(u => { u.gauge = Math.min(1, u.gauge + .18 + combo * .04); });
+    const el = $('combo'); if (el) { el.innerHTML = `<b>${combo}</b> COMBO!<small>스킬 충전 +${18 + combo * 4}%</small>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+    if (combo >= 3) KS.fx('charge');
+  }
+}
+function stepMobs(dt) {
+  comboT = Math.max(0, comboT - dt);
+  if (!firstSpawn) { firstSpawn = true; spawnMobs(WAVE_SIZE[0]); sayBoss(`${mobName()} 떼가 나타났다!`, 3.4); }
+  MOBS.forEach(m => {
+    if (m.dead) return;
+    if (m.y > 0) { m.y = Math.max(0, m.y - dt * 9); if (!m.y) KS.fx('hit'); }
+    m.bob += dt * 6; m.flash = Math.max(0, (m.flash || 0) - dt);
+    const live = alive(); if (!live.length) return;
+    const tgt = live.reduce((a, u) => u.pos.distanceTo(m.pos) < a.pos.distanceTo(m.pos) ? u : a, live[0]);
+    const d = tgt.pos.clone().sub(m.pos); d.y = 0; const len = d.length();
+    if (len > 1.8 && !m.y) m.pos.add(d.multiplyScalar(Math.min(1, dt * 1.3 / len)));
+    else if (!m.y && (m.atkT -= dt) <= 0) { m.atkT = rnd(1.2, 1.6); m.lunge = .25; hurt(tgt, 110 * SM.dmg); }
+    m.lunge = Math.max(0, (m.lunge || 0) - dt);
+    const lx = m.lunge > 0 ? -Math.sin(m.lunge / .25 * Math.PI) * .3 : 0;
+    m.g.position.set(m.pos.x + lx, m.y + Math.abs(Math.sin(m.bob)) * .12, m.pos.z); m.g.rotation.y = -.5 + Math.sin(m.bob * .5) * .1;
+    m.g.userData.fill.scale.x = Math.max(.01, m.hp / m.max); m.g.userData.fill.position.x = -.38 * (1 - m.hp / m.max);
+  });
+  if (wave < WAVES && !mobsAlive().length && firstSpawn) {
+    wave++;
+    if (wave < WAVES) { spawnMobs(WAVE_SIZE[wave]); sayBoss(`웨이브 ${wave + 1}!`, 3.4); }
+    else { KS.fx('reveal'); sayBoss(`${ARENA.name()}이(가) 깨어났다!`, 3); shake(.25, .5); flash(ARENA.hitColor, 8, bossCenter, .8); B.slamT = 2; B.bombT = 5; }
+  }
+}
+const bossAwake = () => wave >= WAVES;
+function skipWaves() { wave = WAVES; firstSpawn = true; B.slamT = 2.5; B.bombT = 5; }
 
 /* ───────── 날아가는 것 ───────── */
 function bolt(from, to, color, dur, done, size = .55, arc = 0) {
@@ -488,16 +565,16 @@ function finish(win) {
   const left = alive().length, stars = win ? (left === 5 ? 3 : left >= 3 ? 2 : 1) : 0;
   const base = win ? { know: 20 + stars * 10, snack: 10 + stars * 8, power: 8 + stars * 6, coin: 12 + stars * 6 } : { know: 5, snack: 3, power: 0, coin: 3 };
   const rw = Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.round(v * SM.reward)]));
-  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0, gearGot = null, lvUps = [], xpGain = 0, trainMsg = '', treasureGot = null;
+  const g = loadCampus(); let unlocked = false, chapOpen = 0, bondUp = [], newStars = 0, tickets = 0, gearGot = null, lvUps = [], xpGain = 0, trainMsg = '', treasureGot = null, xpRows = [], trainGear = [];
   if (g && TRAIN) {   // 요일 훈련 결과: 그날 자원만 많이
     const k = TRAIN.kind, m = win ? 1 : .25, R = SM.reward;
     Object.keys(rw).forEach(r => { rw[r] = 0; });
     if (['know', 'snack', 'power', 'coin'].includes(k)) rw[k] = Math.round({ know: 180, snack: 140, power: 110, coin: 110 }[k] * R * m);
     const got = [];
-    if (k === 'gear' && win) { g.items = g.items || {}; for (let i = 0; i < 2; i++) { const t = rollGear(effStage(CH, STAGE) / 2 + 2); g.items[t] = (g.items[t] || 0) + 1; got.push(STATIONERY[t].name); } }
+    if (k === 'gear' && win) { g.items = g.items || {}; for (let i = 0; i < 2; i++) { const t = rollGear(effStage(CH, STAGE) / 2 + 2); g.items[t] = (g.items[t] || 0) + 1; got.push(STATIONERY[t].name); trainGear.push(t); } }
     Object.keys(rw).forEach(r => { g.res[r] = (g.res[r] || 0) + rw[r]; });
     xpGain = Math.round(30 * (1 + (effStage(CH, STAGE) - 1) * .15) * (k === 'xp' ? 3 : 1) * m);
-    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const up = addXp(g, id, xpGain); if (up) lvUps.push([id, lvOf(g, id)]); });
+    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const lv0 = lvOf(g, id), xp0 = xpOf(g, id), up = addXp(g, id, xpGain); xpRows.push({ id, lv0, xp0, lv1: lvOf(g, id), xp1: xpOf(g, id), up }); if (up) lvUps.push([id, lvOf(g, id)]); });
     const day = todayNum(); g.train = g.train && g.train.day === day ? g.train : { day, n: 0 }; g.train.n++;
     trainMsg = `요일 훈련 · ${TK.name} ${win ? '성공!' : '아쉽게 실패 (보상 조금)'}${got.length ? `<br><b style="color:#9ad5ff">장비 획득 · ${got.join(', ')}</b>` : ''}<br>함께한 친구들 경험치 +${xpGain}${lvUps.length ? ` · <b style="color:#ffd779">${lvUps.map(([id, l]) => `${nameOf(id)} Lv.${l}`).join(', ')} 레벨 업!</b>` : ''}<br>오늘 남은 훈련 ${Math.max(0, TRAIN_MAX - g.train.n)}번`;
     if (g.train.n >= TRAIN_MAX) try { localStorage.removeItem('yangil.kingdom.train'); } catch (e) {}
@@ -507,7 +584,7 @@ function finish(win) {
     if (win) g.wins = (g.wins || 0) + 1;
     // 경험치: 함께 싸운 친구들이 받는다 (지면 조금)
     xpGain = Math.round((win ? 30 : 10) * (1 + (effStage(CH, IN_TOWER ? 5 + STAGE : STAGE) - 1) * .15));
-    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const up = addXp(g, id, xpGain); if (up) lvUps.push([id, lvOf(g, id)]); });
+    PICK.forEach(id => { if (!(g.friends || []).includes(id)) return; const lv0 = lvOf(g, id), xp0 = xpOf(g, id), up = addXp(g, id, xpGain); xpRows.push({ id, lv0, xp0, lv1: lvOf(g, id), xp1: xpOf(g, id), up }); if (up) lvUps.push([id, lvOf(g, id)]); });
     if (win) { g.bond = g.bond || {}; PICK.forEach(id => { g.bond[id] = (g.bond[id] || 0) + 1; bondUp.push(id); }); const nexts = CHAPTERS.filter(c => prevOf(c.n) === CH0 && c.n !== CH0 && !progOf(g, c.n)).map(c => c.n); if (STAGE >= progOf(g, CH0) && STAGE < maxStageOf(CH0)) { setProg(g, CH0, STAGE + 1); unlocked = true; saveSel(CH0, STAGE + 1); } if (STAGE >= CHAP_UNLOCK) nexts.forEach(n => { setProg(g, n, 1); chapOpen = chapOpen ? [].concat(chapOpen, n) : n; }); }
     // 별: 처음 얻은 별마다 보너스
     if (win) { g.star = g.star || {}; const key = CH0 + '-' + STAGE, had2 = g.star[key] || 0; if (stars > had2) { newStars = stars - had2; g.star[key] = stars; const bk = Math.round(15 * newStars * SM.reward), bs = Math.round(10 * newStars * SM.reward); g.res.know += bk; g.res.snack += bs; rw.know += bk; rw.snack += bs; } }
@@ -524,11 +601,35 @@ function finish(win) {
     $('r-stars').innerHTML = [0, 1, 2].map(i => drawIcon(i < stars ? 'star' : 'starOff', i === 1 ? 46 : 36)).join('');
     $('r-time').innerHTML = win ? `${Math.round(TIME_LIMIT - clockT)}초 만에 ${josa(ARENA.name(), '을', '를')} 쓰러뜨렸다 · 남은 친구 ${left}명${newStars ? `<br><b style="color:#ffd779">새 별 ${newStars}개 · 보너스 받음!</b>` : stars < 3 ? `<br><small>친구를 더 많이 살리면 별을 더 받아요</small>` : ''}${unlocked ? `<br><b style="color:#ffd779">${IN_TOWER ? `탑 ${STAGE + 1}층` : `스테이지 ${CH0}-${STAGE + 1}`} 열림!</b>` : ''}${chapOpen ? [].concat(chapOpen).map(n => `<br><b style="color:#9dffb0">새 챕터 「${CHAPTERS[n - 1].place}」 열림!</b>`).join('') : ''}<br>함께한 친구들 경험치 +${xpGain}${lvUps.length ? ` · <b style="color:#ffd779">${lvUps.map(([id, l]) => `${nameOf(id)} Lv.${l}`).join(', ')} 레벨 업!</b>` : ''}${treasureGot ? `<br><b style="color:#ffd23f">학교 보물 · ${TREASURES[treasureGot].name}! (${TREASURES[treasureGot].desc})</b>` : ''}${gearGot ? `<br><b style="color:#9ad5ff">장비 획득 · ${STATIONERY[gearGot].name}! (${STATIONERY[gearGot].desc})</b>` : ''}${tickets ? `<br><b style="color:#ffd779">뽑기권 ${tickets}장 받음! 캠퍼스 뽑기에서 써요</b>` : ''}${bondUp.length ? `<br>함께한 친구들 친밀도 +1` : ''}` : `${josa(ARENA.name(), '이', '가')} 너무 강했다. 캠퍼스에서 친구를 키우거나 건물을 지어 보자.`;
     $('r-rw').innerHTML = RES_ORDER.filter(k => rw[k]).map(k => `<span class="rs">${drawIcon(k, 20)}+${rw[k]}</span>`).join('');
-    if (TRAIN) { $('r-sub').textContent = 'TRAINING'; $('r-time').innerHTML = trainMsg; }
+    if (TRAIN) { $('r-sub').textContent = 'TRAINING'; $('r-title').textContent = win ? '훈련 성공!' : '훈련 실패…'; }
+    // 그림으로 보여 주는 결과: 기록 칩 · 친구 경험치 바 · 획득 카드 · 보상 숫자
+    const chips = [];
+    if (win && newStars) chips.push(['star', `새 별 ${newStars}개`, '#ffe58a']);
+    if (unlocked) chips.push(['next', IN_TOWER ? `탑 ${STAGE + 1}층 열림` : `${CH0}-${STAGE + 1} 열림`, '#c8f5d2']);
+    [].concat(chapOpen || []).filter(Boolean).forEach(n => chips.push(['lock', `${CHAPTERS[n - 1].place} 열림`, '#c8f5d2']));
+    if (tickets) chips.push(['star', `뽑기권 ×${tickets}`, '#ffe58a']);
+    if (gearGot) chips.push([gearGot, STATIONERY[gearGot].name, '#d6e6ff']);
+    trainGear.forEach(t => chips.push([t, STATIONERY[t].name, '#d6e6ff']));
+    if (treasureGot) chips.push([treasureGot, `보물 ${TREASURES[treasureGot].name}`, '#ffd9a8']);
+    const pct = (lv, xp) => lv >= MAX_LV ? 100 : Math.round(xp / xpNeed(lv) * 100);
+    const team = xpRows.map(r => `<div class="rt-f${r.up ? ' up' : ''}"><img src="${svgURL(kitHeadSVG(r.id))}" alt=""><b>${nameOf(r.id)}</b><span class="rt-lv">Lv.<i data-lv="${r.lv1}">${r.lv0}</i></span><i class="rt-xp"><u style="width:${pct(r.lv0, r.xp0)}%" data-to="${pct(r.lv1, r.xp1)}" data-up="${r.up ? 1 : 0}"></u></i><small>+${xpGain}</small>${r.up ? '<em>LEVEL UP!</em>' : ''}${win && bondUp.includes(r.id) ? `<span class="rt-h">${drawIcon('heart', 12)}+1</span>` : ''}</div>`).join('');
+    $('r-time').innerHTML = `<div class="rt-stat">${win || TRAIN ? `<span><small>걸린 시간</small><b>${Math.round(TIME_LIMIT - clockT)}초</b></span>` : ''}<span><small>남은 친구</small><b>${left} / ${units.length}</b></span><span><small>잡몹 처치</small><b>${mobKills}</b></span>${bestCombo > 1 ? `<span><small>최고 콤보</small><b>${bestCombo}</b></span>` : ''}${TRAIN ? `<span><small>오늘 남은 훈련</small><b>${Math.max(0, TRAIN_MAX - ((loadCampus() || {}).train || { n: 0 }).n)}번</b></span>` : ''}</div>
+      ${team ? `<div class="rt-team">${team}</div>` : ''}
+      ${chips.length ? `<div class="rt-chips">${chips.map(([ic, tx, c], i) => `<span style="--c:${c};animation-delay:${.6 + i * .15}s">${drawIcon(ic, 18)}${tx}</span>`).join('')}</div>` : ''}
+      ${!win && !TRAIN ? `<div class="rt-tip">${drawIcon('info', 16)}<span>캠퍼스에서 친구를 레벨업하거나 장비를 끼우면 더 세져요</span></div>` : ''}`;
+    $('r-rw').innerHTML = RES_ORDER.filter(k => rw[k]).map(k => `<span class="rs">${drawIcon(k, 20)}<b data-n="${rw[k]}">+0</b></span>`).join('');
     $('result').hidden = false;
+    setTimeout(() => {   // 숫자 올라가기 · 경험치 바 채우기
+      const t0 = performance.now(), nums = [...document.querySelectorAll('#r-rw [data-n]')];
+      const tick = () => { const k = Math.min(1, (performance.now() - t0) / 900); nums.forEach(el => { el.textContent = '+' + Math.round(+el.dataset.n * (1 - Math.pow(1 - k, 3))); }); if (k < 1) requestAnimationFrame(tick); };
+      tick();
+      document.querySelectorAll('.rt-xp u').forEach(u => { if (u.dataset.up === '1') { u.style.width = '100%'; setTimeout(() => { u.style.transition = 'none'; u.style.width = '0%'; void u.offsetWidth; u.style.transition = ''; u.style.width = u.dataset.to + '%'; const f = u.closest('.rt-f'); f.classList.add('pop'); const l = f.querySelector('[data-lv]'); l.textContent = l.dataset.lv; KS.fx('levelup'); }, 700); } else u.style.width = u.dataset.to + '%'; });
+    }, 350);
   }, win ? 1300 : 800);
   if (win) { flash('#ffd27a', 10, bossCenter, 1.2); shake(.3, .6); tween(1.2, k => { boss.rotation.z = -k * .35; boss.position.y = -k * .8; }); }
 }
+$('go-boss').hidden = !CLEARED;
+$('go-boss').onclick = () => { skipWaves(); $('go').click(); };
 $('go').onclick = () => { KS.play(['', 'ginkgo', 'neon', 'ghost', 'storm', 'storm', 'neon', 'ginkgo'][CH]); KS.fx('click'); $('start').hidden = true; started = true; units.forEach((u, i) => setTimeout(() => sayLine(u, 'start'), 900 + i * 300)); };
 $('r-retry').onclick = () => location.reload();
 $('r-camp').onclick = () => { location.href = './'; };
@@ -547,7 +648,7 @@ function step(dt) {
   if (B.burn > 0) { B.burn -= dt; B.burnT += dt; if (B.burnT >= 1) { B.burnT = 0; damageBoss(150, { crit: false }); } }
   if (B.stun > 0) B.stun -= dt;
   else if (B.stagger > 0) B.stagger -= dt;
-  else if (introT <= 0) {
+  else if (introT <= 0 && bossAwake()) {
     const haste = 1 + B.layer * .15;
     B.slamT -= dt * haste; B.bombT -= dt * haste;
     if (B.slamT <= 0 && !bombs.length) {
@@ -559,6 +660,7 @@ function step(dt) {
     else if ((CH !== 4 || revealed()) && (B.spT -= dt * haste) <= 0) { B.spT = rnd(11, 13.5); special(); }
   }
   stepBombs(B.stun > 0 ? 0 : dt);
+  stepMobs(dt);
   // 친구들
   units.forEach(u => {
     if (u.dead) return;
@@ -576,7 +678,7 @@ function step(dt) {
       u.atkT = u.st.rate / (hasteT > 0 ? 1.6 : 1);
       const atk = u.st.atk * (buffT > 0 ? 1.4 : 1) * (B.nerf > 0 ? .7 : 1);
       if (u.st.melee) { u.lunge = .3; u.ch.play('attack'); KS.fx('swing'); tween(.12, null, () => damageBoss(atk, { normal: true })); }
-      else { u.ch.play('throw'); KS.fx('throw'); } if (!u.st.melee) bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk, { normal: true }), .45, .6);
+      else { u.ch.play('throw'); KS.fx('throw'); } if (!u.st.melee) { const mf = mobsAlive().sort((a, b) => a.pos.x - b.pos.x)[0]; bolt(u.pos.clone().add(new THREE.Vector3(.4, 2, 0)), mf ? mf.pos.clone().add(new THREE.Vector3(0, .6, .2)) : bossCenter.clone().add(new THREE.Vector3(rnd(-.6, .6), rnd(-.8, .8), .8)), u.st.bolt, .35, () => damageBoss(atk, { normal: true }), .45, .6); }
     }
   });
   if (auto && cutLock <= 0 && ultT <= 0) autoSkills();
@@ -617,6 +719,9 @@ function frame() {
   $('b-now').style.width = Math.max(0, B.hp / L * 100) + '%'; $('b-trail').style.width = Math.max(0, B.trail / L * 100) + '%';
   $('b-next').style.visibility = B.layer < LAYERS.length - 1 ? 'visible' : 'hidden';
   $('b-count').textContent = '×' + (LAYERS.length - B.layer);
+  if (!bossAwake()) { const live = mobsAlive(), tot = live.reduce((a, m) => a + m.hp, 0), mx = live.reduce((a, m) => a + m.max, 0) || 1; $('b-now').style.width = (tot / mx * 100) + '%'; $('b-trail').style.width = (tot / mx * 100) + '%'; $('boss-name').textContent = `${mobName()} 웨이브 ${Math.min(wave + 1, WAVES)}/${WAVES} · 남은 ${live.length}`; }
+  else if (mobsAlive().length) $('boss-name').textContent = `${ARENA.name()} · 부하 ${mobsAlive().length}`;
+  else if ($('boss-name').textContent.includes('부하') || $('boss-name').textContent.includes('웨이브')) $('boss-name').textContent = ARENA.name();
   if (!over) units.forEach(u => { if (!u.dead && !u.lowSaid && u.hp / u.max < .3) { u.lowSaid = true; sayLine(u, 'low'); } });
   $('timer').textContent = `${Math.floor(clockT / 60)}:${String(Math.floor(clockT % 60)).padStart(2, '0')}`;
   skillUI();

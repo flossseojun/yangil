@@ -88,7 +88,7 @@ function migrate(g) {
 }
 function load() { try { const g = JSON.parse(localStorage.getItem(SAVE)); if (g && g.res) return migrate(g); } catch (e) {} return fresh(); }
 function save() { if (window.__noSave) return; try { localStorage.setItem(SAVE, JSON.stringify(G)); } catch (e) {} }
-G = load(); if (G.res.coin == null) G.res.coin = 60; G.zones = G.zones || {}; G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
+G = load(); if (G.res.coin == null) G.res.coin = 60; G.dist = G.dist || {}; G.zones = G.zones || {}; G.story = G.story || {}; G.stat = G.stat || {}; G.req = G.req || []; G.facAt = G.facAt || {}; G.b = G.b || [];
 const zoneOpen = z => !z || z === 'core' || !!G.zones[z];
 const facOpen = t => zoneOpen(FAC[t].zone);
 const lvOfFac = t => G.fac[t] || 0;
@@ -96,15 +96,37 @@ const inZone = (x, z) => ZONE_ORDER.find(k => { const Z = ZONES[k]; return x >= 
 const allowedCell = (x, z) => { const k = inZone(x, z); return !!k && zoneOpen(k); };
 const interior = (x, z) => allowedCell(x, z) && allowedCell(x - 1, z) && allowedCell(x + 1, z) && allowedCell(x, z - 1) && allowedCell(x, z + 1);
 const campusLv = () => FAC_ORDER.reduce((a, t) => a + lvOfFac(t), 0);
-const restore = () => campusLv() / (FAC_ORDER.length * MAX_LV);   // 재건 정도 0~1
+const campusRestore = () => campusLv() / (FAC_ORDER.length * MAX_LV);   // 양일고 재건 0~1
+// 양평 동네 구역: 지도에서 눌러 복구 · 레벨업 (0 = 무너짐, 3 = 완전 복구). 학교 가까운 곳부터 열린다
+const DISTRICTS = [
+  { id: 'gate',      name: '학교 앞 골목',   at: [33, 42],    r: 38, need: .04, res: 'snack', desc: '분식집과 문방구가 모여 있던 학교 앞 골목' },
+  { id: 'station',   name: '양평역 앞',      at: [-9, 60],    r: 34, need: .08, res: 'coin',  desc: '중앙선 기차가 서는 양평의 대문', lm: 'station' },
+  { id: 'yanggeun',  name: '양근리 주택가',  at: [81, 48],    r: 40, need: .12, res: 'know',  desc: '친구들 집이 모여 있는 조용한 동네' },
+  { id: 'market',    name: '물맑은시장',     at: [30, 112],   r: 36, need: .16, res: 'snack', desc: '장날이면 북적이는 양평 전통시장', lm: 'market' },
+  { id: 'hall',      name: '군청 광장',      at: [-65, 127],  r: 40, need: .2,  res: 'know',  desc: '양평군청과 광장 · 축제가 열리는 곳', lm: 'hall' },
+  { id: 'middle',    name: '중학교 언덕',    at: [3, -110],   r: 62, need: .25, res: 'power', desc: '양평중학교와 언덕길 산책로' },
+  { id: 'west',      name: '서쪽 초등학교 길', at: [-112, 98], r: 52, need: .3,  res: 'snack', desc: '양평초등학교 아이들이 다니는 길' },
+  { id: 'gongheung', name: '공흥리',         at: [161, 51],   r: 56, need: .35, res: 'power', desc: '논밭과 새 아파트가 함께 있는 동네' },
+  { id: 'high',      name: '양평고 동네',    at: [154, 162],  r: 46, need: .42, res: 'know',  desc: '이웃 학교 양평고가 있는 동네' },
+  { id: 'east',      name: '동쪽 병원길',    at: [210, -55],  r: 72, need: .5,  res: 'coin',  desc: '양평병원으로 가는 큰길' },
+  { id: 'river',     name: '남한강변',       at: [-175, 150], r: 62, need: .58, res: 'power', desc: '남한강을 따라 걷는 강변 산책길' },
+];
+const DIST_MAX = 3;
+const distLv = id => ((G && G.dist) || {})[id] || 0;
+const townLv = () => DISTRICTS.reduce((a, d) => a + distLv(d.id), 0);
+const restore = () => (campusRestore() + townLv() / (DISTRICTS.length * DIST_MAX)) / 2;   // 양평 전체 재건 0~1
+const distOf = (x, z) => { let best = -1, bd = 1e9; DISTRICTS.forEach((d, i) => { const dd = Math.hypot(x - d.at[0], z - d.at[1]); if (dd < d.r && dd < bd) { bd = dd; best = i; } }); return best; };
+const lmAlive = kind => { const d = DISTRICTS.find(x => x.lm === kind); return d ? distLv(d.id) > 0 : false; };
+const townAlive = (x, z) => { if (Math.hypot(x - 12, z - 12) < 26) return true; const i = distOf(x, z); return i >= 0 ? distLv(DISTRICTS[i].id) > 0 : false; };
 const bump = (k, n = 1) => { G.stat[k] = (G.stat[k] || 0) + n; };
 const HOOK = { tick: [], tap: [] };   // notebook.js 같은 덧붙이는 모듈이 쓰는 고리
 
 /* ───────── 장면 ───────── */
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const GFX = (typeof getSettings === 'function' ? getSettings() : { gfx: 'mid' }).gfx;   // 설정 창: 그래픽 낮음 · 보통 · 높음
+renderer.setPixelRatio(Math.min(devicePixelRatio, GFX === 'high' ? 2 : GFX === 'low' ? 1 : 1.5));
+renderer.shadowMap.enabled = GFX !== 'low'; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#bfe3f5');
@@ -168,7 +190,7 @@ const outside = new THREE.Group(); scene.add(outside);
 const mapLabels = [];
 // 양평 복구: 큰 장소는 재건 % 단계에서, 나머지 건물은 학교에서 가까운 곳부터 살아난다
 const LANDMARK = { station: [.25, '양평역'], market: [.5, '양평물맑은시장'], hall: [.75, '양평군청'] };
-const townU = { uRestore: { value: 0 } };
+const townU = { uRestore: { value: 0 }, uDist: { value: new Array(12).fill(0) } };
 let townBase = null;
 {
   const M = typeof YP_MAP !== 'undefined' ? YP_MAP : { B: [], R: [], RL: [], W: [], WL: [], L: [], P: [] };
@@ -199,32 +221,53 @@ let townBase = null;
     const LM = M.P.filter(p => LANDMARK[p[0]]).map(p => [p[2], p[3], LANDMARK[p[0]][0]]);
     let sd = 11; const rnd2 = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
     const thrOf = f => { let cx = 0, cz = 0; for (let k = 0; k < f.length; k += 2) { cx += f[k]; cz += f[k + 1]; } cx /= f.length / 2; cz /= f.length / 2; const d = Math.hypot(cx - 12, cz - 6); let t = Math.min(.97, .03 + .92 * Math.pow(Math.min(1, d / 300), .8) + rnd2() * .05); LM.forEach(([x, z, th]) => { if (Math.hypot(cx - x, cz - z) < 16) t = Math.min(t, th - .005); }); return t; };
-    M.B.forEach(([lv, f], i) => { if (f.length < 6) return; try { const thr = thrOf(f); const g = new THREE.ExtrudeGeometry(shapeOf(f), { depth: Math.max(.6, lv * .66), bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.4, 0); const ng = g.toNonIndexed(), n = ng.attributes.position.count, col = new THREE.Color(lv >= 8 ? '#f1ead9' : PAL[i % PAL.length]), cols = new Float32Array(n * 3), nrm = ng.attributes.normal; for (let k = 0; k < n; k++) { const top = nrm.getY(k) > .5, c = top ? col.clone().multiplyScalar(lv >= 8 ? .9 : .82).lerp(new THREE.Color(lv >= 8 ? '#8a9aa8' : '#b0705a'), .35) : col; cols.set([c.r, c.g, c.b], k * 3); } ng.setAttribute('color', new THREE.BufferAttribute(cols, 3)); ng.setAttribute('aThr', new THREE.BufferAttribute(new Float32Array(n).fill(thr), 1)); ng.deleteAttribute('uv'); geos.push(ng); g.dispose(); } catch (e) {} });
+    M.B.forEach(([lv, f], i) => { if (f.length < 6) return; try { const thr = thrOf(f); const g = new THREE.ExtrudeGeometry(shapeOf(f), { depth: Math.max(.6, lv * .66), bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.4, 0); const ng = g.toNonIndexed(), n = ng.attributes.position.count, col = new THREE.Color(lv >= 8 ? '#f1ead9' : PAL[i % PAL.length]), cols = new Float32Array(n * 3), nrm = ng.attributes.normal; for (let k = 0; k < n; k++) { const top = nrm.getY(k) > .5, c = top ? col.clone().multiplyScalar(lv >= 8 ? .9 : .82).lerp(new THREE.Color(lv >= 8 ? '#8a9aa8' : '#b0705a'), .35) : col; cols.set([c.r, c.g, c.b], k * 3); } ng.setAttribute('color', new THREE.BufferAttribute(cols, 3)); ng.setAttribute('aThr', new THREE.BufferAttribute(new Float32Array(n).fill(thr), 1)); { let cx = 0, cz = 0; for (let q = 0; q < f.length; q += 2) { cx += f[q]; cz += f[q + 1]; } ng.setAttribute('aDist', new THREE.BufferAttribute(new Float32Array(n).fill(distOf(cx / (f.length / 2), cz / (f.length / 2))), 1)); } ng.deleteAttribute('uv'); geos.push(ng); g.dispose(); } catch (e) {} });
     if (geos.length) { const g = mergeGeometries(geos); const bm = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: gradMap() });
       // 무너진 건물: 지붕을 들쭉날쭉 낮추고 잿빛으로 (셰이더에서 처리해서 다시 만들 필요 없음)
       bm.onBeforeCompile = sh2 => {
-        sh2.uniforms.uRestore = townU.uRestore;
-        sh2.vertexShader = 'attribute float aThr;\nuniform float uRestore;\nvarying float vRuin;\n' + sh2.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nfloat ruin = step(uRestore, aThr);\nfloat hh = 0.12 + 0.3 * fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5453);\ntransformed.y = mix(transformed.y, -0.4 + (transformed.y + 0.4) * hh, ruin);\nvRuin = ruin;');
+        sh2.uniforms.uRestore = townU.uRestore; sh2.uniforms.uDist = townU.uDist;
+        sh2.vertexShader = 'attribute float aThr;\nattribute float aDist;\nuniform float uRestore;\nuniform float uDist[12];\nvarying float vRuin;\n' + sh2.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nfloat ruin = aDist > -.5 ? (uDist[int(aDist + .5)] > .5 ? 0.0 : 1.0) : step(uRestore, aThr);\nfloat hh = 0.12 + 0.3 * fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5453);\ntransformed.y = mix(transformed.y, -0.4 + (transformed.y + 0.4) * hh, ruin);\nvRuin = ruin;');
         sh2.fragmentShader = 'varying float vRuin;\n' + sh2.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\nfloat gy = dot(diffuseColor.rgb, vec3(0.33));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.58, 0.52) * (0.7 + gy * 0.4), vRuin * 0.85);');
       };
       const m = new THREE.Mesh(g, bm); m.castShadow = true; m.receiveShadow = true; outside.add(m); } }
   // 이름표: 양평역 · 시장 · 남한강 · 군청 · 학교들
   const seen = new Set();
   M.P.forEach(([kind, name, x, z]) => {
-    if (seen.has(name) || /상인회|별관|마을회관/.test(name)) return; seen.add(name);
+    if (seen.has(name) || /상인회|별관|마을회관/.test(name) || LANDMARK[kind]) return; seen.add(name);   // 역 · 시장 · 군청은 동네 표지가 대신한다
     const big = kind === 'station' || kind === 'market' || kind === 'river';
-    const draw = (g, w, h) => { const ruined = LANDMARK[kind] && restore() < LANDMARK[kind][0] - 1e-9, name2 = ruined ? '무너진 ' + name : name; g.clearRect(0, 0, w, h); g.font = `${big ? 40 : 30}px Jua, sans-serif`; const tw = Math.min(w - 16, g.measureText(name2).width + 40); g.fillStyle = ruined ? '#c9c2b4' : kind === 'river' ? '#dff1fb' : kind === 'station' ? '#ffd23f' : kind === 'market' ? '#ffb4a0' : '#fffaf0'; g.beginPath(); g.roundRect((w - tw) / 2, 8, tw, 64, 14); g.fill(); g.lineWidth = 5; g.strokeStyle = INK; g.stroke(); g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name2, w / 2, 42); g.beginPath(); g.moveTo(w / 2 - 10, 72); g.lineTo(w / 2, 90); g.lineTo(w / 2 + 10, 72); g.closePath(); g.fillStyle = INK; g.fill(); };
+    const draw = (g, w, h) => { const ruined = LANDMARK[kind] && !lmAlive(kind), name2 = ruined ? '무너진 ' + name : name; g.clearRect(0, 0, w, h); g.font = `${big ? 40 : 30}px Jua, sans-serif`; const tw = Math.min(w - 16, g.measureText(name2).width + 40); g.fillStyle = ruined ? '#c9c2b4' : kind === 'river' ? '#dff1fb' : kind === 'station' ? '#ffd23f' : kind === 'market' ? '#ffb4a0' : '#fffaf0'; g.beginPath(); g.roundRect((w - tw) / 2, 8, tw, 64, 14); g.fill(); g.lineWidth = 5; g.strokeStyle = INK; g.stroke(); g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name2, w / 2, 42); g.beginPath(); g.moveTo(w / 2 - 10, 72); g.lineTo(w / 2, 90); g.lineTo(w / 2 + 10, 72); g.closePath(); g.fillStyle = INK; g.fill(); };
     const t = canvasTex(360, 96, draw); t.userData = { draw };
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); sp.renderOrder = 13; sp.position.set(x, kind === 'river' ? 1 : 6, z); sp.userData.base = big ? 1.35 : 1; sp.userData.lm = !!LANDMARK[kind]; sp.userData.kind = kind; sp.userData.name = name; outside.add(sp); mapLabels.push(sp);
   });
 }
 // 이름표는 멀리 볼수록 크게 (화면에서 비슷한 크기로)
 function refreshTown() {
-  const r = restore(); townU.uRestore.value = r;
+  const r = restore(); townU.uRestore.value = r; DISTRICTS.forEach((d, i) => { townU.uDist.value[i] = distLv(d.id); }); refreshDistMarks();
   if (townBase) townBase.material.color.set('#' + new THREE.Color('#bfae8e').lerp(new THREE.Color('#b9dca0'), Math.min(1, r * 1.6)).getHexString());
   mapLabels.forEach(s => { if (!s.userData.lm) return; const t = s.material.map, c = t.image, g = c.getContext('2d'); t.userData.draw(g, c.width, c.height); t.needsUpdate = true; });
 }
-function stepLabels() { const k = 1 / camera.zoom; mapLabels.forEach(s => { const b = s.userData.base * 5.2 * k; s.scale.set(b, b * .267, 1); s.visible = camera.zoom < 1.4 || s.userData.base > 1; }); }
+const distMarks = [];
+function distMarkDraw(d) {
+  return (g, w, h) => {
+    const lv = distLv(d.id), open = campusRestore() >= d.need - 1e-9, stock = (window.__kingdom && window.__kingdom.distStock) ? window.__kingdom.distStock(d) : 0;
+    g.clearRect(0, 0, w, h); g.font = '34px Jua, sans-serif'; const label = lv ? d.name : open ? '무너진 ' + d.name : d.name;
+    const tw = Math.min(w - 20, g.measureText(label).width + 56); const x0 = (w - tw) / 2;
+    g.fillStyle = lv ? '#fffaf0' : open ? '#ffd23f' : '#c9c2b4'; g.strokeStyle = '#231c17'; g.lineWidth = 5;
+    g.beginPath(); g.roundRect(x0, 8, tw, 56, 16); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(w / 2 - 12, 62); g.lineTo(w / 2, 84); g.lineTo(w / 2 + 12, 62); g.fill(); g.stroke();
+    g.fillStyle = '#231c17'; g.textAlign = 'center'; g.fillText(label, w / 2 + (lv ? 0 : 0), 48);
+    if (lv) { g.font = '22px Jua, sans-serif'; g.fillStyle = '#c98a00'; g.fillText('★'.repeat(lv) + '☆'.repeat(DIST_MAX - lv), w / 2, 112); }
+    else if (open) { g.font = '22px Jua, sans-serif'; g.fillStyle = '#fffaf0'; g.strokeStyle = '#231c17'; g.lineWidth = 4; g.strokeText('눌러서 복구', w / 2, 112); g.fillText('눌러서 복구', w / 2, 112); }
+    if (stock) { g.fillStyle = '#e5484d'; g.beginPath(); g.arc(x0 + tw - 4, 12, 13, 0, 7); g.fill(); g.strokeStyle = '#231c17'; g.lineWidth = 3; g.stroke(); g.fillStyle = '#fff'; g.font = '20px Jua, sans-serif'; g.fillText('!', x0 + tw - 4, 19); }
+  };
+}
+DISTRICTS.forEach(d => {
+  const draw = distMarkDraw(d), t = canvasTex(400, 124, draw); t.userData = { draw };
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); sp.renderOrder = 14; sp.position.set(d.at[0], 9, d.at[1]); sp.userData.base = 1.6; sp.userData.dist = d.id; sp.userData.w = 400 / 124;
+  outside.add(sp); mapLabels.push(sp); distMarks.push(sp);
+});
+function refreshDistMarks() { distMarks.forEach(s => { const t = s.material.map, c = t.image; t.userData.draw(c.getContext('2d'), c.width, c.height); t.needsUpdate = true; }); }
+function stepLabels() { const k = 1 / camera.zoom; mapLabels.forEach(s => { const b = s.userData.base * 5.2 * k; s.scale.set(b, b / (s.userData.w || 3.75), 1); s.visible = camera.zoom < 1.4 || s.userData.base > 1; }); }
 // 담장 · 산울타리 · 정문
 const fixed = new THREE.Group(); scene.add(fixed);
 {
@@ -307,6 +350,47 @@ function building(d, lv, floors, door = true) {
 }
 function shadeHex(hex, k) { const c = new THREE.Color(hex); c.offsetHSL(0, 0, k); return '#' + c.getHexString(); }
 // 폐허: 무너진 벽 · 깨진 창 · 잔해 · 잡초 (시설마다 모양이 조금씩 다르게)
+// 레벨에 따라 겉모습이 바뀐다: Lv.1 비계 · 가림막 → Lv.2 창가 화분 → Lv.3 옥상 물탱크 · 실외기 → Lv.4 옥상 정원 · 외등 → Lv.5 금빛 테두리 · 깃발 · 별
+function levelLook(t, d, lv, g) {
+  const [sx, sz] = d.size, W = sx - .5, D = sz - .6, top = (g.userData.h || 2) - .1, gold = toon('#ffc83a'), glow = new THREE.MeshBasicMaterial({ color: '#fff0b0' });
+  if (d.ground || t === 'pavilion') {
+    if (lv === 1) [-1, 1].forEach(s => g.add(mesh(new THREE.ConeGeometry(.16, .4, 8), toon('#ff8a3c'), s * (sx / 2 - .6), .2, sz / 2 - .5, .04)));   // 공사 고깔
+    if (lv >= 3) [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => { g.add(mesh(new THREE.CylinderGeometry(.05, .07, 2.4, 6), toon('#8a94a0'), a * (sx / 2 - .3), 1.2, b * (sz / 2 - .3), .03)); g.add(mesh(new THREE.BoxGeometry(.4, .22, .12), lv >= 4 ? glow : toon('#d9d2c2'), a * (sx / 2 - .3), 2.45, b * (sz / 2 - .3), .03)); });
+    if (lv >= 5) [-1, 1].forEach(a => { g.add(mesh(new THREE.CylinderGeometry(.03, .03, 1.8, 6), gold, a * (sx / 2 - .9), .9, -(sz / 2 - .3), 0)); g.add(mesh(new THREE.BoxGeometry(.6, .36, .03), toon('#e5484d'), a * (sx / 2 - .9) + .3, 1.6, -(sz / 2 - .3), .03)); });
+    return;
+  }
+  if (lv === 1) {   // 비계 + 공사 가림막
+    const pole = toon('#8a7a64'), plank = toon('#b8935f');
+    for (let i = 0; i < 3; i++) g.add(mesh(new THREE.CylinderGeometry(.035, .035, top, 5), pole, -W / 2 + .2 + i * .55, top / 2, D / 2 + .28, 0));
+    for (let y = .7; y < top; y += .8) g.add(mesh(new THREE.BoxGeometry(1.3, .05, .28), plank, -W / 2 + .75, y, D / 2 + .28, .03));
+    g.add(mesh(new THREE.BoxGeometry(Math.min(1.2, W * .3), .7, .03), toon('#3fa26a'), W / 2 - .7, .65, D / 2 + .03, .03));
+  }
+  if (lv >= 2) {   // 창가 화분
+    const box = toon('#a5774b'), cols = ['#ff6b8b', '#ffd23f', '#c86bff', '#ff9a3c'];
+    for (let x = -W / 2 + .5, k = 0; x < W / 2 - .3; x += 1.1, k++) { if (Math.abs(x) < .7) continue; g.add(mesh(new THREE.BoxGeometry(.5, .12, .14), box, x, .62, D / 2 + .08, .03)); g.add(mesh(new THREE.SphereGeometry(.08, 6, 5), toon(cols[k % 4]), x, .72, D / 2 + .08)); }
+  }
+  if (d.arch) {   // 둥근 지붕 건물: 옆에 장식
+    if (lv >= 3) [-1, 1].forEach(a => g.add(mesh(new THREE.BoxGeometry(.5, .35, .3), toon('#c9ccd2'), a * (W / 2 + .3), .45, -D / 4, .03)));
+    if (lv >= 4) [-1, 1].forEach(a => { g.add(mesh(new THREE.CylinderGeometry(.04, .05, 1.4, 6), toon('#3a3f4a'), a * (W / 2 - .2), .7, D / 2 + .4, 0)); g.add(mesh(new THREE.SphereGeometry(.12, 8, 6), glow, a * (W / 2 - .2), 1.45, D / 2 + .4)); });
+    if (lv >= 5) { g.add(mesh(new THREE.BoxGeometry(W + .3, .1, .1), gold, 0, .32, D / 2 + .12, .02)); g.add(mesh(new THREE.OctahedronGeometry(.25), gold, 0, top + .4, 0, .05)); }
+    return;
+  }
+  if (lv >= 3) {   // 옥상 물탱크 · 실외기
+    g.add(mesh(new THREE.CylinderGeometry(.3, .3, .5, 10), toon('#5b8def'), W / 2 - .6, top + .3, -D / 2 + .5, .04));
+    [0, 1].forEach(i => g.add(mesh(new THREE.BoxGeometry(.4, .25, .3), toon('#d9d2c2'), -W / 2 + .5 + i * .5, top + .15, -D / 2 + .4, .03)));
+  }
+  if (lv >= 4) {   // 옥상 정원 + 현관 외등
+    g.add(mesh(new THREE.BoxGeometry(Math.min(W * .45, 2.4), .1, Math.min(D * .45, 1.4)), toon('#6cbf5a'), -W / 6, top + .06, D / 8, .02));
+    [-.5, 0, .5].forEach(x => g.add(mesh(new THREE.IcosahedronGeometry(.2, 0), toon('#3f8f4e'), -W / 6 + x * Math.min(W * .35, 1.8), top + .3, D / 8, .04)));
+    [-1, 1].forEach(a => g.add(mesh(new THREE.SphereGeometry(.09, 8, 6), glow, a * .75, 1.05, D / 2 + .22)));
+  }
+  if (lv >= 5) {   // 금빛 테두리 · 깃발 · 별
+    g.add(mesh(new THREE.BoxGeometry(W + .32, .08, D + .32), gold, 0, top - .02, 0, .02));
+    g.add(mesh(new THREE.CylinderGeometry(.03, .03, 1.3, 6), toon('#c9ccd2'), W / 2 - .3, top + .65, D / 2 - .3, 0));
+    g.add(mesh(new THREE.BoxGeometry(.55, .32, .03), toon('#2b4a3c'), W / 2 - .02, top + 1.1, D / 2 - .3, .03));
+    g.add(mesh(new THREE.OctahedronGeometry(.18), gold, 0, top + .5, 0, .05));
+  }
+}
 function construction(d) {
   const [sx, sz] = d.size, g = new THREE.Group(); let seed = 0; for (const ch of d.name) seed = (seed * 31 + ch.charCodeAt(0)) % 9973; const R = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
   const W = sx - .5, D = sz - .6, wallM = toon('#' + new THREE.Color(d.wall || '#e8e0d0').lerp(new THREE.Color('#9a948a'), .6).getHexString()), dark = toon('#3a3530'), stoneM = toon('#9a9286'), weedM = toon('#5f9a3e'), weedM2 = toon('#7ab04a');
@@ -449,8 +533,10 @@ function makeFacility(t) {
   else if (d.ground) g = fieldModel(d, lv);
   else {
     const floors = t === 'main' || t === 'dorm' ? 2 + Math.ceil(lv / 2) : t === 'gym' || t === 'hall' ? 2 + (lv >= 4 ? 1 : 0) : t === 'greenhouse' ? 1 : 1 + Math.floor((lv - 1) / 2) + (t === 'library' || t === 'cafe' ? 1 : 0);
-    g = building(d, lv, floors); extrasFor(t, d, lv, g); extrasMore(t, d, lv, g);
+    const dd = lv === 1 ? Object.assign({}, d, { wall: '#' + new THREE.Color(d.wall).lerp(new THREE.Color('#a8a296'), .4).getHexString() }) : d;   // Lv.1은 아직 칠이 바랜 임시 복구
+    g = building(dd, lv, floors); extrasFor(t, d, lv, g); extrasMore(t, d, lv, g);
   }
+  if (lv) levelLook(t, d, lv, g);
   bake(g, new Set(animated.filter(a => a.obj && isChild(a.obj, g)).map(a => a.obj)));
   const [sx, sz] = d.size; g.position.set(d.at[0] + sx / 2, 0, d.at[1] + sz / 2); g.userData.fac = t;
   return g;
@@ -569,8 +655,38 @@ const stockOf = (t, now = Date.now()) => { const p = prodOf(t); if (!p || !G.fac
 function collect(t) {
   const p = prodOf(t); if (!p) return; const now = Date.now(), n = Math.max(1, stockOf(t, now)); KS.fx('coin');
   G.res[p[0]] += p[1] * n; G.facAt[t] = n >= STOCK_MAX ? now : G.facAt[t] + n * p[2] * 1000; bump('col_' + p[0], p[1] * n); bump('col'); save(); hud();
-  const m = meshes.get(t); floatText(`+${p[1] * n}${drawIcon(p[0], 20)}${n > 1 ? ` <small>×${n}</small>` : ''}`, new THREE.Vector3(m.position.x, (m.userData.h || 2) + 1.2, m.position.z));
+  const m = meshes.get(t), v = new THREE.Vector3(m.position.x, (m.userData.h || 2) + 1.2, m.position.z); floatText(`+${p[1] * n}${drawIcon(p[0], 20)}${n > 1 ? ` <small>×${n}</small>` : ''}`, v); const [sx, sy] = toScreen(v); flyRes(p[0], p[1] * n, sx, sy);
 }
+
+/* ───────── 손맛: 자원이 위로 날아가기 · 공사 먼지 · 반짝이 ───────── */
+function flyRes(k, n, x, y) {
+  const el = $('r-' + k); if (!el || !n) return; const chip = el.closest('.res') || el, r = chip.getBoundingClientRect(), tx = r.left + 14, ty = r.top + r.height / 2;
+  const cnt = Math.min(8, 3 + Math.floor(Math.log2(1 + n)));
+  for (let i = 0; i < cnt; i++) {
+    const d = document.createElement('div'); d.className = 'flyres'; d.innerHTML = drawIcon(k, 22);
+    d.style.left = (x + (Math.random() - .5) * 70) + 'px'; d.style.top = (y + (Math.random() - .5) * 40) + 'px'; document.body.appendChild(d);
+    setTimeout(() => { d.style.left = tx + 'px'; d.style.top = ty + 'px'; d.classList.add('go'); }, 40 + i * 45);
+    setTimeout(() => { d.remove(); chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump'); }, 640 + i * 45);
+  }
+}
+const puffTex = canvasTex(64, 64, g => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.6, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); });
+function dust(x, z, w, d) {
+  for (let i = 0; i < 16; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: '#d9cdb8', transparent: true, depthWrite: false })), sc = .6 + Math.random() * .9, vx = (Math.random() - .5) * 2, vz = (Math.random() - .5) * 2;
+    sp.position.set(x + (Math.random() - .5) * w, .2, z + (Math.random() - .5) * d); sp.scale.setScalar(sc); world.add(sp);
+    const x0 = sp.position.x, z0 = sp.position.z;
+    tween(.9 + Math.random() * .5, k => { sp.position.set(x0 + vx * k, .2 + k * 1.6, z0 + vz * k); sp.scale.setScalar(sc * (1 + k * 1.6)); sp.material.opacity = .9 * (1 - k); }, () => world.remove(sp));
+  }
+}
+function sparkle(x, y, z, n = 22) {
+  for (let i = 0; i < n; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: puffTex, color: ['#ffd23f', '#fff3b0', '#ffffff', '#ff9a3c'][i % 4], transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })), a = Math.random() * Math.PI * 2, v = 1.5 + Math.random() * 2.5, up = 2 + Math.random() * 3;
+    sp.scale.setScalar(.35 + Math.random() * .3); sp.position.set(x, y, z); world.add(sp);
+    tween(.9 + Math.random() * .4, k => { sp.position.set(x + Math.cos(a) * v * k, y + up * k - 3 * k * k, z + Math.sin(a) * v * k); sp.material.opacity = 1 - k; }, () => world.remove(sp));
+  }
+}
+// 건물이 아래에서 쑥 올라온다 (탕탕 망치 소리)
+function rise(m) { m.scale.set(1, .02, 1); [0, 160, 320].forEach(d => setTimeout(() => KS.fx('hit'), d)); tween(.75, k => { const e = k < .7 ? k / .7 * 1.12 : 1.12 - (k - .7) / .3 * .12; m.scale.set(1 + Math.sin(k * Math.PI) * .05, Math.max(.02, e), 1 + Math.sin(k * Math.PI) * .05); }); }
 
 /* ───────── 친구들 ───────── */
 const people = [];
@@ -625,7 +741,7 @@ function takeGift(p) {
   }
   const k = ['know', 'snack', 'power', 'coin'][Math.floor(Math.random() * 4)], n = Math.round((4 + Math.floor(campusLv() * 1.2 + Math.random() * 5)) * (k === 'coin' ? .5 : 1));
   G.res[k] += n; bump('gift'); G.bond = G.bond || {}; save(); hud(); KS.fx('coin');
-  floatText(`+${n}${drawIcon(k, 20)}`, p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0)));
+  const gv = p.spr.position.clone().add(new THREE.Vector3(0, 1.8, 0)); floatText(`+${n}${drawIcon(k, 20)}`, gv); { const [sx, sy] = toScreen(gv); flyRes(k, n, sx, sy); }
   sayText(p, ['이거 너 줄게!', '매점에서 하나 더 샀어. 너 가져!', '오다 주웠다.', '선물이야!'][Math.floor(Math.random() * 4)]);
 }
 
@@ -728,7 +844,7 @@ function doUpgrade(t) {
   G.fac[t] = lvOfFac(t) + 1; if (!G.facAt[t]) G.facAt[t] = Date.now(); bump('up');
   const old = meshes.get(t); world.remove(old); const s = bubbles.get(t); if (s) { world.remove(s); bubbles.delete(t); }
   animated.splice(0, animated.length, ...animated.filter(a => a.g !== old && (!a.obj || !isChild(a.obj, old))));
-  const m = addFac(t); pop(m); KS.fx(G.fac[t] === 1 ? 'build' : 'levelup');
+  const m = addFac(t), d0 = FAC[t]; rise(m); dust(m.position.x, m.position.z, d0.size[0], d0.size[1]); setTimeout(() => { KS.fx(G.fac[t] === 1 ? 'build' : 'levelup'); sparkle(m.position.x, (m.userData.h || 2) + .3, m.position.z, G.fac[t] >= 5 ? 40 : 22); }, 520);
   floatText(G.fac[t] === 1 ? `${FAC[t].name} 복구!` : `${FAC[t].name} Lv.${G.fac[t]}!`, m.position.clone().add(new THREE.Vector3(0, (m.userData.h || 2) + .8, 0)));
   if (t === 'club' && G.fac[t] === 1) G.freePull = (G.freePull || 0) + 1;   // 첫 뽑기는 무료 (notebook.js가 알려 준다)
   if (G.fac[t] === 1) firstRestore(t);
@@ -744,7 +860,7 @@ function hideInfo() { $('info').classList.remove('show'); }
 /* ───────── 구역 넓히기 ───────── */
 function zoneCheck(k) {
   const Z = ZONES[k], n = Z.need || {}, list = [];
-  if (n.restore) list.push({ ok: restore() >= n.restore - 1e-9, text: `양일고 재건 ${Math.round(n.restore * 100)}% (지금 ${Math.round(restore() * 100)}%)` });
+  if (n.restore) list.push({ ok: campusRestore() >= n.restore - 1e-9, text: `양일고 재건 ${Math.round(n.restore * 100)}% (지금 ${Math.round(campusRestore() * 100)}%)` });
   if (n.ch) list.push({ ok: typeof progOf === 'function' && progOf(G, n.ch) > 0, text: `전투 챕터 ${n.ch} 열기 (${n.ch - 1}-5 클리어)` });
   return { list, ready: list.every(x => x.ok), pay: canPay(Z.cost) };
 }
@@ -897,9 +1013,9 @@ function storyPages() {
   ];
 }
 const MILES = [
-  [.25, '양평역에 다시 기차가 선다', '중앙선 기차가 다시 양평역에 멈춰 섰다. 역 앞 거리에 사람들이 돌아온다.', { know: 60, snack: 40, coin: 50 }],
-  [.5, '물맑은시장이 다시 열렸다', '“떡볶이 나왔어요!” 시장 골목에 다시 불이 켜지고, 장날 북적임이 돌아왔다.', { know: 90, snack: 70, power: 30, coin: 80 }],
-  [.75, '양평군청에 불이 켜졌다', '군청 앞 광장에 다시 사람들이 모인다. 남한강 산책길도 다시 열렸다.', { know: 140, snack: 100, power: 60, coin: 120 }],
+  [.25, '양평이 깨어난다', '학교 종소리를 듣고 동네 사람들이 하나둘 돌아오기 시작했다. 지도에서 무너진 동네를 눌러 다시 세워 보자.', { know: 60, snack: 40, coin: 50 }],
+  [.5, '양평이 절반 돌아왔다', '골목마다 불이 켜지고, 버스가 다시 다닌다. 양평의 절반이 다시 우리 동네가 됐다.', { know: 90, snack: 70, power: 30, coin: 80 }],
+  [.75, '거의 다 왔다', '남은 동네도 곧 살아날 것 같다. 친구들이 "조금만 더!" 하고 응원한다.', { know: 140, snack: 100, power: 60, coin: 120 }],
   [1, '양평 재건 완료!', '무너졌던 양평이 다시 우리 동네가 됐다. 남한강은 오늘도 반짝이고, 양일고 종이 울린다.', { know: 300, snack: 200, power: 120, coin: 200 }],
 ];
 function showStory(pages, done) {
@@ -936,4 +1052,4 @@ if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { flyRes, dust, sparkle, GFX, lmAlive, DISTRICTS, DIST_MAX, distLv, distOf, townAlive, campusRestore, refreshTown, distMarks, focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };

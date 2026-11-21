@@ -61,6 +61,7 @@ const ICON_PATHS = {
   chalk: '<rect x="3" y="12" width="18" height="8" rx="1" fill="#c86bff"/><rect x="5" y="5" width="3" height="8" rx="1" fill="#fff"/><rect x="10" y="4" width="3" height="9" rx="1" fill="#ffd23f"/><rect x="15" y="6" width="3" height="7" rx="1" fill="#ff8fb3"/>',
   medal: '<path d="M8 2l2 7M16 2l-2 7" stroke="#e5484d"/><circle cx="12" cy="15" r="6" fill="#ffd23f"/><path d="M12 12l1 2h2l-1.5 1.5.5 2-2-1-2 1 .5-2L9 14h2z" fill="#fff" stroke-width="1"/>',
   mic: '<rect x="9" y="2.5" width="6" height="11" rx="3" fill="#6b7078"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8"/>',
+  cog: '<circle cx="12" cy="12" r="3.2" fill="#ffd23f"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.5"/>',
   clipboard: '<rect x="5" y="4" width="14" height="17" rx="2" fill="#fffaf0"/><rect x="9" y="2.5" width="6" height="3.5" rx="1" fill="#ffd23f"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/>',
   expand: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" stroke-width="2.6"/>',
   shrink: '<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" stroke-width="2.6"/>',
@@ -155,3 +156,15 @@ const paginateIn = (root, prefix = '') => { if (root) root.querySelectorAll('.pg
   };
   if (document.body) add(); else addEventListener('DOMContentLoaded', add);
 })();
+
+// 설정 (그래픽 · 소리 크기 · 진동): 캠퍼스 메뉴의 설정 창에서 바꾸고, 세 화면이 같이 쓴다
+const SETTINGS_KEY = 'yangil.kingdom.settings';
+function getSettings() { let st = {}; try { st = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch (e) {} return Object.assign({ gfx: 'mid', music: 1, sfx: 1, buzz: true }, st); }
+function setSettings(p) { const st = Object.assign(getSettings(), p); try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(st)); } catch (e) {} return st; }
+// 진동: 중요한 순간에만 짧게 (지원하는 폰만)
+const BUZZ = { levelup: [18, 40, 18], build: 25, fanfare: [20, 60, 30], break: 35, crit: 12, coin: 8, reveal: [30, 50, 30], boom: 20 };
+function buzz(p) { try { if (getSettings().buzz && navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+addEventListener('DOMContentLoaded', () => {
+  if (typeof KS === 'undefined' || KS.__buzz) return; KS.__buzz = true;
+  const fx = KS.fx.bind(KS); KS.fx = name => { fx(name); if (BUZZ[name]) buzz(BUZZ[name]); };
+});

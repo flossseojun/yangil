@@ -5,7 +5,8 @@ const K = window.__kingdom, G = K.G, THREE = K.THREE;
 const $ = id => document.getElementById(id);
 const L = () => K.campusLv();
 const dayNum = (t = Date.now()) => Math.floor((t - new Date(t).getTimezoneOffset() * 60000) / 864e5);
-const give = rw => { Object.entries(rw).forEach(([k, n]) => { if (n) G.res[k] = (G.res[k] || 0) + n; }); K.save(); K.hud(); refreshBadge(); };
+let lastTap = [innerWidth / 2, innerHeight / 2]; addEventListener('pointerdown', e => { lastTap = [e.clientX, e.clientY]; }, true);
+const give = rw => { Object.entries(rw).forEach(([k, n]) => { if (n) { G.res[k] = (G.res[k] || 0) + n; if (K.flyRes && G.res[k] != null && ['know', 'snack', 'power', 'coin'].includes(k)) K.flyRes(k, n, lastTap[0], lastTap[1]); } }); K.save(); K.hud(); refreshBadge(); };   // 받은 자원은 누른 곳에서 위로 날아간다
 const canPay = c => Object.entries(c).every(([k, n]) => (G.res[k] || 0) >= n);
 const storyOpen = () => !$('story').hidden;
 // 이야기 창이 비면 띄운다 (마일스톤 이야기와 겹치지 않게)
@@ -56,7 +57,7 @@ function stepTut() {
   if (G.tut == null) G.tut = 0;
   if (G.tut >= TUT.length) return;
   const s = TUT[G.tut];
-  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, #ev, #adv, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
+  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, #ev, #adv, #dist, #set, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
   if (tutStarted !== G.tut) { tutStarted = G.tut; s.start && s.start(); tutEl.querySelector('p').innerHTML = `<b class="n">${G.tut + 1}/${TUT.length}</b> ${s.text}`; }
   tutEl.hidden = false;
   if (s.done()) { nextTut(); return; }
@@ -114,8 +115,8 @@ const ACH = [
   ['first', '첫 삽', '시설 하나를 복구했다', () => K.FAC_ORDER.filter(t => K.lvOfFac(t)).length ? 1 : 0, 1, { know: 20, snack: 10 }],
   ['main3', '본관 3층', '본관을 Lv.3으로', () => K.lvOfFac('main'), 3, { know: 60, snack: 30 }],
   ['main5', '본관 완공', '본관을 Lv.5로', () => K.lvOfFac('main'), 5, { know: 150, snack: 80, power: 40 }],
-  ['r25', '기차가 다시 선다', '양평 재건 25%', () => Math.round(K.restore() * 100), 25, { know: 40, snack: 20 }],
-  ['r50', '장날이 돌아왔다', '양평 재건 50%', () => Math.round(K.restore() * 100), 50, { know: 80, snack: 50 }],
+  ['r25', '양평이 깨어난다', '양평 재건 25%', () => Math.round(K.restore() * 100), 25, { know: 40, snack: 20 }],
+  ['r50', '절반이 돌아왔다', '양평 재건 50%', () => Math.round(K.restore() * 100), 50, { know: 80, snack: 50 }],
   ['r100', '다시 우리 동네', '양평 재건 100%', () => Math.round(K.restore() * 100), 100, { know: 300, snack: 200, power: 100 }],
   ['zones', '캠퍼스 넓히기', '별관 · 뒷동산 · 기숙사 구역을 모두 열기', () => ZK.filter(z => G.zones[z]).length, 3, { know: 120, snack: 80, power: 40 }],
   ['f10', '친구 10명', '캠퍼스 친구 10명 모으기', () => G.friends.length, 10, { know: 40, snack: 30 }],
@@ -135,6 +136,8 @@ const ACH = [
   ['awake1', '첫 각성', '친구 한 명 각성시키기', () => G.stat.awake || 0, 1, { know: 200, snack: 120, power: 60 }],
   ['evdeco', '행사 개근', '학교 행사 한정 꾸미기 받기', () => Object.keys(G.decoUnlock || {}).length, 1, { know: 120, snack: 80 }],
   ['ch7', '시장까지 지켰다', '물맑은시장 챕터 열기', () => typeof progOf === 'function' && progOf(G, 7) > 0 ? 1 : 0, 1, { know: 150, snack: 100, power: 50 }],
+  ['dist1', '동네 살리기', '양평 동네 하나 복구하기', () => K.DISTRICTS.filter(d => K.distLv(d.id)).length, 1, { know: 60, coin: 30 }],
+  ['distall', '양평 지킴이', '양평 동네 11곳 모두 복구하기', () => K.DISTRICTS.filter(d => K.distLv(d.id)).length, 11, { know: 400, coin: 200, power: 100 }],
   ['att7', '개근상', '7일 연속 출석', () => (G.daily && G.daily.best) || 0, 7, { know: 150, snack: 100, power: 50 }],
 ];
 G.ach = G.ach || {};
@@ -264,9 +267,63 @@ K.HOOK.tap.push(ray => {
   if (!hit) return false;
   const { kind, name } = hit.object.userData, th = K.LANDMARK[kind][0];
   KS.fx('click');
-  if (K.restore() < th - 1e-9) { K.toast(`${name}은(는) 양평 재건 ${Math.round(th * 100)}%에 다시 살아나요`); return true; }
+  if (!K.lmAlive(kind)) { const d = K.DISTRICTS.find(x => x.lm === kind); if (d) openDist(d.id); return true; }
   openLM(kind, name); return true;
 });
+
+/* ───────── 5½. 양평 동네 구역: 지도에서 눌러 복구 · 레벨업 · 생산 ───────── */
+G.distAt = G.distAt || {};
+const DIST_RATE = { know: 24, snack: 24, power: 18, coin: 14 }, DIST_CAP_H = 8;   // 레벨당 시간당 생산, 최대 8시간치
+const distIdx = d => K.DISTRICTS.indexOf(d);
+const distCost = (d, lv) => { const k = Math.pow(lv + 1, 1.6) * (1 + distIdx(d) * .25); return lv === 0 ? { know: Math.round(80 * k) } : { know: Math.round(90 * k), coin: Math.round(25 * k) }; };
+const distRate = d => Math.round(K.distLv(d.id) * DIST_RATE[d.res] * (1 + distIdx(d) * .08));
+const distStock = d => { if (!K.distLv(d.id)) return 0; const h = Math.min(DIST_CAP_H, (Date.now() - (G.distAt[d.id] || Date.now())) / 3600e3); return Math.floor(h * distRate(d)); };
+K.distStock = d => distStock(d) >= Math.max(5, distRate(d) * .5);
+const DIST_LINE = ['여기 오랜만에 와 본다!', '골목에 다시 불이 켜졌어.', '이 길 기억나? 같이 걸었던 데잖아.', '사람들이 돌아오니까 좋다.', '다음엔 어디를 고칠까?'];
+const dsheet = document.createElement('div'); dsheet.className = 'modal'; dsheet.id = 'dist'; dsheet.hidden = true; document.body.appendChild(dsheet);
+function openDist(id) {
+  const d = K.DISTRICTS.find(x => x.id === id); if (!d) return;
+  const lv = K.distLv(id), open = K.campusRestore() >= d.need - 1e-9, cost = lv < K.DIST_MAX ? distCost(d, lv) : null, st = distStock(d), I = RES_INFO[d.res];
+  const stars = Array.from({ length: K.DIST_MAX }, (_, i) => drawIcon(i < lv ? 'star' : 'starOff', 18)).join('');
+  let body;
+  if (!open) body = `<div class="req"><div class="rq"><b>아직 갈 수 없어요</b><p>양일고 재건 <b>${Math.round(d.need * 100)}%</b>가 되면 열려요 (지금 ${Math.round(K.campusRestore() * 100)}%). 학교 시설을 복구 · 레벨업해 보세요.</p></div></div>`;
+  else {
+    const prod = lv ? `<div class="req${st ? ' done' : ''}"><div class="rq"><b>${drawIcon(d.res, 16)} ${I.name} 생산 · 1시간에 ${distRate(d)}</b><p>모인 것 ${st} (최대 ${DIST_CAP_H}시간치)</p></div><button class="claim" data-dget ${st ? '' : 'disabled'}>모으기</button></div>` : '';
+    const up = cost ? `<div class="req"><div class="rq"><b>${lv ? `Lv.${lv + 1}로 키우기` : '동네 복구하기'}</b><p>${lv ? `생산이 늘고 동네가 더 활기차져요` : `무너진 건물이 다시 서고, ${I.name}을(를) 만들어요`}</p><div class="rw">${resText(cost, 13)}</div></div><button class="claim${canPay(cost) ? '' : ' lack'}" data-dup>${lv ? '키우기' : '복구!'}</button></div>` : `<div class="req done"><div class="rq"><b>완전히 복구됐어요!</b><p>이 동네는 다시 예전 모습이 됐어요.</p></div></div>`;
+    const lmBtn = d.lm && lv ? `<button class="claim alt wide" data-dlm>${d.name} 둘러보기 (선물 · 교환)</button>` : '';
+    body = prod + up + lmBtn;
+  }
+  dsheet.innerHTML = `<div class="sheet" role="dialog" aria-label="${d.name}"><div class="sh-top"><b>${d.name}</b><span class="stars">${stars}</span><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
+    <p class="lm-st">${d.desc}${lv ? '' : ' · 지금은 무너져 있어요.'}</p>${body}</div>`;
+  dsheet.dataset.id = id; dsheet.hidden = false;
+}
+dsheet.addEventListener('click', e => {
+  if (e.target === dsheet || e.target.closest('[data-close]')) { dsheet.hidden = true; return; }
+  const d = K.DISTRICTS.find(x => x.id === dsheet.dataset.id), b = e.target.closest('button'); if (!d || !b || b.disabled) return;
+  if (b.dataset.dget != null) { const st = distStock(d); if (!st) return; give({ [d.res]: st }); G.distAt[d.id] = Date.now(); KS.fx('coin'); K.refreshTown(); openDist(d.id); return; }
+  if (b.dataset.dlm != null) { dsheet.hidden = true; openLM(d.lm, d.name); return; }
+  if (b.dataset.dup != null) {
+    const lv = K.distLv(d.id); if (lv >= K.DIST_MAX) return; const cost = distCost(d, lv);
+    if (!canPay(cost)) { lackHint(cost); return; }
+    if (lv) { const st = distStock(d); if (st) give({ [d.res]: st }); }
+    Object.entries(cost).forEach(([k, n]) => { G.res[k] -= n; }); G.dist[d.id] = lv + 1; G.distAt[d.id] = Date.now(); G.stat.dist = (G.stat.dist || 0) + 1;
+    K.save(); K.refreshTown(); K.hud(); KS.fx(lv ? 'levelup' : 'build');
+    K.dust(d.at[0], d.at[1], 14, 14); K.sparkle(d.at[0], 6, d.at[1], 30);
+    if (!lv) { dsheet.hidden = true; const who = G.friends[Math.floor(Math.random() * G.friends.length)]; showQ([{ t: `${d.name}에 다시 불이 켜졌다`, p: `${d.desc}.<br>무너졌던 건물들이 다시 섰다.<br><b>${K.rosterOf(who).name}</b> “${DIST_LINE[Math.floor(Math.random() * DIST_LINE.length)]}”`, art: 'mile', btn: '좋아!' }]); }
+    else { K.toast(`${d.name} Lv.${lv + 1}!`); openDist(d.id); }
+  }
+});
+// 지도에서 동네 누르기 (표지 또는 그 동네 땅)
+const groundP = new THREE.Plane(new THREE.Vector3(0, 1, 0), .4), hitV = new THREE.Vector3();
+K.HOOK.tap.push(ray => {
+  const hm = ray.intersectObjects(K.distMarks.filter(s => s.visible), false)[0];
+  if (hm) { KS.fx('click'); openDist(hm.object.userData.dist); return true; }
+  if (!ray.ray.intersectPlane(groundP, hitV)) return false;
+  if (hitV.x > -14 && hitV.x < 38 && hitV.z > -14 && hitV.z < 26) return false;   // 학교 안은 빼고
+  const i = K.distOf(hitV.x, hitV.z); if (i < 0) return false;
+  KS.fx('click'); openDist(K.DISTRICTS[i].id); return true;
+});
+let dmT = 0; K.HOOK.tick.push(dt => { if ((dmT += dt) > 20) { dmT = 0; K.refreshTown(); } });
 
 /* ───────── 6. 살아나는 동네: 재건될수록 차와 사람이 늘어난다 ───────── */
 {
@@ -285,23 +342,23 @@ K.HOOK.tap.push(ray => {
     const roads = M.R.map(r => ({ cls: r[0], p: r[2] })).filter(r => r.p.length >= 4);
     const LMP = M.P.filter(p => K.LANDMARK[p[0]]).map(p => ({ kind: p[0], x: p[2], z: p[3] }));
     const radiusOf = r => r < .04 ? 0 : 300 * Math.pow(Math.min(1, (r - .03) / .92), 1.25);   // 무너진 건물이 살아나는 거리 (kingdom.js와 같은 식)
-    const near = (x, z, R) => Math.hypot(x - 12, z - 6) < R;
+    const near = (x, z) => K.townAlive(x, z);   // 복구된 동네(와 학교 둘레)에서만 다닌다
     const cars = [], peds = [];
     let R = -1;
     function spawnRoad(list, carMode) {
-      const cand = roads.filter(r => (carMode ? r.cls >= 1 : r.cls <= 1) && near(r.p[0], r.p[1], R));
+      const cand = roads.filter(r => (carMode ? r.cls >= 1 : r.cls <= 1) && near(r.p[0], r.p[1]));
       if (!cand.length) return null;
       const r = cand[Math.floor(Math.random() * cand.length)], segs = r.p.length / 2 - 1, i = Math.floor(Math.random() * segs);
       return { r, i, t: Math.random(), dir: Math.random() < .5 ? 1 : -1, sp: carMode ? 2.4 + Math.random() * 1.6 : .45 + Math.random() * .3, lane: carMode ? (r.cls >= 2 ? .35 : .15) : (Math.random() - .5) * .5 };
     }
     function rebuild() {
-      const r = K.restore(), nR = radiusOf(r); if (Math.abs(nR - R) < 2) return; R = nR;
-      const nc = Math.min(MAXC, Math.round(r * 44)), np = Math.min(MAXP, Math.round(r * 50));
+      const r = K.restore(), sig = K.DISTRICTS.map(d => K.distLv(d.id)).join(''); if (sig === R) return; R = sig;
+      const ls = K.GFX === 'low' ? .35 : K.GFX === 'high' ? 1.3 : 1, nc = Math.min(MAXC, Math.round(r * 44 * ls)), np = Math.min(MAXP, Math.round(r * 50 * ls));   // 그래픽 설정에 따라 동네 사람 수
       cars.length = 0; peds.length = 0;
       for (let k = 0; k < nc; k++) { const a = spawnRoad(roads, true); if (a) cars.push(a); }
       for (let k = 0; k < np; k++) { const a = spawnRoad(roads, false); if (a) peds.push(a); }
       // 살아난 명소 앞에는 사람이 모인다
-      LMP.forEach(l => { if (r >= K.LANDMARK[l.kind][0] - 1e-9) for (let k = 0; k < 8 && peds.length < MAXP; k++) peds.push({ home: l, x: l.x + (Math.random() - .5) * 8, z: l.z + (Math.random() - .5) * 8, tx: l.x, tz: l.z, sp: .5 }); });
+      LMP.forEach(l => { if (K.lmAlive(l.kind)) for (let k = 0; k < 8 && peds.length < MAXP; k++) peds.push({ home: l, x: l.x + (Math.random() - .5) * 8, z: l.z + (Math.random() - .5) * 8, tx: l.x, tz: l.z, sp: .5 }); });
       carBody.count = carTop.count = cars.length; pedBody.count = pedHead.count = peds.length;
     }
     const dm = new THREE.Object3D();
@@ -312,7 +369,7 @@ K.HOOK.tap.push(ray => {
       if (a.t > 1) { if (a.i < n - 1) { a.i++; a.t = 0; } else { a.t = 1; a.dir = -1; } }
       else if (a.t < 0) { if (a.i > 0) { a.i--; a.t = 1; } else { a.t = 0; a.dir = 1; } }
       const x = ax + (bx - ax) * a.t, z = az + (bz - az) * a.t;
-      if (!near(x, z, R + 6)) a.dir *= -1;   // 아직 무너진 쪽으로는 안 간다
+      if (!near(x, z)) a.dir *= -1;   // 아직 무너진 쪽으로는 안 간다
       const dx = (bx - ax) / len * a.dir, dz = (bz - az) / len * a.dir;
       return { x: x - dz * a.lane, z: z + dx * a.lane, ang: Math.atan2(-dz, dx) };
     }
@@ -402,7 +459,15 @@ function frList() {
       <button class="claim${why === '자원 부족' ? ' lack' : ''}" data-frup="${id}" ${why === '최고 레벨' ? 'disabled' : ''}>${lv >= MAX_LV ? (aw ? '각성 완료' : '최고') : `레벨업<small>${resText(upCost(lv), 11)}</small>`}</button>${det}</div>`;
   }).join('');
   if (solo) return `<button class="mini fr-back" data-frback>◀ 친구 목록</button><div class="fr-list solo">${body}</div>`;
-  return `<div class="fr-tools"><button class="claim alt" data-autogear>알아서 끼우기</button><small>경험치는 전투에 데려가면 쌓여요 · 간식으로 바로 레벨업도 돼요</small></div><div class="nbtabs fr-tabs">${roles.map(([k, n]) => `<button class="${frRole === k ? 'on' : ''}" data-role="${k}">${k === 'all' ? '' : roleIcon(k, 12)}${n}</button>`).join('')}</div><div class="fr-list pg" data-pg="fr-${frRole}">${body}</div>`;
+  const grid = list.map(id => {
+    const f = K.rosterOf(id), k = kitOf(id), r = ROLES[k.role], lv = lvOf(G, id), aw = awakeOf(G, id), gq = G.gear[id], max = lv >= MAX_LV, can = max ? !aw && canPay(AWAKE_COST) : canPay(upCost(lv));
+    return `<div class="fc${can ? ' can' : ''}${aw ? ' awake' : ''}${max ? ' max' : ''}" role="button" tabindex="0" data-tapup="${id}" style="--rc:${r.color}">
+      <span class="fc-lv">Lv.${lv}</span>${gq ? `<span class="fc-g">${gearIcon(gq, 14)}</span>` : ''}<button class="fc-i" data-finfo="${id}" aria-label="${f.name} 자세히">i</button>
+      <img src="${faceSVG(id)}" alt=""><b>${teamIds().includes(id) ? '<i class="fc-t">팀</i>' : ''}${f.name}</b>
+      <span class="fc-xp"><u style="width:${max ? 100 : xpOf(G, id) / xpNeed(lv) * 100}%"></u></span>
+      <span class="fc-c">${max ? (aw ? '각성 완료' : '각성하기') : `${roleIcon(k.role, 10)} ${resText(upCost(lv), 10)}`}</span></div>`;
+  }).join('');
+  return `<div class="fr-tools"><button class="claim alt" data-autogear>알아서 끼우기</button><small>친구를 누르면 바로 레벨업! · <b>i</b>는 자세히 · 전투에 데려가도 경험치가 쌓여요</small></div><div class="nbtabs fr-tabs">${roles.map(([k, n]) => `<button class="${frRole === k ? 'on' : ''}" data-role="${k}">${k === 'all' ? '' : roleIcon(k, 12)}${n}</button>`).join('')}</div><div class="fr-grid pg" data-pg="fr-${frRole}">${grid}</div>`;
 }
 function frShop() {
   const worn = t => Object.values(G.gear).filter(x => x === t).length;
@@ -438,6 +503,18 @@ fr.addEventListener('click', e => {
     K.save(); K.hud(); refreshBadge(); KS.fx('levelup'); K.toast(`${K.rosterOf(id).name} Lv.${lv + 1}!`);
     const p = K.people.find(q => q.id === id); if (p) K.sayText(p, lv + 1 >= MAX_LV ? '최고 레벨! 이제 각성할 수 있대!' : '나 더 강해진 것 같아!');
     frOpen = id; redraw(); return;
+  }
+  const fi = e.target.closest('[data-finfo]'); if (fi) { KS.fx('pop'); frOpen = fi.dataset.finfo; openFR(); return; }
+  const tu = e.target.closest('[data-tapup]');
+  if (tu) {
+    const id = tu.dataset.tapup, lv = lvOf(G, id);
+    if (lv >= MAX_LV) { if (!awakeOf(G, id)) { frOpen = id; openFR(); } else K.toast('최고 레벨 · 각성까지 끝났어요!'); return; }
+    const cost = upCost(lv); if (!canPay(cost)) { lackHint(cost); return; }
+    Object.entries(cost).forEach(([k, n]) => { G.res[k] -= n; }); G.lv[id] = lv + 1; G.xp = G.xp || {}; G.xp[id] = 0; G.stat.lvup = (G.stat.lvup || 0) + 1;
+    K.save(); K.hud(); refreshBadge(); KS.fx('levelup');
+    const p = K.people.find(q => q.id === id); if (p) K.sayText(p, lv + 1 >= MAX_LV ? '최고 레벨! 이제 각성할 수 있대!' : '나 더 강해진 것 같아!');
+    redraw(); const card = fr.querySelector(`[data-tapup="${id}"]`); if (card) { card.classList.add('up'); card.insertAdjacentHTML('beforeend', `<em class="fc-pop">Lv.${lv + 1}!</em>`); }
+    return;
   }
   const c = e.target.closest('[data-fr]'); if (c && !frOpen) { KS.fx('pop'); frOpen = c.dataset.fr; openFR(); }
 });
@@ -742,12 +819,34 @@ advBtn.innerHTML = drawIcon('compass', 24) + '<i class="badge" id="adv-n" hidden
 advBtn.onclick = () => { KS.fx('click'); openADV(); };
 let advT = 0; K.HOOK.tick.push(dt => { if ((advT += dt) < 2) return; advT = 0; advBtn.classList.toggle('locked', !expOpen()); const n = advDot(), el = $('adv-n'); if (el) { el.textContent = n; el.hidden = !n; } if (!adv.hidden && advTab === 'exp' && !pickDest) { const sc = adv.querySelector('.sheet').scrollTop; openADV(); adv.querySelector('.sheet').scrollTop = sc; } });
 
+/* ───────── 8⅓. 설정: 그래픽 · 소리 크기 · 진동 ───────── */
+const setEl = document.createElement('div'); setEl.className = 'modal'; setEl.id = 'set'; setEl.hidden = true; document.body.appendChild(setEl);
+function openSet() {
+  const st = getSettings(), G3 = [['low', '낮음', '오래된 폰 · 그림자 끔'], ['mid', '보통', '추천'], ['high', '높음', '선명하게 · 동네 사람 많이']];
+  setEl.innerHTML = `<div class="sheet" role="dialog" aria-label="설정"><div class="sh-top"><b>설정</b><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
+    <div class="set-row"><b>그래픽</b><div class="seg">${G3.map(([k, n, d]) => `<button class="${st.gfx === k ? 'on' : ''}" data-gfx="${k}">${n}<small>${d}</small></button>`).join('')}</div></div>
+    <div class="set-row"><b>음악</b><input type="range" min="0" max="100" value="${Math.round(st.music * 100)}" data-vol="music"><span>${Math.round(st.music * 100)}</span></div>
+    <div class="set-row"><b>효과음</b><input type="range" min="0" max="100" value="${Math.round(st.sfx * 100)}" data-vol="sfx"><span>${Math.round(st.sfx * 100)}</span></div>
+    <div class="set-row"><b>진동</b><button class="tog${st.buzz ? ' on' : ''}" data-buzz><i></i></button><small>${navigator.vibrate ? '레벨업 · 보스 격파 때 짧게' : '이 폰은 진동을 지원하지 않아요'}</small></div>
+    ${st.gfx !== K.GFX ? '<p class="sv warn">그래픽은 화면을 다시 열면 바뀌어요. <button class="mini" data-reload>지금 다시 열기</button></p>' : ''}</div>`;
+  setEl.hidden = false;
+}
+setEl.addEventListener('click', e => {
+  if (e.target === setEl || e.target.closest('[data-close]')) { setEl.hidden = true; return; }
+  const g = e.target.closest('[data-gfx]'); if (g) { KS.fx('click'); setSettings({ gfx: g.dataset.gfx }); openSet(); return; }
+  if (e.target.closest('[data-buzz]')) { const st = setSettings({ buzz: !getSettings().buzz }); if (st.buzz) buzz(30); openSet(); return; }
+  if (e.target.closest('[data-reload]')) { K.save(); location.reload(); }
+});
+setEl.addEventListener('input', e => { const r = e.target.closest('[data-vol]'); if (!r) return; const v = +r.value / 100, st = setSettings({ [r.dataset.vol]: v }); r.nextElementSibling.textContent = r.value; KS.setVol && KS.setVol(st.music, st.sfx); });
+setEl.addEventListener('change', e => { if (e.target.dataset.vol === 'sfx') KS.fx('coin'); });
+
 /* ───────── 8½. 오른쪽 버튼 정리: 자주 안 쓰는 버튼은 '메뉴'로 ───────── */
 {
   const more = document.createElement('button'); more.className = 'rbtn'; more.id = 'b-more'; more.setAttribute('aria-label', '메뉴'); more.setAttribute('aria-expanded', 'false');
   more.innerHTML = '<span class="dots3"><i></i><i></i><i></i></span><span class="more-lab">메뉴</span>';
   const pop = document.createElement('div'); pop.className = 'more-pop'; pop.hidden = true;
-  const LAB = { 'b-rot': '돌리기', 'b-in': '가까이', 'b-out': '멀리', 'b-music': '소리', 'b-full': '전체화면', 'b-back': '원래 게임' };
+  { const sb = document.createElement('button'); sb.className = 'rbtn'; sb.id = 'b-set'; sb.setAttribute('aria-label', '설정'); sb.innerHTML = drawIcon('cog', 24); sb.onclick = () => { KS.fx('click'); openSet(); }; document.querySelector('.side').appendChild(sb); }
+  const LAB = { 'b-set': '설정', 'b-rot': '돌리기', 'b-in': '가까이', 'b-out': '멀리', 'b-music': '소리', 'b-full': '전체화면', 'b-back': '원래 게임' };
   Object.keys(LAB).forEach(id => { const b = $(id); if (!b) return; const row = document.createElement('label'); row.className = 'more-row'; row.append(b); row.insertAdjacentHTML('beforeend', `<span>${LAB[id]}</span>`); pop.append(row); });
   $('b-fight').after(more); document.body.append(pop);
   const place = () => { const r = more.getBoundingClientRect(); pop.style.top = Math.max(8, Math.min(innerHeight - pop.offsetHeight - 8, r.top - 6)) + 'px'; pop.style.right = (innerWidth - r.left + 8) + 'px'; };
@@ -780,11 +879,11 @@ const TOWN_B = (() => {
 })();
 let winR = -1, winSig = '';
 function buildLights() {
-  const r = K.restore();
-  if (Math.abs(r - winR) > .005) {
-    winR = r; if (townWin) K.scene.remove(townWin);
+  const r = K.restore(), wsig = K.DISTRICTS.map(d => K.distLv(d.id)).join('') + Math.round(r * 100);
+  if (wsig !== winR) {
+    winR = wsig; if (townWin) K.scene.remove(townWin);
     const pos = [];
-    TOWN_B.forEach((b, i) => { if (r < b.thr) return; const floors = Math.min(4, Math.max(1, b.lv)), f = b.f, n = f.length / 2;
+    TOWN_B.forEach((b, i) => { const di = K.distOf(b.cx, b.cz); if (di >= 0 ? !K.distLv(K.DISTRICTS[di].id) : r < b.thr) return; const floors = Math.min(4, Math.max(1, b.lv)), f = b.f, n = f.length / 2;
       for (let e = 0; e < Math.min(n - 1, 4); e++) { const ax = f[e * 2], az = f[e * 2 + 1], bx = f[e * 2 + 2], bz = f[e * 2 + 3]; let mx = (ax + bx) / 2, mz = (az + bz) / 2; const ox = mx - b.cx, oz = mz - b.cz, ol = Math.hypot(ox, oz) || 1; mx += ox / ol * .08; mz += oz / ol * .08;
         for (let fl = 0; fl < floors; fl++) if ((i * 7 + e * 3 + fl * 5) % 3) pos.push(mx, -.4 + .35 + fl * .66, mz); } });
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); townWin = new THREE.Points(g, winMat); townWin.frustumCulled = false; K.scene.add(townWin);
@@ -887,4 +986,4 @@ let evT = 0; K.HOOK.tick.push(dt => { if ((evT += dt) > 2) { evT = 0; syncEV(); 
 { const fx = curEvent().E.fx; if (fx) { const box = document.createElement('div'); box.className = 'evfx ' + fx; box.innerHTML = Array.from({ length: 22 }, (_, i) => `<i style="left:${(i * 4.6 + (i % 3) * 7) % 100}%;animation-delay:${-(i * .83) % 9}s;animation-duration:${7 + (i % 5) * 1.3}s"></i>`).join(''); document.body.appendChild(box); } }
 
 K.save();
-Object.assign(K, { openADV, openEV, evState, setHour, openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });
+Object.assign(K, { openDist, openADV, openEV, evState, setHour, openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });
