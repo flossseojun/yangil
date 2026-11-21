@@ -23,7 +23,7 @@ const CH0 = SEL.ch, STAGE = SEL.st, CH = bossChOf(CH0, STAGE), CHD = CHAPTERS[CH
 const SM = TRAIN ? Object.assign({}, stageMulOf(CH0, STAGE), { hp: stageMulOf(CH0, STAGE).hp * .7 }) : stageMulOf(CH0, STAGE), SID = TRAIN ? '요일 훈련' : stageName(CH0, STAGE), PLACE = TRAIN ? `요일 훈련 · ${TK.name}` : IN_TOWER ? `도전의 탑 ${STAGE}층` : CHD.place;
 document.getElementById('stg').textContent = SID; document.getElementById('st-sub').textContent = TRAIN ? 'TRAINING' : 'STAGE ' + SID;
 document.getElementById('st-place').textContent = PLACE; document.getElementById('st-title').textContent = PLACE; document.getElementById('boss-name').textContent = CHD.boss;
-document.getElementById('st-desc').innerHTML = `보스 · ${CHD.boss}${IN_TOWER ? ` · ${CHD.place}에서` : STAGE > 1 ? ` (강화 ${STAGE - 1}단계)` : ''} · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}<br><small>잡몹 웨이브 2번을 물리치면 보스가 깨어나요 · ${CHD.desc}</small>`;
+document.getElementById('st-desc').innerHTML = `보스 · ${CHD.boss}${IN_TOWER ? ` · ${CHD.place}에서` : STAGE > 1 ? ` (강화 ${STAGE - 1}단계)` : ''} · 추천 전투력 ${SM.rec.toLocaleString('ko-KR')}<br><small>잡몹을 물리치면 보스가 깨어나요 · ${CHD.desc}</small>`;
 const nameOf = id => (ROSTER.find(f => f.id === id) || { name: id }).name;
 const introOf = id => (ROSTER.find(f => f.id === id) || { role: '' }).role.split(' · ')[0];
 
@@ -69,7 +69,7 @@ const SKILL_ORDER = ordered;
 document.getElementById('syn').innerHTML = teamSynergy(PICK).filter(x => x.on).map(x => `<b>${x.name}</b>${x.desc}`).join(' · ');
 const SYNERGY = FX.skill;
 const LAYERS = [13000, 13000, 13000].map(x => Math.round(x * SM.hp));     // 보스 체력 3겹
-const TIME_LIMIT = 120;   // 잡몹 웨이브 2번 + 보스
+const TIME_LIMIT = 100;   // 잡몹 웨이브 + 보스
 
 /* ───────── 작은 도구 ───────── */
 const $ = id => document.getElementById(id);
@@ -144,8 +144,10 @@ function hurt(u, n, cls = 'taken') {
 function heal(u, n) { if (u.dead) return; if (u.sleep > 0) wakeUnit(u, '깼다!'); if (n > 0) { u.ch.face('happy', .8); KS.fx('heal'); } const v = Math.min(u.max - u.hp, Math.round(n)); u.hp += v; popText(u.pos.clone().add(new THREE.Vector3(0, 2.8, 0)), 'heal', '+' + fmt(v)); flash('#7dff9e', 2.4, u.pos.clone().add(new THREE.Vector3(0, 1.2, 0)), .6); }
 
 /* ───────── 잡몹: 웨이브 2번을 다 잡으면 보스가 깨어난다 ───────── */
-const MOBS = [], WAVE_SIZE = [3, 4], WAVES = WAVE_SIZE.length;
-let wave = 0, mobKills = 0, firstSpawn = false;
+const MOBS = [], WAVE_SIZE = [4], WAVES = WAVE_SIZE.length;   // 짧고 시원하게: 웨이브 1번
+let wave = 0, mobKills = 0, firstSpawn = false, combo = 0, comboT = 0, bestCombo = 0;
+// 이미 깬 스테이지는 웨이브를 건너뛰고 바로 보스전도 할 수 있다
+const CLEARED = !TRAIN && !IN_TOWER && STAGE < progOf(CAMP, CH0);
 const mobsAlive = () => MOBS.filter(m => !m.dead);
 const MOB_NAME = { 1: '은행 열매', 2: '고장 난 모니터', 3: '꼬마 유령', 4: '벽돌 졸개', 5: '졸개', 6: '표 검사 로봇', 7: '떡꼬치' };
 const mobName = () => MOB_NAME[CH] || '졸개';
@@ -165,7 +167,7 @@ function makeMob() {
 }
 function spawnMobs(n) {
   for (let i = 0; i < n; i++) {
-    const g = makeMob(), pos = new THREE.Vector3(rnd(3.2, 6.2), 0, rnd(-1.6, 1.5)), max = Math.round(1700 * SM.hp);
+    const g = makeMob(), pos = new THREE.Vector3(rnd(3.2, 6.2), 0, rnd(-1.6, 1.5)), max = Math.round(900 * SM.hp);
     const m = { g, pos, hp: max, max, atkT: rnd(1, 2), dead: false, bob: Math.random() * 6, y: 5 + i * .6 };
     g.scale.setScalar(1.45); g.position.set(pos.x, m.y, pos.z); scene.add(g); MOBS.push(m);
   }
@@ -173,17 +175,25 @@ function spawnMobs(n) {
 }
 function damageMob(n, opts = {}) {
   const live = mobsAlive(); if (!live.length) return;
-  const m = live.sort((a, b) => a.pos.x - b.pos.x)[0];   // 맨 앞 잡몹부터
+  if (!opts.normal && !opts.one && live.length > 1) { live.forEach(m2 => damageMob1(m2, n * .8, Object.assign({}, opts, { one: true }))); return; }   // 스킬은 잡몹 전부를 한 번에
+  damageMob1(live.sort((a, b) => a.pos.x - b.pos.x)[0], n, opts);   // 일반 공격은 맨 앞 잡몹부터
+}
+function damageMob1(m, n, opts) {
   const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * rnd(.92, 1.08));
   m.hp -= dmg; m.flash = .12; KS.fx(crit ? 'crit' : 'hit');
   popText(m.pos.clone().add(new THREE.Vector3(rnd(-.3, .3), 1.7, .4)), crit ? 'big' : 'mid', fmt(dmg));
   if (m.hp <= 0) {
     m.dead = true; mobKills++; flash(ARENA.hitColor, 3.5, m.pos.clone().add(new THREE.Vector3(0, .6, 0)), .45); KS.fx('break');
     tween(.35, k => { m.g.scale.setScalar(Math.max(.01, 1.45 * (1 - k))); m.g.rotation.y = k * 6; m.g.position.y = k * 1.2; }, () => scene.remove(m.g));
-    if (opts.big && mobsAlive().length) damageMob(Math.round(dmg * .5), { crit: false });   // 큰 기술은 남은 힘이 다음 잡몹에게
+    // 콤보: 연달아 잡을수록 친구들 스킬 게이지가 찬다
+    combo = comboT > 0 ? combo + 1 : 1; comboT = 3; bestCombo = Math.max(bestCombo, combo);
+    alive().forEach(u => { u.gauge = Math.min(1, u.gauge + .18 + combo * .04); });
+    const el = $('combo'); if (el) { el.innerHTML = `<b>${combo}</b> COMBO!<small>스킬 충전 +${18 + combo * 4}%</small>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+    if (combo >= 3) KS.fx('charge');
   }
 }
 function stepMobs(dt) {
+  comboT = Math.max(0, comboT - dt);
   if (!firstSpawn) { firstSpawn = true; spawnMobs(WAVE_SIZE[0]); sayBoss(`${mobName()} 떼가 나타났다!`, 3.4); }
   MOBS.forEach(m => {
     if (m.dead) return;
@@ -206,6 +216,7 @@ function stepMobs(dt) {
   }
 }
 const bossAwake = () => wave >= WAVES;
+function skipWaves() { wave = WAVES; firstSpawn = true; B.slamT = 2.5; B.bombT = 5; }
 
 /* ───────── 날아가는 것 ───────── */
 function bolt(from, to, color, dur, done, size = .55, arc = 0) {
@@ -601,7 +612,7 @@ function finish(win) {
     if (treasureGot) chips.push([treasureGot, `보물 ${TREASURES[treasureGot].name}`, '#ffd9a8']);
     const pct = (lv, xp) => lv >= MAX_LV ? 100 : Math.round(xp / xpNeed(lv) * 100);
     const team = xpRows.map(r => `<div class="rt-f${r.up ? ' up' : ''}"><img src="${svgURL(kitHeadSVG(r.id))}" alt=""><b>${nameOf(r.id)}</b><span class="rt-lv">Lv.<i data-lv="${r.lv1}">${r.lv0}</i></span><i class="rt-xp"><u style="width:${pct(r.lv0, r.xp0)}%" data-to="${pct(r.lv1, r.xp1)}" data-up="${r.up ? 1 : 0}"></u></i><small>+${xpGain}</small>${r.up ? '<em>LEVEL UP!</em>' : ''}${win && bondUp.includes(r.id) ? `<span class="rt-h">${drawIcon('heart', 12)}+1</span>` : ''}</div>`).join('');
-    $('r-time').innerHTML = `<div class="rt-stat">${win || TRAIN ? `<span><small>걸린 시간</small><b>${Math.round(TIME_LIMIT - clockT)}초</b></span>` : ''}<span><small>남은 친구</small><b>${left} / ${units.length}</b></span><span><small>잡몹 처치</small><b>${mobKills}</b></span>${TRAIN ? `<span><small>오늘 남은 훈련</small><b>${Math.max(0, TRAIN_MAX - ((loadCampus() || {}).train || { n: 0 }).n)}번</b></span>` : ''}</div>
+    $('r-time').innerHTML = `<div class="rt-stat">${win || TRAIN ? `<span><small>걸린 시간</small><b>${Math.round(TIME_LIMIT - clockT)}초</b></span>` : ''}<span><small>남은 친구</small><b>${left} / ${units.length}</b></span><span><small>잡몹 처치</small><b>${mobKills}</b></span>${bestCombo > 1 ? `<span><small>최고 콤보</small><b>${bestCombo}</b></span>` : ''}${TRAIN ? `<span><small>오늘 남은 훈련</small><b>${Math.max(0, TRAIN_MAX - ((loadCampus() || {}).train || { n: 0 }).n)}번</b></span>` : ''}</div>
       ${team ? `<div class="rt-team">${team}</div>` : ''}
       ${chips.length ? `<div class="rt-chips">${chips.map(([ic, tx, c], i) => `<span style="--c:${c};animation-delay:${.6 + i * .15}s">${drawIcon(ic, 18)}${tx}</span>`).join('')}</div>` : ''}
       ${!win && !TRAIN ? `<div class="rt-tip">${drawIcon('info', 16)}<span>캠퍼스에서 친구를 레벨업하거나 장비를 끼우면 더 세져요</span></div>` : ''}`;
@@ -616,6 +627,8 @@ function finish(win) {
   }, win ? 1300 : 800);
   if (win) { flash('#ffd27a', 10, bossCenter, 1.2); shake(.3, .6); tween(1.2, k => { boss.rotation.z = -k * .35; boss.position.y = -k * .8; }); }
 }
+$('go-boss').hidden = !CLEARED;
+$('go-boss').onclick = () => { skipWaves(); $('go').click(); };
 $('go').onclick = () => { KS.play(['', 'ginkgo', 'neon', 'ghost', 'storm', 'storm', 'neon', 'ginkgo'][CH]); KS.fx('click'); $('start').hidden = true; started = true; units.forEach((u, i) => setTimeout(() => sayLine(u, 'start'), 900 + i * 300)); };
 $('r-retry').onclick = () => location.reload();
 $('r-camp').onclick = () => { location.href = './'; };
