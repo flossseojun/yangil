@@ -450,6 +450,17 @@
   .ld-tip { margin: 0; font-family: 'Gowun Dodum'; font-size: 14px; min-height: 20px; color: #fffaf0; }
   @media (max-height: 480px) { .ld-title { font-size: 32px; } .ld-faces { height: 50px; } .ld-faces img { width: 46px; height: 46px; } }
   @media (prefers-reduced-motion: reduce) { .ld-faces img { animation: none; } }
+  /* ── 양평 전체 지도 창 ── */
+  .town-bar { position: relative; height: 22px; border: 2.5px solid var(--ink); border-radius: 11px; background: #f1e7d0; overflow: hidden; display: flex; margin-bottom: 8px; }
+  .town-bar i { display: block; height: 100%; background: #ffd23f; } .town-bar u { display: block; height: 100%; background: #6cd39a; }
+  .town-bar span { position: absolute; top: 2px; font-family: Jua, sans-serif; font-size: 11px; color: var(--ink); } .town-bar span:first-of-type { left: 8px; } .town-bar span:last-of-type { left: 52%; }
+  .sheet .town-grid.pg:not(.dex) { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: 7px; align-content: start; }
+  .tw { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; background: #fff; border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 6px 9px; cursor: pointer; font: inherit; color: var(--ink); }
+  .tw b { font-family: Jua, sans-serif; font-weight: 400; font-size: 15px; } .tw span { font-size: 12px; color: #c98a00; font-family: Jua, sans-serif; } .tw small { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--sub); }
+  .tw.on { background: linear-gradient(160deg, #fff, #e8f8dc); border-left: 7px solid #6cd39a; } .tw.open { background: #fff3c4; border-left: 7px solid #ffd23f; } .tw.open span { color: #c0392b; } .tw.lock { background: #e6dcc6; color: #7a6d5c; border-color: #b8ab92; box-shadow: none; } .tw.lock span { color: #8a7a64; }
+  .tw-dot { position: absolute; top: -7px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff; border: 2px solid var(--ink); font-style: normal; font-family: Jua, sans-serif; font-size: 12px; display: grid; place-items: center; }
+  #lv:active { transform: rotate(1.5deg) translateY(2px); }
+  .tut-arrow.up { margin: 0 0 0 -20px; } .tut-arrow.up svg { transform: rotate(180deg); }
 </style>
 </head>
 <body>
@@ -480,17 +491,17 @@
 <a class="osm" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">지도 © OpenStreetMap</a>
 <div class="loading" id="loading"><div class="ld-box"><b class="ld-title">양일 캠퍼스</b><small>무너진 양평을 다시 세우자!</small><div class="ld-faces" id="ld-faces"></div><div class="ld-bar"><i id="ld-bar"></i></div><p class="ld-tip" id="ld-tip">캠퍼스를 짓는 중…</p></div></div>
 
-<script src="../avatar.js?v=1795235617"></script>
-<script src="../avatar2.js?v=1795235617"></script>
-<script src="../avatar3.js?v=1795235617"></script>
-<script src="../scene.js?v=1795235617"></script>
-<script src="../fullbody.js?v=1795235617"></script>
-<script src="roster.js?v=1795235617"></script>
-<script src="yangpyeong.js?v=1795235617"></script>
-<script src="kits.js?v=1795235617"></script>
-<script src="profiles.js?v=1795235617"></script>
-<script src="ui.js?v=1795235617"></script>
-<script src="audio.js?v=1795235617"></script>
+<script src="../avatar.js?v=1795572463"></script>
+<script src="../avatar2.js?v=1795572463"></script>
+<script src="../avatar3.js?v=1795572463"></script>
+<script src="../scene.js?v=1795572463"></script>
+<script src="../fullbody.js?v=1795572463"></script>
+<script src="roster.js?v=1795572463"></script>
+<script src="yangpyeong.js?v=1795572463"></script>
+<script src="kits.js?v=1795572463"></script>
+<script src="profiles.js?v=1795572463"></script>
+<script src="ui.js?v=1795572463"></script>
+<script src="audio.js?v=1795572463"></script>
 <script>
 // 로딩 화면: 친구 얼굴 · 팁 · 진행 막대 (진짜 화면이 뜨면 kingdom.js가 지운다)
 (function () {
@@ -502,7 +513,7 @@
 </script>
 <script>document.querySelectorAll('[data-ic]').forEach(el => el.insertAdjacentHTML('afterbegin', drawIcon(el.dataset.ic, el.classList.contains('rbtn') ? 24 : 18)));</script>
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
-<script type="module" src="kingdom.js?v=1795235617"></script>
-<script type="module" src="notebook.js?v=1795235617"></script>
+<script type="module" src="kingdom.js?v=1795572463"></script>
+<script type="module" src="notebook.js?v=1795572463"></script>
 </body>
 </html>

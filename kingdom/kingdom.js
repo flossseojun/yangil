@@ -99,17 +99,17 @@ const campusLv = () => FAC_ORDER.reduce((a, t) => a + lvOfFac(t), 0);
 const campusRestore = () => campusLv() / (FAC_ORDER.length * MAX_LV);   // 양일고 재건 0~1
 // 양평 동네 구역: 지도에서 눌러 복구 · 레벨업 (0 = 무너짐, 3 = 완전 복구). 학교 가까운 곳부터 열린다
 const DISTRICTS = [
-  { id: 'gate',      name: '학교 앞 골목',   at: [33, 42],    r: 38, need: .04, res: 'snack', desc: '분식집과 문방구가 모여 있던 학교 앞 골목' },
-  { id: 'station',   name: '양평역 앞',      at: [-9, 60],    r: 34, need: .08, res: 'coin',  desc: '중앙선 기차가 서는 양평의 대문', lm: 'station' },
-  { id: 'yanggeun',  name: '양근리 주택가',  at: [81, 48],    r: 40, need: .12, res: 'know',  desc: '친구들 집이 모여 있는 조용한 동네' },
-  { id: 'market',    name: '물맑은시장',     at: [30, 112],   r: 36, need: .16, res: 'snack', desc: '장날이면 북적이는 양평 전통시장', lm: 'market' },
-  { id: 'hall',      name: '군청 광장',      at: [-65, 127],  r: 40, need: .2,  res: 'know',  desc: '양평군청과 광장 · 축제가 열리는 곳', lm: 'hall' },
-  { id: 'middle',    name: '중학교 언덕',    at: [3, -110],   r: 62, need: .25, res: 'power', desc: '양평중학교와 언덕길 산책로' },
-  { id: 'west',      name: '서쪽 초등학교 길', at: [-112, 98], r: 52, need: .3,  res: 'snack', desc: '양평초등학교 아이들이 다니는 길' },
-  { id: 'gongheung', name: '공흥리',         at: [161, 51],   r: 56, need: .35, res: 'power', desc: '논밭과 새 아파트가 함께 있는 동네' },
-  { id: 'high',      name: '양평고 동네',    at: [154, 162],  r: 46, need: .42, res: 'know',  desc: '이웃 학교 양평고가 있는 동네' },
-  { id: 'east',      name: '동쪽 병원길',    at: [210, -55],  r: 72, need: .5,  res: 'coin',  desc: '양평병원으로 가는 큰길' },
-  { id: 'river',     name: '남한강변',       at: [-175, 150], r: 62, need: .58, res: 'power', desc: '남한강을 따라 걷는 강변 산책길' },
+  { id: 'gate',      name: '학교 앞 골목',   at: [33, 42],    r: 38, need: .0, res: 'snack', desc: '분식집과 문방구가 모여 있던 학교 앞 골목' },
+  { id: 'station',   name: '양평역 앞',      at: [-9, 60],    r: 34, need: .03, res: 'coin',  desc: '중앙선 기차가 서는 양평의 대문', lm: 'station' },
+  { id: 'yanggeun',  name: '양근리 주택가',  at: [81, 48],    r: 40, need: .06, res: 'know',  desc: '친구들 집이 모여 있는 조용한 동네' },
+  { id: 'market',    name: '물맑은시장',     at: [30, 112],   r: 36, need: .1, res: 'snack', desc: '장날이면 북적이는 양평 전통시장', lm: 'market' },
+  { id: 'hall',      name: '군청 광장',      at: [-65, 127],  r: 40, need: .14, res: 'know',  desc: '양평군청과 광장 · 축제가 열리는 곳', lm: 'hall' },
+  { id: 'middle',    name: '중학교 언덕',    at: [3, -110],   r: 62, need: .18, res: 'power', desc: '양평중학교와 언덕길 산책로' },
+  { id: 'west',      name: '서쪽 초등학교 길', at: [-112, 98], r: 52, need: .22, res: 'snack', desc: '양평초등학교 아이들이 다니는 길' },
+  { id: 'gongheung', name: '공흥리',         at: [161, 51],   r: 56, need: .27, res: 'power', desc: '논밭과 새 아파트가 함께 있는 동네' },
+  { id: 'high',      name: '양평고 동네',    at: [154, 162],  r: 46, need: .32, res: 'know',  desc: '이웃 학교 양평고가 있는 동네' },
+  { id: 'east',      name: '동쪽 병원길',    at: [210, -55],  r: 72, need: .38, res: 'coin',  desc: '양평병원으로 가는 큰길' },
+  { id: 'river',     name: '남한강변',       at: [-175, 150], r: 62, need: .44, res: 'power', desc: '남한강을 따라 걷는 강변 산책길' },
 ];
 const DIST_MAX = 3;
 const distLv = id => ((G && G.dist) || {})[id] || 0;
@@ -226,7 +226,7 @@ let townBase = null;
       // 무너진 건물: 지붕을 들쭉날쭉 낮추고 잿빛으로 (셰이더에서 처리해서 다시 만들 필요 없음)
       bm.onBeforeCompile = sh2 => {
         sh2.uniforms.uRestore = townU.uRestore; sh2.uniforms.uDist = townU.uDist;
-        sh2.vertexShader = 'attribute float aThr;\nattribute float aDist;\nuniform float uRestore;\nuniform float uDist[12];\nvarying float vRuin;\n' + sh2.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nfloat ruin = aDist > -.5 ? (uDist[int(aDist + .5)] > .5 ? 0.0 : 1.0) : step(uRestore, aThr);\nfloat hh = 0.12 + 0.3 * fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5453);\ntransformed.y = mix(transformed.y, -0.4 + (transformed.y + 0.4) * hh, ruin);\nvRuin = ruin;');
+        sh2.vertexShader = 'attribute float aThr;\nattribute float aDist;\nuniform float uRestore;\nuniform float uDist[12];\nvarying float vRuin;\n' + sh2.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nfloat ruin = aDist > -.5 ? 1.0 - clamp(uDist[int(aDist + .5)], 0.0, 1.0) : step(uRestore, aThr);\nfloat hh = 0.12 + 0.3 * fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5453);\ntransformed.y = mix(transformed.y, -0.4 + (transformed.y + 0.4) * hh, ruin);\nvRuin = ruin;');
         sh2.fragmentShader = 'varying float vRuin;\n' + sh2.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\nfloat gy = dot(diffuseColor.rgb, vec3(0.33));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.58, 0.52) * (0.7 + gy * 0.4), vRuin * 0.85);');
       };
       const m = new THREE.Mesh(g, bm); m.castShadow = true; m.receiveShadow = true; outside.add(m); } }
@@ -241,8 +241,40 @@ let townBase = null;
   });
 }
 // 이름표는 멀리 볼수록 크게 (화면에서 비슷한 크기로)
+// 동네가 살아나는 모습: 건물이 천천히 솟고, 땅이 초록으로, 가로수 · 가로등 · 꽃이 생긴다
+const distGoal = new Array(12).fill(0), distDecoLv = new Array(12).fill(-1), distDeco = []; let townReady = false;
+const roadPts = (() => { const M = typeof YP_MAP !== 'undefined' ? YP_MAP : null, out = DISTRICTS.map(() => []); if (!M) return out;
+  M.R.forEach(r => { if (r[0] < 1) return; const p = r[2]; for (let i = 0; i + 3 < p.length; i += 2) { const ax = p[i], az = p[i + 1], bx = p[i + 2], bz = p[i + 3], L = Math.hypot(bx - ax, bz - az); for (let t = 0; t < L; t += 7) { const k = t / L, x = ax + (bx - ax) * k, z = az + (bz - az) * k, di = distOf(x, z); if (di >= 0) { const nx = -(bz - az) / L, nz = (bx - ax) / L, side = (out[di].length % 2 ? 1 : -1) * (r[0] >= 2 ? 1.6 : 1.1); out[di].push([x + nx * side, z + nz * side]); } } } });
+  return out; })();
+function buildDistDeco(i) {
+  const d = DISTRICTS[i], lv = distLv(d.id); distDecoLv[i] = lv;
+  if (distDeco[i]) outside.remove(distDeco[i]);
+  const g = new THREE.Group(), pts = roadPts[i]; let sd = i * 97 + 13; const R = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
+  const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m; };
+  // 땅 색: 무너지면 흙빛, 살아나면 초록
+  const patch = new THREE.Mesh(new THREE.CircleGeometry(d.r, 40), new THREE.MeshBasicMaterial({ color: lv ? '#8fd06a' : '#a8987a', transparent: true, opacity: lv ? .45 : .4, depthWrite: false }));
+  patch.rotation.x = -Math.PI / 2; patch.position.set(d.at[0], -.41, d.at[1]); g.add(patch);
+  const pick = n => { const out = []; for (let k = 0; k < n && pts.length; k++) out.push(pts[Math.floor(R() * pts.length)]); return out; };
+  if (!lv) {   // 잔해 · 마른 나무
+    pick(12).forEach(([x, z]) => add(new THREE.IcosahedronGeometry(.3 + R() * .4, 0), toon('#8f877a'), x, -.2, z));
+    pick(6).forEach(([x, z]) => add(new THREE.CylinderGeometry(.06, .1, 1.2, 5), toon('#6a5a48'), x, .2, z));
+  } else {
+    const trunk = toon('#7a4a2a'), leaf = toon('#5fae4e'), leaf2 = toon('#7cc35e'), pole = toon('#3a3f4a'), glowM = new THREE.MeshBasicMaterial({ color: '#fff0b0' });
+    pick(10 + lv * 8).forEach(([x, z], k) => { add(new THREE.CylinderGeometry(.08, .12, .9, 5), trunk, x, .05, z); add(new THREE.IcosahedronGeometry(.55 + R() * .25, 0), k % 2 ? leaf : leaf2, x, .85, z); });
+    pick(4 + lv * 2).forEach(([x, z]) => { add(new THREE.CylinderGeometry(.04, .05, 1.8, 6), pole, x, .5, z); add(new THREE.SphereGeometry(.14, 8, 6), glowM, x, 1.45, z); });
+    if (lv >= 2) pick(10).forEach(([x, z], k) => { add(new THREE.BoxGeometry(.9, .2, .5), toon('#a5774b'), x, -.25, z); add(new THREE.SphereGeometry(.18, 6, 5), toon(['#ff6b8b', '#ffd23f', '#c86bff', '#ff9a3c'][k % 4]), x, -.05, z); });
+    if (lv >= 3) pick(8).forEach(([x, z], k) => { add(new THREE.CylinderGeometry(.03, .03, 2.2, 5), toon('#c9ccd2'), x, .7, z); add(new THREE.BoxGeometry(.7, .42, .03), toon(['#e5484d', '#ffd23f', '#5b8def', '#2f8f6b'][k % 4]), x + .36, 1.55, z); });
+  }
+  bake(g, new Set([patch])); distDeco[i] = g; outside.add(g);
+}
+function stepTown(dt) { for (let i = 0; i < DISTRICTS.length; i++) { const v = townU.uDist.value[i], gl = distGoal[i]; if (v !== gl) townU.uDist.value[i] = gl > v ? Math.min(gl, v + dt / 1.8) : Math.max(gl, v - dt / 1.8); } }
+// 카메라를 동네로 날려 보낸다
+function flyTo(x, z, zoom = .5, dur = 1.1, done) {
+  const t0 = controls.target.clone(), z0 = camera.zoom;
+  tween(dur, k => { const e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; controls.target.set(t0.x + (x - t0.x) * e, 0, t0.z + (z - t0.z) * e); camera.zoom = z0 + (zoom - z0) * e; camera.updateProjectionMatrix(); placeCamera(); }, done);
+}
 function refreshTown() {
-  const r = restore(); townU.uRestore.value = r; DISTRICTS.forEach((d, i) => { townU.uDist.value[i] = distLv(d.id); }); refreshDistMarks();
+  const r = restore(); townU.uRestore.value = r; DISTRICTS.forEach((d, i) => { distGoal[i] = distLv(d.id) ? 1 : 0; if (!townReady) townU.uDist.value[i] = distGoal[i]; if (distDecoLv[i] !== distLv(d.id)) buildDistDeco(i); }); townReady = true; refreshDistMarks();
   if (townBase) townBase.material.color.set('#' + new THREE.Color('#bfae8e').lerp(new THREE.Color('#b9dca0'), Math.min(1, r * 1.6)).getHexString());
   mapLabels.forEach(s => { if (!s.userData.lm) return; const t = s.material.map, c = t.image, g = c.getContext('2d'); t.userData.draw(g, c.width, c.height); t.needsUpdate = true; });
 }
@@ -991,7 +1023,7 @@ function perfCheck() {
 }
 function loop() {
   const dt = Math.min(clock.getDelta(), .05), now = Date.now(), t = performance.now() / 1000;
-  controls.update(); stepLabels(); stepPeople(dt); stepGifts(dt); perfCheck(); stepAnimated(dt, t); stepLeaves(dt, t); stepSky(dt, t);
+  controls.update(); stepLabels(); stepTown(dt); stepPeople(dt); stepGifts(dt); perfCheck(); stepAnimated(dt, t); stepLeaves(dt, t); stepSky(dt, t);
   for (let i = tweens.length - 1; i >= 0; i--) { const w = tweens[i]; w.t += dt; const k = Math.min(1, w.t / w.dur); w.f(k); if (k >= 1) { tweens.splice(i, 1); w.done && w.done(); } }
   FAC_ORDER.forEach(f => syncBubble(f, now)); HOOK.tick.forEach(f => f(dt, t));
   if (talk) { if (performance.now() > talk.until) { talk.el.remove(); talk = null; } else { const [x, y] = toScreen(talk.p.spr.position.clone().add(new THREE.Vector3(0, 2.1, 0))); talk.el.style.left = x + 'px'; talk.el.style.top = y + 'px'; } }
@@ -1052,4 +1084,4 @@ if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { flyRes, dust, sparkle, GFX, lmAlive, DISTRICTS, DIST_MAX, distLv, distOf, townAlive, campusRestore, refreshTown, distMarks, focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { flyTo, flyRes, dust, sparkle, GFX, lmAlive, DISTRICTS, DIST_MAX, distLv, distOf, townAlive, campusRestore, refreshTown, distMarks, focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };

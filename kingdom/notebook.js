@@ -38,6 +38,7 @@ const TUT = [
   { text: '무너진 <b>본관</b>을 눌러서 복구해 보자!', fac: 'main', done: () => K.lvOfFac('main') >= 1 },
   { text: '본관 위에 <b>말풍선</b>이 뜨면 눌러서 지식을 모아요.<br><small>20초쯤 기다리면 떠요</small>', bubble: 'main', start: () => { TUT[1].c0 = colSum(); }, done: () => colSum() > (TUT[1].c0 || 0) },
   { text: '<b>매점</b>도 복구하면 간식이 나와요.', fac: 'store', done: () => K.lvOfFac('store') >= 1 },
+  { text: '위의 <b>양평 재건</b>을 누르면 양평 동네 지도가 나와요. 학교 앞 골목부터 다시 세워 보자!', el: 'lv', done: () => flags.town },
   { text: '친구들 부탁을 들어주면 보상을 받아요.<br><b>의뢰</b> 버튼을 눌러 보자!', el: 'b-req', done: () => flags.req },
   { text: '<b>수첩</b>에는 출석 · 오늘의 미션 · 친구 도감 · 업적이 있어요.', el: 'b-note', done: () => flags.note },
   { text: '<b>친구들</b>에서 친구를 강화하고 문구 장비를 끼워요.', el: 'b-friends', done: () => flags.fr },
@@ -57,7 +58,7 @@ function stepTut() {
   if (G.tut == null) G.tut = 0;
   if (G.tut >= TUT.length) return;
   const s = TUT[G.tut];
-  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, #ev, #adv, #dist, #set, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
+  if (storyOpen() || !$('reqs').hidden || !$('nb').hidden || [...document.querySelectorAll('#fr, #ga, #ev, #adv, #dist, #set, #town, .modal.join')].some(m => !m.hidden)) { tutEl.hidden = arrow.hidden = true; if (s.done()) nextTut(); return; }
   if (tutStarted !== G.tut) { tutStarted = G.tut; s.start && s.start(); tutEl.querySelector('p').innerHTML = `<b class="n">${G.tut + 1}/${TUT.length}</b> ${s.text}`; }
   tutEl.hidden = false;
   if (s.done()) { nextTut(); return; }
@@ -66,7 +67,7 @@ function stepTut() {
   let v = null;
   if (s.fac) v = facTop(s.fac); else if (s.bubble) v = K.bubbles.has(s.bubble) ? K.bubbles.get(s.bubble).position.clone().add(new THREE.Vector3(0, .9, 0)) : null;
   if (v) { const [x, y] = K.toScreen(v); pointAt(x, y, 'down'); return; }
-  if (s.el) { const r = $(s.el).getBoundingClientRect(); if (r.width) { pointAt(r.left - 6, r.top + r.height / 2, 'right'); return; } }
+  if (s.el) { const r = $(s.el).getBoundingClientRect(); if (r.width) { if (s.el === 'lv') pointAt(r.left + r.width / 2, r.bottom + 50, 'up'); else pointAt(r.left - 6, r.top + r.height / 2, 'right'); return; } }
   arrow.hidden = true;
 }
 function nextTut() {
@@ -308,9 +309,9 @@ dsheet.addEventListener('click', e => {
     if (lv) { const st = distStock(d); if (st) give({ [d.res]: st }); }
     Object.entries(cost).forEach(([k, n]) => { G.res[k] -= n; }); G.dist[d.id] = lv + 1; G.distAt[d.id] = Date.now(); G.stat.dist = (G.stat.dist || 0) + 1;
     K.save(); K.refreshTown(); K.hud(); KS.fx(lv ? 'levelup' : 'build');
-    K.dust(d.at[0], d.at[1], 14, 14); K.sparkle(d.at[0], 6, d.at[1], 30);
-    if (!lv) { dsheet.hidden = true; const who = G.friends[Math.floor(Math.random() * G.friends.length)]; showQ([{ t: `${d.name}에 다시 불이 켜졌다`, p: `${d.desc}.<br>무너졌던 건물들이 다시 섰다.<br><b>${K.rosterOf(who).name}</b> “${DIST_LINE[Math.floor(Math.random() * DIST_LINE.length)]}”`, art: 'mile', btn: '좋아!' }]); }
-    else { K.toast(`${d.name} Lv.${lv + 1}!`); openDist(d.id); }
+    dsheet.hidden = true; K.flyTo(d.at[0], d.at[1], .55, 1); setTimeout(() => { K.dust(d.at[0], d.at[1], d.r * .8, d.r * .8); K.sparkle(d.at[0], 6, d.at[1], 40); [0, 300, 600].forEach(t => setTimeout(() => KS.fx('build'), t)); }, 900);   // 카메라가 날아가서 동네가 솟아오르는 걸 보여 준다
+    if (!lv) { setTimeout(() => { const who = G.friends[Math.floor(Math.random() * G.friends.length)]; showQ([{ t: `${d.name}에 다시 불이 켜졌다`, p: `${d.desc}.<br>무너졌던 건물들이 다시 섰다.<br><b>${K.rosterOf(who).name}</b> “${DIST_LINE[Math.floor(Math.random() * DIST_LINE.length)]}”`, art: 'mile', btn: '좋아!' }]); }, 3200); }
+    else { K.toast(`${d.name} Lv.${lv + 1}! 동네가 더 활기차졌어요`); setTimeout(() => openDist(d.id), 2600); }
   }
 });
 // 지도에서 동네 누르기 (표지 또는 그 동네 땅)
@@ -324,6 +325,26 @@ K.HOOK.tap.push(ray => {
   KS.fx('click'); openDist(K.DISTRICTS[i].id); return true;
 });
 let dmT = 0; K.HOOK.tick.push(dt => { if ((dmT += dt) > 20) { dmT = 0; K.refreshTown(); } });
+// 양평 전체 지도 창: 위의 "양평 재건 %"를 누르면 동네 11곳이 한눈에
+const town = document.createElement('div'); town.className = 'modal'; town.id = 'town'; town.hidden = true; document.body.appendChild(town);
+function openTown() {
+  flags.town = true;
+  const D = K.DISTRICTS, done = D.filter(d => K.distLv(d.id)).length, lvSum = D.reduce((a, d) => a + K.distLv(d.id), 0);
+  town.innerHTML = `<div class="sheet nbs" role="dialog" aria-label="양평 재건"><div class="sh-top"><b>양평 재건 ${Math.round(K.restore() * 100)}%</b><small>양일고 ${Math.round(K.campusRestore() * 100)}% · 동네 ${done}/${D.length}곳 · 별 ${lvSum}/${D.length * K.DIST_MAX}</small><button class="x" data-close aria-label="닫기">${drawIcon('close', 18)}</button></div>
+    <div class="town-bar"><i style="width:${K.campusRestore() * 50}%"></i><u style="width:${lvSum / (D.length * K.DIST_MAX) * 50}%"></u><span>양일고</span><span>양평 동네</span></div>
+    <div class="town-grid pg" data-pg="town">${D.map(d => { const lv = K.distLv(d.id), open = K.campusRestore() >= d.need - 1e-9, st = K.distStock(d);
+      return `<button class="tw${lv ? ' on' : open ? ' open' : ' lock'}" data-tw="${d.id}">${st ? '<i class="tw-dot">!</i>' : ''}<b>${d.name}</b><span>${lv ? '★'.repeat(lv) + '☆'.repeat(K.DIST_MAX - lv) : open ? '무너짐 · 복구하기' : `양일고 ${Math.round(d.need * 100)}%에 열림`}</span><small>${drawIcon(d.res, 12)} ${RES_INFO[d.res].name}</small></button>`; }).join('')}</div>
+    <div class="sv-row"><button class="claim alt" data-twall>양평 전체 보기</button><button class="claim alt" data-twhome>학교로 돌아가기</button></div></div>`;
+  town.hidden = false; paginateIn(town, 'town-');
+}
+town.addEventListener('click', e => {
+  if (e.target === town || e.target.closest('[data-close]')) { town.hidden = true; return; }
+  const t = e.target.closest('[data-tw]'); if (t) { const d = K.DISTRICTS.find(x => x.id === t.dataset.tw); town.hidden = true; KS.fx('click'); K.flyTo(d.at[0], d.at[1], .55, 1, () => openDist(d.id)); return; }
+  if (e.target.closest('[data-twall]')) { town.hidden = true; K.flyTo(20, 30, .16, 1.2); return; }
+  if (e.target.closest('[data-twhome]')) { town.hidden = true; K.flyTo(12, 13, 1.05, 1); }
+});
+$('lv').style.cursor = 'pointer'; $('lv').addEventListener('click', () => { KS.fx('click'); openTown(); });
+
 
 /* ───────── 6. 살아나는 동네: 재건될수록 차와 사람이 늘어난다 ───────── */
 {
@@ -986,4 +1007,4 @@ let evT = 0; K.HOOK.tick.push(dt => { if ((evT += dt) > 2) { evT = 0; syncEV(); 
 { const fx = curEvent().E.fx; if (fx) { const box = document.createElement('div'); box.className = 'evfx ' + fx; box.innerHTML = Array.from({ length: 22 }, (_, i) => `<i style="left:${(i * 4.6 + (i % 3) * 7) % 100}%;animation-delay:${-(i * .83) % 9}s;animation-duration:${7 + (i % 5) * 1.3}s"></i>`).join(''); document.body.appendChild(box); } }
 
 K.save();
-Object.assign(K, { openDist, openADV, openEV, evState, setHour, openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });
+Object.assign(K, { openTown, openDist, openADV, openEV, evState, setHour, openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });
