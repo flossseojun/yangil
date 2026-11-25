@@ -154,6 +154,8 @@ Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, n
 scene.add(sun, sun.target);
 
 /* ───────── 재료 ───────── */
+// 글씨가 흐리지 않게 2배로 그리는 이름표
+function sharpTex(w, h, draw) { const t = canvasTex(w * 2, h * 2, (g) => { g.setTransform(2, 0, 0, 2, 0, 0); draw(g, w, h); }); t.userData = { draw: (g) => { g.setTransform(2, 0, 0, 2, 0, 0); draw(g, w, h); } }; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; return t; }
 function canvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }
 let grad = null; const gradMap = () => { if (grad) return grad; grad = new THREE.DataTexture(new Uint8Array([110, 190, 255]), 3, 1, THREE.RedFormat); grad.minFilter = grad.magFilter = THREE.NearestFilter; grad.needsUpdate = true; return grad; };
 const MATS = {};
@@ -190,11 +192,12 @@ const outside = new THREE.Group(); scene.add(outside);
 const mapLabels = [];
 // 양평 복구: 큰 장소는 재건 % 단계에서, 나머지 건물은 학교에서 가까운 곳부터 살아난다
 const LANDMARK = { station: [.25, '양평역'], market: [.5, '양평물맑은시장'], hall: [.75, '양평군청'] };
-const townU = { uRestore: { value: 0 }, uDist: { value: new Array(12).fill(0) } };
+const townU = { uRestore: { value: 0 }, uDist: { value: new Array(12).fill(0) }, uNight: { value: 0 } };
 let townBase = null;
 {
   const M = typeof YP_MAP !== 'undefined' ? YP_MAP : { B: [], R: [], RL: [], W: [], WL: [], L: [], P: [] };
-  const base = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), new THREE.MeshToonMaterial({ color: '#b9dca0', gradientMap: gradMap() })); townBase = base; base.rotation.x = -Math.PI / 2; base.position.set(N / 2, -.42, N / 2); base.receiveShadow = true; outside.add(base);
+  const grassT = canvasTex(256, 256, (g, w) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, w); for (let k = 0; k < 700; k++) { g.fillStyle = Math.random() < .5 ? 'rgba(60,110,40,.10)' : 'rgba(255,255,230,.18)'; const x = Math.random() * w, y = Math.random() * w; g.fillRect(x, y, 2 + Math.random() * 3, 2 + Math.random() * 3); } }); grassT.wrapS = grassT.wrapT = THREE.RepeatWrapping; grassT.repeat.set(160, 160);
+  const base = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), new THREE.MeshToonMaterial({ map: grassT, color: '#b9dca0', gradientMap: gradMap() })); townBase = base; base.rotation.x = -Math.PI / 2; base.position.set(N / 2, -.42, N / 2); base.receiveShadow = true; outside.add(base);
   const shapeOf = f => { const s = new THREE.Shape(); for (let i = 0; i < f.length; i += 2) i ? s.lineTo(f[i], -f[i + 1]) : s.moveTo(f[i], -f[i + 1]); return s; };
   const flatGroup = (list, color, y) => { const geos = list.map(f => { try { const g = new THREE.ShapeGeometry(shapeOf(f)); g.rotateX(-Math.PI / 2); g.translate(0, y, 0); return g; } catch (e) { return null; } }).filter(Boolean); if (!geos.length) return; const g = mergeGeometries(geos.map(x => x.index ? x.toNonIndexed() : x)); const m = new THREE.Mesh(g, toon(color)); m.receiveShadow = true; outside.add(m); };
   const LC = { park: '#8fcf6a', grass: '#a3d684', wood: '#5f9a48', farm: '#d8cf8a', pitch: '#7fbf5a', platform: '#cfc8bb' };
@@ -217,17 +220,18 @@ let townBase = null;
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); outside.add(new THREE.Mesh(g, toon('#9a8a78', { side: THREE.DoubleSide })));
     const lp = []; M.RL.forEach(p => { for (let i = 0; i + 3 < p.length; i += 2) lp.push(p[i], -.37, p[i + 1], p[i + 2], -.37, p[i + 3]); }); const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3)); outside.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: '#3a3f4a' }))); }
   // 건물: 실제 윤곽을 층수만큼 올린다 (한 층 ≈ 3m ≈ .66칸)
-  { const geos = [], PAL = ['#efe6d6', '#e6dccb', '#f3ece0', '#dcd3c4', '#e9e2d8', '#d9e2e6', '#f0e2d0'];
+  { const geos = [], PAL = ['#fff1d2', '#ffe0c4', '#e2f2df', '#dce9f6', '#f8dfe8', '#fbe9b4', '#ebe2f6'], ROOF = ['#d9604a', '#3f7fb8', '#2f8f6b', '#9a6a44', '#c9643c', '#6b7680', '#b8434a'];
     const LM = M.P.filter(p => LANDMARK[p[0]]).map(p => [p[2], p[3], LANDMARK[p[0]][0]]);
     let sd = 11; const rnd2 = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
     const thrOf = f => { let cx = 0, cz = 0; for (let k = 0; k < f.length; k += 2) { cx += f[k]; cz += f[k + 1]; } cx /= f.length / 2; cz /= f.length / 2; const d = Math.hypot(cx - 12, cz - 6); let t = Math.min(.97, .03 + .92 * Math.pow(Math.min(1, d / 300), .8) + rnd2() * .05); LM.forEach(([x, z, th]) => { if (Math.hypot(cx - x, cz - z) < 16) t = Math.min(t, th - .005); }); return t; };
-    M.B.forEach(([lv, f], i) => { if (f.length < 6) return; try { const thr = thrOf(f); const g = new THREE.ExtrudeGeometry(shapeOf(f), { depth: Math.max(.6, lv * .66), bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.4, 0); const ng = g.toNonIndexed(), n = ng.attributes.position.count, col = new THREE.Color(lv >= 8 ? '#f1ead9' : PAL[i % PAL.length]), cols = new Float32Array(n * 3), nrm = ng.attributes.normal; for (let k = 0; k < n; k++) { const top = nrm.getY(k) > .5, c = top ? col.clone().multiplyScalar(lv >= 8 ? .9 : .82).lerp(new THREE.Color(lv >= 8 ? '#8a9aa8' : '#b0705a'), .35) : col; cols.set([c.r, c.g, c.b], k * 3); } ng.setAttribute('color', new THREE.BufferAttribute(cols, 3)); ng.setAttribute('aThr', new THREE.BufferAttribute(new Float32Array(n).fill(thr), 1)); { let cx = 0, cz = 0; for (let q = 0; q < f.length; q += 2) { cx += f[q]; cz += f[q + 1]; } ng.setAttribute('aDist', new THREE.BufferAttribute(new Float32Array(n).fill(distOf(cx / (f.length / 2), cz / (f.length / 2))), 1)); } ng.deleteAttribute('uv'); geos.push(ng); g.dispose(); } catch (e) {} });
+    M.B.forEach(([lv, f], i) => { if (f.length < 6) return; try { const thr = thrOf(f); const g = new THREE.ExtrudeGeometry(shapeOf(f), { depth: Math.max(.6, lv * .66), bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.4, 0); const ng = g.toNonIndexed(), n = ng.attributes.position.count, col = new THREE.Color(lv >= 8 ? '#f4f1ea' : PAL[i % PAL.length]), roofC = new THREE.Color(lv >= 8 ? '#8f9aa6' : ROOF[(i * 3 + (i >> 2)) % ROOF.length]), cols = new Float32Array(n * 3), nrm = ng.attributes.normal; for (let k = 0; k < n; k++) { const top = nrm.getY(k) > .5, c = top ? roofC : col; cols.set([c.r, c.g, c.b], k * 3); } ng.setAttribute('color', new THREE.BufferAttribute(cols, 3)); ng.setAttribute('aThr', new THREE.BufferAttribute(new Float32Array(n).fill(thr), 1)); { let cx = 0, cz = 0; for (let q = 0; q < f.length; q += 2) { cx += f[q]; cz += f[q + 1]; } ng.setAttribute('aDist', new THREE.BufferAttribute(new Float32Array(n).fill(distOf(cx / (f.length / 2), cz / (f.length / 2))), 1)); } ng.deleteAttribute('uv'); geos.push(ng); g.dispose(); } catch (e) {} });
     if (geos.length) { const g = mergeGeometries(geos); const bm = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: gradMap() });
       // 무너진 건물: 지붕을 들쭉날쭉 낮추고 잿빛으로 (셰이더에서 처리해서 다시 만들 필요 없음)
       bm.onBeforeCompile = sh2 => {
-        sh2.uniforms.uRestore = townU.uRestore; sh2.uniforms.uDist = townU.uDist;
-        sh2.vertexShader = 'attribute float aThr;\nattribute float aDist;\nuniform float uRestore;\nuniform float uDist[12];\nvarying float vRuin;\n' + sh2.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nfloat ruin = aDist > -.5 ? 1.0 - clamp(uDist[int(aDist + .5)], 0.0, 1.0) : step(uRestore, aThr);\nfloat hh = 0.12 + 0.3 * fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5453);\ntransformed.y = mix(transformed.y, -0.4 + (transformed.y + 0.4) * hh, ruin);\nvRuin = ruin;');
-        sh2.fragmentShader = 'varying float vRuin;\n' + sh2.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\nfloat gy = dot(diffuseColor.rgb, vec3(0.33));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.58, 0.52) * (0.7 + gy * 0.4), vRuin * 0.85);');
+        sh2.uniforms.uRestore = townU.uRestore; sh2.uniforms.uDist = townU.uDist; sh2.uniforms.uNight = townU.uNight;
+        sh2.vertexShader = 'attribute float aThr;\nattribute float aDist;\nuniform float uRestore;\nuniform float uDist[12];\nvarying float vRuin;\nvarying vec3 vWP;\nvarying float vSide;\n' + sh2.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nfloat ruin = aDist > -.5 ? 1.0 - clamp(uDist[int(aDist + .5)], 0.0, 1.0) : step(uRestore, aThr);\nfloat hh = 0.12 + 0.3 * fract(sin(dot(position.xz, vec2(12.9898, 78.233))) * 43758.5453);\ntransformed.y = mix(transformed.y, -0.4 + (transformed.y + 0.4) * hh, ruin);\nvRuin = ruin;\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvSide = 1.0 - step(0.5, abs(normal.y));');
+        // 창문(층마다 줄) · 밤에는 불 켜진 창 · 아래쪽은 살짝 어둡게 · 무너지면 잿빛
+        sh2.fragmentShader = 'uniform float uNight;\nvarying float vRuin;\nvarying vec3 vWP;\nvarying float vSide;\n' + sh2.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\nfloat hy = vWP.y + 0.4;\nfloat fl = fract(hy / 0.66);\nfloat cl = fract((vWP.x * 0.83 + vWP.z * 0.55) / 0.62);\nfloat win = vSide * step(0.3, fl) * step(fl, 0.72) * step(0.22, cl) * step(cl, 0.72) * step(0.25, hy) * (1.0 - vRuin);\nfloat lit = step(0.45, fract(sin(dot(floor(vec2(hy / 0.66, (vWP.x * 0.83 + vWP.z * 0.55) / 0.62)), vec2(12.9898, 78.233))) * 43758.5453));\ndiffuseColor.rgb *= mix(1.0, 0.78 + 0.22 * clamp(hy / 1.6, 0.0, 1.0), vSide);\ndiffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.42, 0.55, 0.7), mix(vec3(0.2, 0.24, 0.35), vec3(1.0, 0.85, 0.45), lit), uNight), win * 0.9);\nfloat gy = dot(diffuseColor.rgb, vec3(0.33));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.6, 0.56, 0.5) * (0.7 + gy * 0.4), vRuin * 0.9);');
       };
       const m = new THREE.Mesh(g, bm); m.castShadow = true; m.receiveShadow = true; outside.add(m); } }
   // 이름표: 양평역 · 시장 · 남한강 · 군청 · 학교들
@@ -236,7 +240,7 @@ let townBase = null;
     if (seen.has(name) || /상인회|별관|마을회관/.test(name) || LANDMARK[kind]) return; seen.add(name);   // 역 · 시장 · 군청은 동네 표지가 대신한다
     const big = kind === 'station' || kind === 'market' || kind === 'river';
     const draw = (g, w, h) => { const ruined = LANDMARK[kind] && !lmAlive(kind), name2 = ruined ? '무너진 ' + name : name; g.clearRect(0, 0, w, h); g.font = `${big ? 40 : 30}px Jua, sans-serif`; const tw = Math.min(w - 16, g.measureText(name2).width + 40); g.fillStyle = ruined ? '#c9c2b4' : kind === 'river' ? '#dff1fb' : kind === 'station' ? '#ffd23f' : kind === 'market' ? '#ffb4a0' : '#fffaf0'; g.beginPath(); g.roundRect((w - tw) / 2, 8, tw, 64, 14); g.fill(); g.lineWidth = 5; g.strokeStyle = INK; g.stroke(); g.fillStyle = INK; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(name2, w / 2, 42); g.beginPath(); g.moveTo(w / 2 - 10, 72); g.lineTo(w / 2, 90); g.lineTo(w / 2 + 10, 72); g.closePath(); g.fillStyle = INK; g.fill(); };
-    const t = canvasTex(360, 96, draw); t.userData = { draw };
+    const t = sharpTex(360, 96, draw);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); sp.renderOrder = 13; sp.position.set(x, kind === 'river' ? 1 : 6, z); sp.userData.base = big ? 1.35 : 1; sp.userData.lm = !!LANDMARK[kind]; sp.userData.kind = kind; sp.userData.name = name; outside.add(sp); mapLabels.push(sp);
   });
 }
@@ -276,7 +280,7 @@ function flyTo(x, z, zoom = .5, dur = 1.1, done) {
 function refreshTown() {
   const r = restore(); townU.uRestore.value = r; DISTRICTS.forEach((d, i) => { distGoal[i] = distLv(d.id) ? 1 : 0; if (!townReady) townU.uDist.value[i] = distGoal[i]; if (distDecoLv[i] !== distLv(d.id)) buildDistDeco(i); }); townReady = true; refreshDistMarks();
   if (townBase) townBase.material.color.set('#' + new THREE.Color('#bfae8e').lerp(new THREE.Color('#b9dca0'), Math.min(1, r * 1.6)).getHexString());
-  mapLabels.forEach(s => { if (!s.userData.lm) return; const t = s.material.map, c = t.image, g = c.getContext('2d'); t.userData.draw(g, c.width, c.height); t.needsUpdate = true; });
+  mapLabels.forEach(s => { if (!s.userData.lm) return; const t = s.material.map, c = t.image, g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height); t.userData.draw(g); t.needsUpdate = true; });
 }
 const distMarks = [];
 function distMarkDraw(d) {
@@ -294,11 +298,11 @@ function distMarkDraw(d) {
   };
 }
 DISTRICTS.forEach(d => {
-  const draw = distMarkDraw(d), t = canvasTex(400, 124, draw); t.userData = { draw };
+  const t = sharpTex(400, 124, distMarkDraw(d));
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false })); sp.renderOrder = 14; sp.position.set(d.at[0], 9, d.at[1]); sp.userData.base = 1.6; sp.userData.dist = d.id; sp.userData.w = 400 / 124;
   outside.add(sp); mapLabels.push(sp); distMarks.push(sp);
 });
-function refreshDistMarks() { distMarks.forEach(s => { const t = s.material.map, c = t.image; t.userData.draw(c.getContext('2d'), c.width, c.height); t.needsUpdate = true; }); }
+function refreshDistMarks() { distMarks.forEach(s => { const t = s.material.map, c = t.image, g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height); t.userData.draw(g); t.needsUpdate = true; }); }
 function stepLabels() { const k = 1 / camera.zoom; mapLabels.forEach(s => { const b = s.userData.base * 5.2 * k; s.scale.set(b, b / (s.userData.w || 3.75), 1); s.visible = camera.zoom < 1.4 || s.userData.base > 1; }); }
 // 담장 · 산울타리 · 정문
 const fixed = new THREE.Group(); scene.add(fixed);
@@ -830,7 +834,7 @@ function confirmPlace() {
   save(); hud();
 }
 // 꾸미기 줄 접기 · 펴기 (저장)
-let decoOpen = true; try { decoOpen = localStorage.getItem('yangil.kingdom.deco') !== '0'; } catch (e) {}
+let decoOpen = false; try { decoOpen = localStorage.getItem('yangil.kingdom.deco') === '1'; } catch (e) {}   // 처음엔 접어서 화면을 넓게
 function setDeco(v) { decoOpen = v; document.querySelector('.bar').classList.toggle('closed', !v); $('deco-tog').setAttribute('aria-expanded', v); $('deco-tog').setAttribute('aria-label', v ? '꾸미기 접기' : '꾸미기 펴기'); try { localStorage.setItem('yangil.kingdom.deco', v ? '1' : '0'); } catch (e) {} if (!v) cancelPlace(); }
 setDeco(decoOpen);
 $('deco-tog').addEventListener('click', e => { e.stopPropagation(); KS.fx('click'); setDeco(!decoOpen); });
@@ -1084,4 +1088,4 @@ if (!G.story.intro2) { G.story.intro = 1; G.story.intro2 = 1; save(); setTimeout
 if (treesAlive() && !G.story.trees) { G.story.trees = 1; save(); setTimeout(() => toast('은행왕을 물리쳐서 은행나무길이 다시 노랗게 물들었어요!'), 1500); }
 checkMilestone();
 save();
-window.__kingdom = { flyTo, flyRes, dust, sparkle, GFX, lmAlive, DISTRICTS, DIST_MAX, distLv, distOf, townAlive, campusRestore, refreshTown, distMarks, focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };
+window.__kingdom = { townU, flyTo, flyRes, dust, sparkle, GFX, lmAlive, DISTRICTS, DIST_MAX, distLv, distOf, townAlive, campusRestore, refreshTown, distMarks, focusFac, syncEventCards, DECO, sun, recruitCost, recruitCap, hideInfo, HOOK, THREE, scene, world, save, hud, toast, say, sayText, faceOf, restore, campusLv, lvOfFac, prodOf, facOpen, FAC_ORDER, mapLabels, LANDMARK, recruit, rosterOf, floatText, resText, toScreen, G, FAC, ZONES, unlockZone, showZone, zoneCheck, people, meshes, bubbles, camera, controls, renderer, showFac, doUpgrade, openReqs, showStory, storyPages };

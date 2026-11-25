@@ -929,6 +929,7 @@ function applySky() {
   nightN = lerp(a[5], b[5]);
   if (hemi) { hemi.intensity = lerp(a[2], b[2]); hemi.color.copy(cA.set('#fff7e0').lerp(cB.set('#8fa0d8'), nightN)); }
   K.sun.intensity = lerp(a[3], b[3]); K.sun.color.copy(cA.set(a[4]).lerp(cB.set(b[4]), k));
+  if (K.townU) K.townU.uNight.value = Math.max(0, Math.min(1, (nightN - .2) * 1.4));
   winMat.opacity = Math.max(0, Math.min(1, (nightN - .25) * 1.6)); lampMat.opacity = winMat.opacity * .95;
   document.body.classList.toggle('night', nightN > .5);
 }
