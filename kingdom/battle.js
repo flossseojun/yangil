@@ -153,7 +153,8 @@ const mobsAlive = () => MOBS.filter(m => !m.dead);
 const MOB_NAME = { 1: '은행 열매', 2: '고장 난 모니터', 3: '꼬마 유령', 4: '벽돌 졸개', 5: '졸개', 6: '표 검사 로봇', 7: '떡꼬치' };
 const mobName = () => MOB_NAME[CH] || '졸개';
 function makeMob() {
-  const g = new THREE.Group(), M = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .6 }, o)), add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  // 카툰 느낌: 툰 재질 + 잉크 외곽선 + 큰 눈 · 볼터치 · 작은 발
+  const g = new THREE.Group(), ink = new THREE.MeshBasicMaterial({ color: '#231c17', side: THREE.BackSide }), M = (c, o = {}) => new THREE.MeshToonMaterial(Object.assign({ color: c, emissive: c, emissiveIntensity: .28 }, o)), add = (geo, m, x, y, z, line = .07) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; g.add(o); if (line && !m.transparent) { const l = new THREE.Mesh(geo, ink); l.scale.setScalar(1 + line); o.add(l); } return o; };
   let eyeY = .55, eyeZ = .38;
   if (CH === 2) { add(new THREE.BoxGeometry(.9, .62, .2), M('#2a2f3a'), 0, .7, 0); add(new THREE.PlaneGeometry(.76, .48), new THREE.MeshBasicMaterial({ color: '#4ff0ff' }), 0, .7, .11); add(new THREE.BoxGeometry(.1, .3, .1), M('#2a2f3a'), 0, .25, 0); add(new THREE.BoxGeometry(.5, .06, .3), M('#2a2f3a'), 0, .08, 0); eyeY = .72; eyeZ = .13; }
   else if (CH === 3) { add(new THREE.SphereGeometry(.38, 14, 10), M('#f2f4ff', { transparent: true, opacity: .85 }), 0, .75, 0); add(new THREE.ConeGeometry(.38, .6, 14, 1, true), M('#f2f4ff', { transparent: true, opacity: .75, side: THREE.DoubleSide }), 0, .32, 0).rotation.x = Math.PI; eyeY = .8; eyeZ = .34; }
@@ -161,7 +162,14 @@ function makeMob() {
   else if (CH === 6) { add(new THREE.BoxGeometry(.6, .7, .5), M('#2f6fb8'), 0, .55, 0); add(new THREE.CylinderGeometry(.18, .18, .52, 12), M('#23262e'), 0, .18, 0).rotation.x = Math.PI / 2; add(new THREE.BoxGeometry(.4, .14, .02), M('#ffd23f'), 0, .5, .26); eyeY = .72; eyeZ = .26; }
   else if (CH === 7) { add(new THREE.CylinderGeometry(.03, .03, 1.3, 6), M('#c9a06a'), 0, .65, 0); [0, 1, 2].forEach(i => add(new THREE.CylinderGeometry(.16, .16, .32, 12), M('#fff4e0'), 0, .35 + i * .3, 0)); add(new THREE.SphereGeometry(.2, 10, 8), M('#e0321e', { roughness: .3 }), 0, .98, 0); eyeY = .66; eyeZ = .16; }
   else { add(new THREE.SphereGeometry(.42, 16, 12), M('#f2b720', { emissive: '#7a4a00', emissiveIntensity: .25 }), 0, .45, 0); add(new THREE.ConeGeometry(.14, .3, 6), M('#5fae4e'), .05, .95, 0).rotation.z = -.4; }
-  [-.12, .12].forEach(x => { add(new THREE.SphereGeometry(.07, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' }), x, eyeY, eyeZ); add(new THREE.SphereGeometry(.035, 6, 5), new THREE.MeshBasicMaterial({ color: '#231c17' }), x, eyeY, eyeZ + .05); });
+  [-.13, .13].forEach(x => {   // 큰 눈 + 반짝이 + 볼터치
+    add(new THREE.SphereGeometry(.085, 12, 10), new THREE.MeshBasicMaterial({ color: '#ffffff' }), x, eyeY, eyeZ, .18).scale.set(1, 1.2, .5);
+    add(new THREE.SphereGeometry(.055, 10, 8), new THREE.MeshBasicMaterial({ color: '#231c17' }), x, eyeY - .01, eyeZ + .04, 0).scale.set(1, 1.15, .5);
+    add(new THREE.SphereGeometry(.02, 6, 5), new THREE.MeshBasicMaterial({ color: '#ffffff' }), x + .02, eyeY + .03, eyeZ + .07, 0);
+    add(new THREE.CircleGeometry(.05, 12), new THREE.MeshBasicMaterial({ color: '#ff8fa8', transparent: true, opacity: .75 }), x * 1.7, eyeY - .1, eyeZ + .01, 0);
+  });
+  if (CH !== 3) [-.14, .14].forEach(x => add(new THREE.SphereGeometry(.09, 8, 6), M('#3a2f2a'), x, .05, .05, .1).scale.set(1, .6, 1.3));   // 작은 발
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(.42, 20), new THREE.MeshBasicMaterial({ color: '#000', transparent: true, opacity: .22, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = .02; g.add(sh);
   const bg = new THREE.Mesh(new THREE.PlaneGeometry(.8, .1), new THREE.MeshBasicMaterial({ color: '#231c17', depthTest: false })), fill = new THREE.Mesh(new THREE.PlaneGeometry(.76, .06), new THREE.MeshBasicMaterial({ color: '#ff5a4a', depthTest: false }));
   bg.position.set(0, 1.45, 0); fill.position.set(0, 1.45, .01); bg.renderOrder = fill.renderOrder = 20; g.add(bg, fill); g.userData.fill = fill;
   return g;
@@ -181,7 +189,7 @@ function damageMob(n, opts = {}) {
 }
 function damageMob1(m, n, opts) {
   const crit = opts.crit ?? Math.random() < .15, dmg = Math.round(n * (crit ? 1.8 : 1) * (weakT > 0 ? 1.25 : 1) * rnd(.92, 1.08));
-  m.hp -= dmg; m.flash = .12; KS.fx(crit ? 'crit' : 'hit');
+  m.hp -= dmg; m.flash = .12; m.punch = .18; KS.fx(crit ? 'crit' : 'hit');
   popText(m.pos.clone().add(new THREE.Vector3(rnd(-.3, .3), 1.7, .4)), crit ? 'big' : 'mid', fmt(dmg));
   if (m.hp <= 0) {
     m.dead = true; mobKills++; flash(ARENA.hitColor, 3.5, m.pos.clone().add(new THREE.Vector3(0, .6, 0)), .45); KS.fx('break');
@@ -207,7 +215,8 @@ function stepMobs(dt) {
     else if (!m.y && (m.atkT -= dt) <= 0) { m.atkT = rnd(1.2, 1.6); m.lunge = .25; hurt(tgt, 110 * SM.dmg); }
     m.lunge = Math.max(0, (m.lunge || 0) - dt);
     const lx = m.lunge > 0 ? -Math.sin(m.lunge / .25 * Math.PI) * .3 : 0;
-    m.g.position.set(m.pos.x + lx, m.y + Math.abs(Math.sin(m.bob)) * .12, m.pos.z); m.g.rotation.y = -.5 + Math.sin(m.bob * .5) * .1;
+    m.punch = Math.max(0, (m.punch || 0) - dt); const sq = Math.abs(Math.sin(m.bob)), pk = m.punch > 0 ? Math.sin(m.punch / .18 * Math.PI) * .25 : 0;
+    m.g.position.set(m.pos.x + lx, m.y + sq * .12, m.pos.z); m.g.rotation.y = -.5 + Math.sin(m.bob * .5) * .1; m.g.scale.set(1.45 * (1 + pk + (1 - sq) * .05), 1.45 * (1 - pk * .6 + sq * .06), 1.45 * (1 + pk));
     m.g.userData.fill.scale.x = Math.max(.01, m.hp / m.max); m.g.userData.fill.position.x = -.38 * (1 - m.hp / m.max);
   });
   if (wave < WAVES && !mobsAlive().length && firstSpawn) {

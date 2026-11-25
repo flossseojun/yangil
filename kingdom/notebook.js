@@ -67,7 +67,7 @@ function stepTut() {
   let v = null;
   if (s.fac) v = facTop(s.fac); else if (s.bubble) v = K.bubbles.has(s.bubble) ? K.bubbles.get(s.bubble).position.clone().add(new THREE.Vector3(0, .9, 0)) : null;
   if (v) { const [x, y] = K.toScreen(v); pointAt(x, y, 'down'); return; }
-  if (s.el) { const r = $(s.el).getBoundingClientRect(); if (r.width) { if (s.el === 'lv') pointAt(r.left + r.width / 2, r.bottom + 50, 'up'); else pointAt(r.left - 6, r.top + r.height / 2, 'right'); return; } }
+  if (s.el) { const el = $(s.el), r = el.getBoundingClientRect(); if (r.width) { if (s.el === 'lv') pointAt(r.left + r.width / 2, r.bottom + 50, 'up'); else if (el.closest('.dock')) pointAt(r.left + r.width / 2, r.top - 4, 'down'); else pointAt(r.left - 6, r.top + r.height / 2, 'right'); return; } }
   arrow.hidden = true;
 }
 function nextTut() {
@@ -540,7 +540,7 @@ fr.addEventListener('click', e => {
   const c = e.target.closest('[data-fr]'); if (c && !frOpen) { KS.fx('pop'); frOpen = c.dataset.fr; openFR(); }
 });
 const frBtn = document.createElement('button'); frBtn.className = 'rbtn'; frBtn.id = 'b-friends'; frBtn.setAttribute('aria-label', '친구들');
-frBtn.innerHTML = drawIcon('club', 24); nbBtn.after(frBtn);
+frBtn.innerHTML = drawIcon('friends', 24); nbBtn.after(frBtn);
 frBtn.onclick = () => { KS.fx('click'); openFR(); };
 frBtn.insertAdjacentHTML('beforeend', '<i class="badge" id="fr-n" hidden>0</i>');
 // 키울 수 있는 팀 친구 수 (빨간 점)
@@ -714,7 +714,7 @@ sm.addEventListener('click', e => {
   if (SQ.phase === 'card') { if (SQ.i < SQ.list.length - 1) { SQ.i++; nextCap(); } else if (SQ.list.length > 1) summary(); }
 });
 const gaBtn = document.createElement('button'); gaBtn.className = 'rbtn'; gaBtn.id = 'b-gacha'; gaBtn.setAttribute('aria-label', '친구 뽑기');
-gaBtn.innerHTML = drawIcon('star', 24) + '<i class="badge" id="ga-n" hidden>!</i>'; frBtn.after(gaBtn);
+gaBtn.innerHTML = drawIcon('capsule', 24) + '<i class="badge" id="ga-n" hidden>!</i>'; frBtn.after(gaBtn);
 gaBtn.onclick = () => { KS.fx('click'); G.gachaSeen = 1; openGacha(); };
 // 동아리실이 생기면 뽑기 버튼이 나타나고 알려 준다
 let gaT = 0;
@@ -1006,6 +1006,16 @@ evChip.onclick = () => { KS.fx('click'); openEV(); };
 let evT = 0; K.HOOK.tick.push(dt => { if ((evT += dt) > 2) { evT = 0; syncEV(); } }); syncEV();
 // 행사 날씨: 눈 · 꽃잎
 { const fx = curEvent().E.fx; if (fx) { const box = document.createElement('div'); box.className = 'evfx ' + fx; box.innerHTML = Array.from({ length: 22 }, (_, i) => `<i style="left:${(i * 4.6 + (i % 3) * 7) % 100}%;animation-delay:${-(i * .83) % 9}s;animation-duration:${7 + (i % 5) * 1.3}s"></i>`).join(''); document.body.appendChild(box); } }
+
+/* ───────── 아래 이름 달린 바: 자주 쓰는 버튼을 한 줄로 ───────── */
+{
+  const dock = document.createElement('nav'); dock.className = 'dock'; dock.setAttribute('aria-label', '주요 메뉴');
+  const DOCK = [['b-req', '의뢰'], ['b-note', '수첩'], ['b-friends', '친구들'], ['b-gacha', '뽑기'], ['b-adv', '모험'], ['b-fight', '전투']];
+  DOCK.forEach(([id, label]) => { const b = $(id); if (!b) return; b.querySelectorAll(':scope > span').forEach(x => x.remove()); b.insertAdjacentHTML('beforeend', `<span class="dk">${label}</span>`); dock.appendChild(b); });
+  const fb = $('b-friends'); if (fb) { const ic = fb.querySelector('svg'); if (ic) { ic.insertAdjacentHTML('beforebegin', drawIcon('friends', 24)); ic.remove(); } }
+  const gb = $('b-gacha'); if (gb) { const ic = gb.querySelector('svg'); if (ic) { ic.insertAdjacentHTML('beforebegin', drawIcon('capsule', 24)); ic.remove(); } }
+  document.body.appendChild(dock);
+}
 
 K.save();
 Object.assign(K, { openTown, openDist, openADV, openEV, evState, setHour, openGacha, showJoin, openFR, openNB, openLM, daily, ACH, TUT, offline, refreshBadge });

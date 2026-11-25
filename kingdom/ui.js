@@ -62,6 +62,8 @@ const ICON_PATHS = {
   medal: '<path d="M8 2l2 7M16 2l-2 7" stroke="#e5484d"/><circle cx="12" cy="15" r="6" fill="#ffd23f"/><path d="M12 12l1 2h2l-1.5 1.5.5 2-2-1-2 1 .5-2L9 14h2z" fill="#fff" stroke-width="1"/>',
   mic: '<rect x="9" y="2.5" width="6" height="11" rx="3" fill="#6b7078"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8"/>',
   cog: '<circle cx="12" cy="12" r="3.2" fill="#ffd23f"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.5"/>',
+  friends: '<circle cx="8.5" cy="8" r="3.5" fill="#ffd9b8"/><circle cx="16" cy="9" r="3" fill="#ffd9b8"/><path d="M2.5 20c.5-4 3-6 6-6s5.5 2 6 6z" fill="#5b8def"/><path d="M12.5 15.2c1-.8 2.2-1.2 3.5-1.2 2.6 0 4.6 1.8 5 5h-6.5" fill="#6cd39a"/>',
+  capsule: '<path d="M4.5 12a7.5 7.5 0 0 1 15 0z" fill="#e5484d"/><path d="M4.5 12a7.5 7.5 0 0 0 15 0z" fill="#fffaf0"/><path d="M3.5 12h17"/><circle cx="9" cy="8.5" r="1.3" fill="#fff" stroke="none"/>',
   clipboard: '<rect x="5" y="4" width="14" height="17" rx="2" fill="#fffaf0"/><rect x="9" y="2.5" width="6" height="3.5" rx="1" fill="#ffd23f"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/>',
   expand: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" stroke-width="2.6"/>',
   shrink: '<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" stroke-width="2.6"/>',
